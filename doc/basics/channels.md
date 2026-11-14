@@ -1,55 +1,63 @@
 # Channels
 
-## Table of Contents
+How a notification reaches its channels: the `NotificationChannel` contract, the database and push channels the package registers, and how to add your own.
 
-- <a name="toc-concept"></a>[Channel Concept](#concept)
-- <a name="toc-interface"></a>[NotificationChannel Interface](#interface)
-- <a name="toc-database-channel"></a>[DatabaseChannel](#database-channel)
-- <a name="toc-push-channel"></a>[PushChannel](#push-channel)
-- <a name="toc-custom-channels"></a>[Creating Custom Channels](#custom-channels)
-- <a name="toc-registration"></a>[Channel Registration](#registration)
+- [Channel Concept](#concept)
+- [NotificationChannel Interface](#interface)
+- [DatabaseChannel](#database-channel)
+- [PushChannel](#push-channel)
+- [Creating Custom Channels](#custom-channels)
+- [Channel Registration](#registration)
+- [Gotchas](#gotchas)
+- [Related Documentation](#related-documentation)
 
----
+<a name="concept"></a>
+## Channel Concept
 
-## <a name="concept"></a>Channel Concept
-
-A channel is a delivery mechanism for notifications. When `NotificationManager.send` is called, it asks the notification which channels it wants via `Notification.via()`, then dispatches to each registered channel in turn.
+A channel is a delivery mechanism. `NotificationManager.send` asks the notification which channels it wants through `Notification.via()`, then dispatches to each registered channel in turn.
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 class MonitorDownNotification extends Notification {
   @override
   List<String> via(Notifiable notifiable) => ['database', 'push'];
 }
+
+await Notify.send(user, MonitorDownNotification());
 ```
 
-Channels are identified by a string name. The manager skips unknown channel names (logs a warning) and skips channels where `isAvailable` returns `false`. This makes it safe to declare channels in `via()` without knowing whether the device supports them at compile time.
+Channels are identified by a string name. For each name the manager:
 
----
+1. skips it with a logged warning when no channel is registered under it,
+2. skips it when `isAvailable` is `false`,
+3. awaits `channel.send(notifiable, notification)`.
 
-## <a name="interface"></a>NotificationChannel Interface
+Channels run one after another. A channel that throws does not stop the rest: the manager finishes the list, logs every later failure, and rethrows the first error once all channels have been tried.
+
+Declaring a channel in `via()` is therefore safe without knowing at compile time whether the device supports it.
+
+<a name="interface"></a>
+## NotificationChannel Interface
 
 ```dart
 abstract class NotificationChannel {
-  /// Channel identifier (e.g., 'database', 'push', 'mail')
   String get name;
-
-  /// Whether this channel is available and configured
   bool get isAvailable;
-
-  /// Send notification through this channel
   Future<void> send(Notifiable notifiable, Notification notification);
 }
 ```
 
-Every channel must implement these three members:
+| Member | Contract |
+| :--- | :--- |
+| `name` | The key used in `via()` and by `registerChannel` |
+| `isAvailable` | A synchronous guard checked before every `send`; `false` skips the channel silently |
+| `send` | The delivery logic; receives the target entity and the notification |
 
-- `name` — the string key used in `via()` return values and `registerChannel`
-- `isAvailable` — a synchronous guard checked before every `send` call; return `false` to silently skip
-- `send` — the actual delivery logic; receives the target entity and the notification
+<a name="database-channel"></a>
+## DatabaseChannel
 
----
-
-## <a name="database-channel"></a>DatabaseChannel
+`NotificationServiceProvider.boot()` registers `DatabaseChannel` whether or not push is configured. It is always available, and its `send` does nothing:
 
 ```dart
 class DatabaseChannel extends NotificationChannel {
@@ -61,99 +69,79 @@ class DatabaseChannel extends NotificationChannel {
 
   @override
   Future<void> send(Notifiable notifiable, Notification notification) async {
-    final data = notification.toDatabase(notifiable);
-    if (data == null) return;
-    // no-op: database notifications are created server-side
+    // Returns without doing anything: the backend owns the rows.
   }
 }
 ```
 
 ### How It Works
 
-The database channel follows an asymmetric pattern:
+The database channel is asymmetric:
 
-1. **Backend creates** — the Laravel backend calls `$user->notify(new SomeNotification())`, which persists a row in the `notifications` table
-2. **Frontend polls** — `NotificationPoller` calls `NotificationManager.fetchNotifications()` every 30 seconds (configurable), which hits `GET /notifications`
-3. **Stream emits** — results are pushed to the broadcast `StreamController<List<DatabaseNotification>>`
-4. **UI reacts** — any widget listening to `Notify.notifications()` receives the updated list
+1. **The backend creates**: the Laravel backend calls `$user->notify(new SomeNotification())`, which persists a row in the `notifications` table.
+2. **The client reads**: `NotificationPoller` calls `NotificationManager.fetchNotifications()` every 30 seconds by default (`notifications.database.polling_interval`), which hits `GET /notifications`. With a socket, `Notify.startRealtime()` applies each pushed row instead.
+3. **A stream emits**: results go to the broadcast stream behind `Notify.notifications()`.
+4. **The UI reacts**: any widget listening to that stream receives the updated list.
 
-The `send()` method in `DatabaseChannel` is intentionally a no-op. It exists for API parity with Laravel's notification system. When `toDatabase()` returns `null`, `send()` exits immediately; otherwise, the data map is validated but not forwarded (the backend owns persistence).
+`DatabaseChannel.send` exists for parity with Laravel's `via()` vocabulary. A client-created row is not supported by this channel; post to your backend's own endpoint for that.
 
-> [!NOTE]
-> `DatabaseChannel.isAvailable` always returns `true`. Availability is controlled server-side by whether the backend is reachable.
-
-**DatabaseNotification model fields:**
+**`DatabaseNotification` fields:**
 
 | Field | Type | Description |
-|-------|------|-------------|
-| `id` | `String` | UUID from backend |
-| `type` | `String` | Notification class name (e.g., `monitor_down`) |
-| `title` | `String` | Display title |
-| `body` | `String` | Display body |
-| `data` | `Map<String, dynamic>` | Full data payload |
-| `actionUrl` | `String?` | Deep-link or route path |
+| :--- | :--- | :--- |
+| `id` | `String` | Id from the backend |
+| `type` | `String` | Notification type (for example `monitor_down`) |
+| `title` | `String` | Read from `data['title']` |
+| `body` | `String` | Read from `data['body']` |
+| `data` | `Map<String, dynamic>` | The full `data` payload |
+| `actionUrl` | `String?` | Read from `data['action_url']` |
 | `createdAt` | `DateTime` | Creation timestamp |
-| `readAt` | `DateTime?` | `null` when unread |
+| `readAt` | `DateTime?` | `null` while unread |
 | `isRead` | `bool` | `readAt != null` |
 
----
+<a name="push-channel"></a>
+## PushChannel
 
-## <a name="push-channel"></a>PushChannel
+`PushChannel` is registered when a push driver resolves. It is **self-addressed** and ships **switched off**.
 
-```dart
-class PushChannel extends NotificationChannel {
-  final PushDriver _driver;
+| Property | Behaviour |
+| :--- | :--- |
+| `name` | `'push'` |
+| `isAvailable` | `driver.isSupported` and `notifications.push.self_test_enabled` is `true`. With the switch off the manager skips the channel, so the other channels in `via()` still deliver. |
+| Recipient | None. It posts to `POST /notifications/push-test` and the backend derives the recipient from the session, so the only person it can page is the authenticated one. A `Notifiable` whose `notifiableId` is not the signed-in user's id throws `NotificationException` with code `PUSH_RECIPIENT_NOT_AUTHENTICATED_USER`. |
+| Payload | `title` (`heading`), `body` (`content`) and `data` from `toPush()`; a `url` set on the `PushMessage` is folded into `data['url']` unless `data` already has one. |
+| Failure | A non-successful response throws `NotificationException` with code `HTTP_<status>`. |
 
-  PushChannel(this._driver);
-
-  @override
-  String get name => 'push';
-
-  @override
-  bool get isAvailable => _driver.isSupported;
-
-  @override
-  Future<void> send(Notifiable notifiable, Notification notification) async {
-    final pushMessage = notification.toPush(notifiable);
-    if (pushMessage == null) return;
-
-    final preference = notifiable.notificationPreference;
-    if (preference != null) {
-      final pushEnabled = preference.isEnabled(notification.type, 'push');
-      if (!pushEnabled) return;
-    }
-
-    // Dispatches to backend → OneSignal
-  }
-}
-```
+Ordinary push to other people is sent by your backend through OneSignal; see [Laravel Backend Setup](./laravel-backend-setup.md#onesignal-push). This channel exists so a person can find out whether push reaches their own phone before an incident rather than during one. The backend carries the matching `magic-starter.onesignal.self_test_enabled` switch; enable both or neither.
 
 ### How It Works
 
-1. `toPush()` is called on the notification; a `null` return exits early
-2. If the `Notifiable` has a `notificationPreference`, `isEnabled(type, 'push')` is checked against global + per-type preferences
-3. `isAvailable` delegates to `_driver.isSupported` — `false` on web for `OneSignalDriver`, `false` on mobile for `OneSignalWebDriver`
+1. With the switch off, `send` logs a debug line and returns.
+2. A foreign recipient is refused with the exception above.
+3. `toPush()` is called on the notification; a `null` return exits early.
+4. When the `Notifiable` has a `notificationPreference`, `isEnabled(notification.type, 'push')` must be `true` (see [Preferences](./preferences.md#global-vs-type)).
+5. The request is sent.
 
 > [!TIP]
-> Use `PushMessage` with its fluent builder to construct `toPush()` payloads:
+> Build the `toPush()` payload with `PushMessage`:
 > ```dart
 > @override
 > PushMessage? toPush(Notifiable notifiable) {
 >   return PushMessage()
->     ..heading('Monitor Down')
->     ..content('api.example.com is not responding')
->     ..data({'monitor_id': monitor.id})
->     ..url('/monitors/${monitor.id}');
+>       .heading('Monitor Down')
+>       .content('api.example.com is not responding')
+>       .data({'monitor_id': monitor.id})
+>       .url('/monitors/${monitor.id}');
 > }
 > ```
 
----
+<a name="custom-channels"></a>
+## Creating Custom Channels
 
-## <a name="custom-channels"></a>Creating Custom Channels
-
-Extend `NotificationChannel` to add any delivery mechanism:
+Extend `NotificationChannel` for any other delivery mechanism:
 
 ```dart
+import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
 class SlackChannel extends NotificationChannel {
@@ -179,41 +167,47 @@ class SlackChannel extends NotificationChannel {
 }
 ```
 
-Then declare `'slack'` in `via()`:
+Then name it in `via()`:
 
 ```dart
 @override
 List<String> via(Notifiable notifiable) => ['database', 'slack'];
 ```
 
----
+<a name="registration"></a>
+## Channel Registration
 
-## <a name="registration"></a>Channel Registration
-
-Channels are registered on `NotificationManager` before any notifications are dispatched. `NotificationServiceProvider.register()` is the conventional place:
+`NotificationServiceProvider` registers `database` and `push` itself. Register any other channel from the `boot()` of a provider of your own:
 
 ```dart
 @override
-void register() {
-  final manager = NotificationManager();
-  manager.registerChannel(DatabaseChannel());
-  manager.registerChannel(PushChannel(driver));
-  // manager.registerChannel(SlackChannel(webhookUrl));
-  app.singleton('notifications', () => manager);
+Future<void> boot() async {
+  NotificationManager().registerChannel(SlackChannel(webhookUrl));
 }
 ```
 
-Registration is idempotent per name — registering a channel with an existing name replaces the previous instance.
+Registering a name that already exists replaces the previous instance, which is how a test swaps in a fake. `hasChannel` answers whether a name is registered:
 
 ```dart
-// Check registration
 final bool exists = NotificationManager().hasChannel('push');
 ```
 
----
+<a name="gotchas"></a>
+## Gotchas
 
-**Related**
+| Mistake | Fix |
+| :--- | :--- |
+| Expecting `DatabaseChannel.send` to store a row | It does nothing. The backend creates database notifications; the client reads them with `Notify.notifications()` and polling or realtime. |
+| Listing `'push'` in `via()` and seeing nothing happen | `PushChannel` is unavailable until `notifications.push.self_test_enabled` is `true` and the driver is supported. It only reaches the signed-in user. Send push to other people from your backend. |
+| Listing `'mail'` in `via()` | The package has no mail channel. The manager logs `Unknown notification channel: mail` and skips it; send mail from the backend. |
+| Assuming one failing channel blocks the next | It does not. Every channel is tried, then the first error is rethrown from `send`; wrap the call if a failure must not surface. |
+| `Notification` is ambiguous after importing Flutter | Flutter's widgets library also exports `Notification`. Import it with `hide Notification` (`import 'package:flutter/widgets.dart' hide Notification;`). |
 
-- [Drivers](https://magic.fluttersdk.com/packages/notifications/basics/drivers)
-- [Preferences](https://magic.fluttersdk.com/packages/notifications/basics/preferences)
-- [Notification Manager](https://magic.fluttersdk.com/packages/notifications/architecture/notification-manager)
+<a name="related-documentation"></a>
+## Related Documentation
+
+- [Drivers](./drivers.md): the push SDK layer behind `PushChannel`.
+- [Preferences](./preferences.md): the per-type and per-channel opt-outs `PushChannel` honours.
+- [Notification Manager](../architecture/notification-manager.md): dispatch, polling and realtime.
+- [Laravel Backend Setup](./laravel-backend-setup.md): the backend that creates the rows and sends the pushes.
+- [Realtime channels with magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels): the socket layer `Notify.startRealtime` subscribes through.
