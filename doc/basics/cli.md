@@ -206,7 +206,7 @@ The command has no flags. It prints:
 
 - **push**: driver name, the App ID masked to its first eight characters, and the notify button state.
 - **database**: enabled state and polling interval in seconds.
-- **mail**: the enabled state of a `mail` key if the config has one. The package has no mail channel, so the line has no effect.
+- **mail**: the enabled state of a `mail` key, and `disabled` when the config has none, which is the case for a file the installer writes now. The package has no mail channel, so the line has no effect.
 
 The values are read from the file's text, not from a running app, so an App ID read with `env(...)` prints as `NOT SET`. The config file must exist.
 

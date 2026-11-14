@@ -240,8 +240,8 @@ class OneSignalDriver extends PushDriver {
 
     // The SDK's `fallbackToSettings`. On a device that has never been asked
     // this argument is inert (the real dialog is shown either way); it decides
-    // only what happens on a DENIED one, where the request itself can show
-    // nothing.
+    // only what happens on a DENIED one: true shows the SDK's open-settings
+    // dialog there, false shows nothing.
     return await OneSignal.Notifications.requestPermission(
       canOpenPlatformSettings,
     );

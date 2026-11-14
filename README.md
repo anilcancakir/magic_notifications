@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/anilcancakir/magic_notifications/master/.github/magic-logo.svg" width="120" alt="Magic Logo" />
+  <img src="https://raw.githubusercontent.com/anilcancakir/magic_notifications/master/.github/magic-logo.svg" width="120" alt="Magic Notifications" />
 </p>
 
 <h1 align="center">Magic Notifications</h1>
@@ -171,7 +171,7 @@ Future<void> onSignOut() async {
 
 | Member | Meaning |
 |--------|---------|
-| `Notify.requestPushPermission()` | Raises the OS dialog; `true` when granted. Shows nothing on a device that already answered. |
+| `Notify.requestPushPermission()` | Raises the OS dialog; `true` when granted. The OS dialog never returns on a device that already answered; on a denied phone OneSignal shows its own open-settings dialog instead, unless `fallback_to_settings` is `false`. |
 | `Notify.manager.pushDriver.reachability()` | `PushReachability.unavailable`, `blocked`, `off` or `on`, without raising a dialog. |
 | `Notify.manager.pushPromptAdvice(declinedAt:)` | Whether your own reminder may show now, and what its button can do (`PushPromptAction`). |
 | `PushPrompt`, `PushPromptHost(declinedVaultKey:)`, `PushOffNotice(onOpenPreferences:)` | The shipped reminder row and the quiet shell marker; see [Push Prompt Component](https://anilcancakir.com/magic/docs/notifications/basics/preferences#push-prompt). |
@@ -190,7 +190,7 @@ Failure modes:
 | `notifications.push.app_id` is blank | The driver is never initialised, `isInitialized` stays `false` and reachability reads `unavailable`. |
 | The driver fails to initialise | The app still boots; the failure is on `NotificationServiceProvider.pushInitializationError`. |
 | A driver name nothing was registered under | Logged at error level, push stays off. |
-| `requestPushPermission` on a denied device | Shows nothing. Read `reachability()` first and point at the OS setting when it is `blocked`. |
+| `requestPushPermission` on a denied device | No OS dialog. On iOS and Android OneSignal shows its own English dialog offering the app's settings (`notifications.push.fallback_to_settings`, on by default); on web, or with that key `false`, nothing is shown. Read `reachability()` first and, when it is `blocked`, call `Notify.openPushSettings()` on a phone or point at the browser setting on web. |
 | `Notify.pushState.release()` after `Auth.logout()` | The token is gone and the request is a 401. Release first. |
 | Web push on iOS Safari in a plain tab | Reaches nobody until the site is added to the Home Screen. |
 
@@ -229,7 +229,7 @@ void boot() {
 }
 ```
 
-`Notify.view` is a `NotificationViewRegistry` holding `notifications.list` (`NotificationsListView`) and `notifications.preferences` (`NotificationPreferencesView`); register over a key to wrap or replace it, and `Notify.view.slot` supplies a type icon. `NotificationDropdown` is the bell with an unread badge. The package ships no translation catalogue: a host adds the `notifications.*` keys the screens and `PushPrompt` use to every locale, and a missing key renders as itself ([Preferences](https://anilcancakir.com/magic/docs/notifications/basics/preferences)). The preferences screen needs `GET` and `PUT /notification-preferences` on the backend.
+`Notify.view` is a `NotificationViewRegistry` holding `notifications.list` (`NotificationsListView`) and `notifications.preferences` (`NotificationPreferencesView`); register over a key to wrap or replace it, and `Notify.view.slot` supplies a type icon. `NotificationDropdown` is the bell with an unread badge ([Notification Dropdown](https://anilcancakir.com/magic/docs/notifications/basics/notification-dropdown)). The package ships no translation catalogue: a host adds every key the screens, the dropdown and `PushPrompt` read to every locale, and a missing key renders as itself ([Translation Keys](https://anilcancakir.com/magic/docs/notifications/basics/preferences#translation-keys) lists them all). The preferences screen needs `GET` and `PUT /notification-preferences` on the backend.
 
 ## CLI Tools
 
@@ -265,7 +265,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 | Register a `magic_deeplink` handler to open a screen from a tap | Nothing routes a tapped push on its own. |
 | Release push state before `Auth.logout()` | The release needs the token. |
 | Answer `{"count": n}` from `unread-count` and read `perPage` on `GET /notifications` | The client reads `count` at the top level and sends `perPage`. |
-| Add the `notifications.*` translation keys to every locale | A missing key renders as itself. |
+| Add every key in [Translation Keys](https://anilcancakir.com/magic/docs/notifications/basics/preferences#translation-keys) to every locale | A missing key renders as itself. |
 | Call `Notify.forgetDrivers()` in a test's `setUp` | The manager is a process-wide singleton. |
 
 ## Dependencies
@@ -274,7 +274,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 
 ## Links
 
-- [Documentation](https://anilcancakir.com/magic/docs/notifications/getting-started/installation): installation, configuration, channels, drivers, preferences, shipping push, the CLI and the Laravel backend contract
+- [Documentation](https://anilcancakir.com/magic/docs/notifications/getting-started/installation): installation, configuration, channels, drivers, preferences, the notification dropdown, shipping push, the CLI and the Laravel backend contract
 - [API reference](https://pub.dev/documentation/magic_notifications/latest/)
 - [llms.txt](llms.txt) and the [agent skill](skills/magic-notifications/SKILL.md) for AI coding agents: `npx skills add anilcancakir/magic_notifications`
 - [Changelog](CHANGELOG.md)

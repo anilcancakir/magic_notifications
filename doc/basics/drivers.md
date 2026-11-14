@@ -82,7 +82,7 @@ Every field is nullable because one SDK event reports only part of the state: a 
 | State | Meaning |
 | :--- | :--- |
 | `PushReachability.unavailable` | No platform driver here (`isSupported` is `false`), or one whose SDK never started (`isInitialized` is `false`), so a request would only be refused. |
-| `PushReachability.blocked` | Permission was denied and the platform will not re-prompt. The app has to point at the OS or browser setting; `requestPermission()` silently does nothing. |
+| `PushReachability.blocked` | Permission was denied and the platform will not re-prompt. The app has to point at the OS or browser setting. `requestPermission()` raises no OS dialog: on iOS and Android it shows OneSignal's settings fallback while `fallback_to_settings` is on, and on web, or with it off, nothing at all. |
 | `PushReachability.off` | Never asked, or asked and not opted in. Safe to call `requestPermission()`. |
 | `PushReachability.on` | Permitted, opted in and holding a subscription id: the only state a push can reach. |
 
@@ -341,7 +341,7 @@ The provider then resolves your driver by that name, registers `PushChannel` on 
 | :--- | :--- |
 | Expecting a tapped push to open a screen | Nothing routes for you. Register a `magic_deeplink` handler (see [Opening a screen from a tap](#opening-a-screen-from-a-tap)) or route from `Notify.manager.onPushClicked`. |
 | Sending the destination with OneSignal's `setUrl` | That is the Launch URL; it never reaches `event.data`. Put the route in `setData('url', ...)`. |
-| Calling `requestPermission()` on a denied device | It shows nothing. Read `reachability()` or `Notify.manager.pushPromptAdvice()` first, and point at the settings when it is `blocked`. |
+| Calling `requestPermission()` on a denied device | No OS dialog appears. On iOS and Android OneSignal shows its own English dialog offering the settings page (`fallback_to_settings`, on by default); on web, or with that key `false`, nothing is shown. Read `reachability()` or `Notify.manager.pushPromptAdvice()` first, and point at the settings when it is `blocked`. |
 | Calling `login` or `requestPermission` before `initialize` | Both throw `NOT_INITIALIZED`. Let the provider initialise the driver, and check `NotificationServiceProvider.pushInitializationError` when it did not come up. |
 | Blank `notifications.push.app_id` | The provider skips initialisation, `isInitialized` stays `false` and `reachability()` answers `unavailable`. Set the App ID. |
 | Initialising the web SDK in `index.html` as well | The driver initialises from config; a second `OneSignal.init()` call duplicates it. The page only loads the SDK script. |

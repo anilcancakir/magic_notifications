@@ -9,6 +9,7 @@ How a person's notification opt-ins are modelled, which backend endpoints the sh
 - [API Endpoints](#api)
 - [UI Integration](#ui)
 - [Push Prompt Component](#push-prompt)
+- [Translation Keys](#translation-keys)
 - [Gotchas](#gotchas)
 - [Related Documentation](#related-documentation)
 
@@ -277,7 +278,7 @@ class NotificationPreferencesPage extends StatelessWidget {
 }
 ```
 
-`contentClassName` takes `''` when the screen sits inside a page container that already carries the app's padding. See [Notification Manager](../architecture/notification-manager.md#optimistic) for the translation keys the screen needs.
+`contentClassName` takes `''` when the screen sits inside a page container that already carries the app's padding. [Translation Keys](#translation-keys) lists every key the screen needs.
 
 > [!TIP]
 > To make `PushChannel` respect per-type preferences, attach a `NotificationPreference` you have loaded to your `User` model by overriding `Notifiable.notificationPreference`:
@@ -340,29 +341,67 @@ class NotificationPreferencesPage extends StatelessWidget {
   }
   ```
 
-### Translation keys
-
-This package ships no translation catalogue, and `PushPrompt` and `PushOffNotice` resolve every string through `trans('notifications.push_prompt.*')`. A host adds all of the following to every locale it ships; a missing key renders as itself.
-
-| Key | English reference copy |
-| :--- | :--- |
-| `notifications.push_prompt.unavailable_body` | This build has no push notifications. |
-| `notifications.push_prompt.on_body` | You're all set to receive push notifications. |
-| `notifications.push_prompt.blocked_title` | Notifications are blocked |
-| `notifications.push_prompt.blocked_body_settings` | Turn notifications back on in your device settings. |
-| `notifications.push_prompt.blocked_body_web` | Open the padlock icon in your browser's address bar to allow notifications. |
-| `notifications.push_prompt.blocked_body_ios` | Open Settings, then Notifications, to allow notifications for this app. |
-| `notifications.push_prompt.blocked_body_android` | Open this app's notification settings to allow notifications. |
-| `notifications.push_prompt.declined_body` | You turned off this reminder. You can still enable push any time. |
-| `notifications.push_prompt.ask_title` | Turn on notifications |
-| `notifications.push_prompt.ask_body` | Get notified the moment something needs your attention. |
-| `notifications.push_prompt.open_settings` | Open settings |
-| `notifications.push_prompt.enable` | Enable |
-| `notifications.push_prompt.not_now` | Not now |
-| `notifications.push_prompt.shell_notice` | Push is off |
-| `notifications.push_prompt.shell_notice_a11y` | Push notifications are off |
+`PushPrompt` and `PushOffNotice` resolve every string through `trans('notifications.push_prompt.*')`; [Translation Keys](#translation-keys) lists each one with its English reference copy.
 
 The components expose no per-instance `className` override. A host that wants a different look copies the component's recipe file into its own source and registers its own builder.
+
+<a name="translation-keys"></a>
+## Translation Keys
+
+The package ships no translation catalogue. Every string the inbox screen, the preferences screen, `NotificationDropdown`, `PushPrompt` and `PushOffNotice` show goes through Magic's `trans()`, so a host adds each key below to every locale it ships; a missing key renders as the key itself. The English column is reference copy for your own `en` file, not text the package carries. A `:name` in the copy is a placeholder the widget fills.
+
+| Key | Where it shows | English reference copy |
+| :--- | :--- | :--- |
+| `notifications.title` | Inbox header title, dropdown panel heading, and the title of the error shown when a delete fails | Notifications |
+| `notifications.list_subtitle` | Inbox header subtitle | Everything we sent you |
+| `notifications.mark_all_read` | Inbox header action and dropdown heading link, while something is unread | Mark all as read |
+| `notifications.empty` | Inbox and dropdown with no rows | Nothing here yet |
+| `notifications.load_failed` | The inbox when its read failed; the dropdown only when its `notificationStream` emits an error (with `Notify.notifications()` a failed `fetchNotifications()` is logged and the bell keeps its held list) | Could not load notifications |
+| `notifications.delete` | Screen-reader label of an inbox row's delete control | Delete notification |
+| `notifications.delete_failed` | The error `Magic.error` shows when an inbox delete fails | Could not delete the notification |
+| `notifications.view_all` | Dropdown footer, only with `onViewAll` | View all |
+| `notifications.badge_overflow` | Dropdown badge above nine unread rows | 9+ |
+| `notifications.preferences_title` | Preferences header title | Notification preferences |
+| `notifications.preferences_description` | Preferences header subtitle | Choose how we reach you |
+| `notifications.no_preferences` | Preferences screen when the matrix is empty | Nothing to configure |
+| `notifications.fetch_error` | `NotificationPreferencesController` error when `GET /notification-preferences` answers a failure status; the shipped screen shows `no_preferences` instead | Could not load your preferences |
+| `notifications.bulk_title` | Heading of the bulk card above the matrix | Every notification type |
+| `notifications.bulk_description` | Text of the bulk card | Turn a channel on or off at once |
+| `notifications.channel_email` | Label of the `mail` row | Email |
+| `notifications.channel_in_app` | Label of the `database` row | In app |
+| `notifications.channel_push` | Label of the `push` row | Push |
+| `notifications.channel_sms` | Label of the `sms` row | SMS |
+| `notifications.channel_push_unconfigured` | Hint under the `push` row while `meta.push_provisioned` is `false` | Push is not set up yet |
+| `notifications.push_prompt.unavailable_body` | `PushPrompt` on a build with no push | This build has no push notifications. |
+| `notifications.push_prompt.on_body` | `PushPrompt` once push reaches the device | You're all set to receive push notifications. |
+| `notifications.push_prompt.blocked_title` | `PushPrompt` title on a blocked device | Notifications are blocked |
+| `notifications.push_prompt.blocked_body_settings` | `PushPrompt` on a blocked device that can open its settings | Turn notifications back on in your device settings. |
+| `notifications.push_prompt.blocked_body_web` | `PushPrompt` on a blocked browser | Open the padlock icon in your browser's address bar to allow notifications. |
+| `notifications.push_prompt.blocked_body_ios` | `PushPrompt` on a blocked iOS or macOS device without a settings route | Open Settings, then Notifications, to allow notifications for this app. |
+| `notifications.push_prompt.blocked_body_android` | `PushPrompt` on any other blocked device without a settings route | Open this app's notification settings to allow notifications. |
+| `notifications.push_prompt.declined_body` | `PushPrompt` after the reminder was turned down | You turned off this reminder. You can still enable push any time. |
+| `notifications.push_prompt.ask_title` | `PushPrompt` title while asking | Turn on notifications |
+| `notifications.push_prompt.ask_body` | `PushPrompt` text while asking | Get notified the moment something needs your attention. |
+| `notifications.push_prompt.open_settings` | `PushPrompt` button when it opens the settings page | Open settings |
+| `notifications.push_prompt.enable` | `PushPrompt` button when it raises the request | Enable |
+| `notifications.push_prompt.not_now` | `PushPrompt` decline button | Not now |
+| `notifications.push_prompt.shell_notice` | `PushOffNotice` label | Push is off |
+| `notifications.push_prompt.shell_notice_a11y` | `PushOffNotice` screen-reader label | Push notifications are off |
+
+The keys cover the package's own labels only. The dropdown and the inbox draw each notification's `title` and `body` exactly as the backend sent them, without `trans()`, so localising that content is the backend's or the host's job.
+
+The same widgets also read these keys outside the `notifications.*` namespace. An app whose other screens already define them shares them; any other app adds them too.
+
+| Key | Where it shows | English reference copy |
+| :--- | :--- | :--- |
+| `time.just_now` | Row time in the inbox and dropdown, under a minute old | Just now |
+| `time.minutes_ago` | Row time under an hour old | :minutes min ago |
+| `time.hours_ago` | Row time under a day old | :hours h ago |
+| `time.days_ago` | Row time under a week old | :days d ago |
+| `time.date_format` | Row time a week old or more | :day/:month/:year |
+| `common.page_of` | Inbox pager | Page :current of :total |
+| `common.back` | Preferences back control, only with `backRoute` | Back |
+| `errors.unexpected` | `NotificationPreferencesController` error when the preferences read throws | Something went wrong |
 
 <a name="gotchas"></a>
 ## Gotchas
@@ -371,7 +410,7 @@ The components expose no per-instance `className` override. A host that wants a 
 | :--- | :--- |
 | Passing the `GET /notification-preferences` matrix to `NotificationPreference.fromMap` | They are different shapes. The matrix feeds the shipped screen; `NotificationPreference` is flat, and you build it from whatever endpoint of your own supplies it. |
 | A backend that accepts only the single-cell `PUT` | The bulk row sends `{"preferences": [...]}` and gets a 422. Accept both shapes. |
-| Shipping the screen or the prompt without translation keys | Missing keys render as the key text. Add the `notifications.*` keys to every locale. |
+| Shipping the screen or the prompt without translation keys | Missing keys render as the key text. Add every key in [Translation Keys](#translation-keys) to every locale. |
 | Asking `isEnabled` about a channel name it does not know | It returns `false`. Use `push`, `mail` or `email`, `database` or `in_app`. |
 | Reusing one `declinedVaultKey` for something else | `PushPromptHost` reads the key as an ISO-8601 timestamp and treats anything else as "never declined". Give it a key of its own. |
 
@@ -379,6 +418,6 @@ The components expose no per-instance `className` override. A host that wants a 
 ## Related Documentation
 
 - [Channels](./channels.md): `PushChannel` and where `isEnabled` is consulted.
-- [Notification Manager](../architecture/notification-manager.md): `pushPromptAdvice` and the translation keys of the list and preferences screens.
+- [Notification Manager](../architecture/notification-manager.md): `pushPromptAdvice` and the optimistic read-state changes behind the inbox screen.
 - [Configuration](../getting-started/configuration.md#permission): `reprompt_after_hours`, `soft_prompt.enabled` and the automatic request.
 - [Laravel Backend Setup](./laravel-backend-setup.md): the backend contract for the preferences endpoints.

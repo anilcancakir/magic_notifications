@@ -1,8 +1,8 @@
 ---
 name: magic-notifications
-description: "Notifications for a Magic app with magic_notifications: the Notify facade, a backend-driven inbox, OneSignal push and realtime delivery."
+description: "Build notifications in a Magic app with magic_notifications: the Notify facade, a backend-driven inbox, OneSignal push, realtime."
 version: 1.0.0
-when_to_use: "Use when code imports package:magic_notifications or touches Notify, NotificationChannel, PushDriver, OneSignal push, push_state or a notifications:* dowel command in a Magic app."
+when_to_use: "Use when code imports magic_notifications or touches Notify, PushDriver, OneSignal push, push_state or a notifications:* command."
 ---
 
 # magic_notifications
@@ -28,7 +28,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. `plugin:install` regist
 2. `boot()` starts no polling. Start `Notify.startPolling()` and `startRealtime` from the authenticated layout, so nothing runs while nobody is signed in.
 3. A blank `app_id` leaves the driver uninitialised and `reachability()` at `unavailable`. A failed initialisation does not stop boot; read `NotificationServiceProvider.pushInitializationError`.
 4. A `driver` value nothing was registered under is logged at error level and push stays off. A driver of your own is `Notify.extend('name', () => MyDriver())` before the provider boots.
-5. `polling_interval` is clamped to 5 to 600 seconds and read when the poller is built; a value that is not an `int` reads as 30. `notifications.database.enabled` and the `mail` and `soft_prompt.title` keys the stub writes are read by no runtime code.
+5. `polling_interval` is clamped to 5 to 600 seconds and read when the poller is built; a value that is not an `int` reads as 30. `notifications.database.enabled` and `soft_prompt.title`, which the stub writes, are read by no runtime code; a `mail` block left in an older config file is dead too.
 
 ## Channel rules
 
@@ -49,7 +49,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. `plugin:install` regist
 ## Push rules
 
 1. The package declares no push identity. After sign-in call `Notify.initializePush('<prefix><id>')`; on sign-out `Notify.logoutPush()`. The id is forwarded unchanged and the backend addresses the device by the same string, so one prefix (`user_`) must hold on both sides; `notifications.push_state.external_id_prefix` has to match it. `magic_starter` already does this for its apps.
-2. `requestPushPermission()` shows nothing once the OS has answered. Ask `reachability()` (`unavailable`, `blocked`, `off`, `on`) or `Notify.manager.pushPromptAdvice(declinedAt:)` first; `blocked` needs the OS or browser setting, and the app owns the decline timestamp.
+2. `requestPushPermission()` raises no OS dialog once the OS has answered: on a denied iOS or Android device OneSignal shows its own open-settings dialog while `notifications.push.fallback_to_settings` is `true` (the default), and on web, or with it `false`, nothing is shown. Ask `reachability()` (`unavailable`, `blocked`, `off`, `on`) or `Notify.manager.pushPromptAdvice(declinedAt:)` first; `blocked` needs the OS or browser setting, and the app owns the decline timestamp.
 3. A tapped push opens nothing. `onPushClicked` hands over `event.data`; routing is a `magic_deeplink` handler your app registers, or your own listener. Put the destination in OneSignal `setData` under `url`, `deep_link`, `link` or `uri`: `setUrl` is the Launch URL and never reaches the payload.
 4. `Notify.pushState.watch()` reports device reachability to your backend. Nothing calls it for you, the provider included, so arm it once from a provider's `boot()`; it stays off until both `report_path` and `release_path` are set, and one alone logs an error. Call `release()` before `Auth.logout()`, because the release needs the token.
 5. `describePushUserUsing` sends nothing until `share_user_attributes` is `true`. A tag written from a client is user-tamperable: never trust it for a plan, role or entitlement.
@@ -65,7 +65,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. `plugin:install` regist
 ## Screens rules
 
 1. `Notify.view` seeds `notifications.list` and `notifications.preferences` on first read. `register` wraps or replaces one; ask `hasOverride(key)` rather than `has(key)`, which is true from the first read.
-2. The package ships no translation catalogue. Add every `notifications.*` key the screens and `PushPrompt` use to each locale, or a key renders as itself.
+2. The package ships no translation catalogue. Add every key the screens, `NotificationDropdown` and `PushPrompt` read to each locale, or a key renders as itself: the `notifications.*` keys plus `time.*`, `common.page_of`, `common.back` and `errors.unexpected`, listed at https://anilcancakir.com/magic/docs/notifications/basics/preferences#translation-keys.
 3. `NotificationsListView.onDelete` returns `Future<bool>`: `true` reloads the page, `false` leaves it alone, a throw reloads.
 4. `PushPromptHost` takes a `declinedVaultKey` of its own; it reads the value back as an ISO-8601 timestamp and treats anything else as never declined.
 

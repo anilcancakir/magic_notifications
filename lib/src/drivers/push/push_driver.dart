@@ -127,15 +127,17 @@ abstract class PushDriver {
   /// Returns `true` if permission was granted, `false` otherwise.
   ///
   /// **A `false` does not say whether the user was shown anything.** On a
-  /// device that has already denied, every platform resolves this immediately
-  /// with no dialog, so `false` covers "the user saw a prompt and declined",
-  /// "nothing was shown at all", and, where [canOpenPlatformSettings] is true,
-  /// "the settings page was opened and the user has not acted yet". Widening
-  /// the return type would change this contract for every driver, so it stays
-  /// a bool and the distinction is drawn by ASKING FIRST: a caller that needs
-  /// it reads [canRaisePermissionRequest] before requesting. True there means
-  /// a `false` afterwards was a real decline; false there means this call can
-  /// only route the user somewhere, or do nothing at all.
+  /// device that has already denied, no platform shows its permission dialog
+  /// again, so `false` covers "the user saw a prompt and declined", "nothing
+  /// was shown at all", and, where [canOpenPlatformSettings] is true, "the
+  /// SDK's settings fallback was shown and the user has not acted yet".
+  /// Widening the return type would change this contract for every driver, so
+  /// it stays a bool and the distinction is drawn by asking first: a caller
+  /// that needs it reads [canRaisePermissionRequest] before requesting. True
+  /// there means a `false` afterwards is a non-grant (the user declined, or
+  /// dismissed the prompt without choosing, which leaves the permission
+  /// unchanged); false there means this call can only route the user
+  /// somewhere, or do nothing at all.
   Future<bool> requestPermission();
 
   /// Whether raising the permission request would put a dialog in front of the
