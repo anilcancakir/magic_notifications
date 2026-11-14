@@ -16,6 +16,8 @@ How `NotificationServiceProvider` binds the notification manager into Magic's co
 
 `NotificationServiceProvider` is the plugin's bootstrap entry point. It extends Magic's `ServiceProvider`, binds `NotificationManager` into the container, registers the channels and initialises the push driver from config.
 
+Excerpt of `lib/src/providers/notification_service_provider.dart`:
+
 ```dart
 class NotificationServiceProvider extends ServiceProvider {
   NotificationServiceProvider(super.app);
@@ -43,6 +45,8 @@ Magic's provider contract splits bootstrapping into two phases:
 <a name="register"></a>
 ## register(): IoC Binding
 
+Excerpt of `lib/src/providers/notification_service_provider.dart`:
+
 ```dart
 @override
 void register() {
@@ -53,7 +57,14 @@ void register() {
 `register()` binds one string-keyed singleton and does nothing else. It runs before any other provider has bound anything, so a driver resolved here would be resolved against a half-built container.
 
 ```dart
-final manager = app.make<NotificationManager>('notifications');
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+NotificationManager resolveManager(MagicApp app) {
+  final manager = app.make<NotificationManager>('notifications');
+
+  return manager;
+}
 ```
 
 <a name="boot"></a>
@@ -91,12 +102,16 @@ A failure is not rethrown, so a failed push initialisation never stops the app f
 `Config.get` is Magic's static accessor for the merged config map. The provider reads these keys at boot:
 
 ```dart
-Config.get<String>('notifications.push.driver');               // 'onesignal'
-Config.get<String>('notifications.push.app_id');
-Config.get<String>('notifications.push.safari_web_id');        // nullable
-Config.get<bool>('notifications.push.notify_button_enabled');  // false when absent
-Config.get<String>('notifications.push.service_worker_path');  // nullable
-Config.get<String>('notifications.push.service_worker_scope'); // nullable
+import 'package:magic/magic.dart';
+
+void readBootKeys() {
+  Config.get<String>('notifications.push.driver');               // 'onesignal'
+  Config.get<String>('notifications.push.app_id');
+  Config.get<String>('notifications.push.safari_web_id');        // nullable
+  Config.get<bool>('notifications.push.notify_button_enabled');  // false when absent
+  Config.get<String>('notifications.push.service_worker_path');  // nullable
+  Config.get<String>('notifications.push.service_worker_scope'); // nullable
+}
 ```
 
 Other parts of the package read their own keys when they need them (for example `notifications.database.polling_interval` when a poller is built). [Configuration](../getting-started/configuration.md) lists every key.
@@ -104,12 +119,19 @@ Other parts of the package read their own keys when they need them (for example 
 `Config.get` returns `null` when a key is absent or has another type. The values come from the `notificationConfig` getter in `lib/config/notifications.dart`, registered as a config factory:
 
 ```dart
-await Magic.init(
-  configFactories: [
-    () => appConfig,
-    () => notificationConfig,
-  ],
-);
+import 'package:magic/magic.dart';
+
+import 'config/app.dart'; // The host's own config: declares `appConfig`.
+import 'config/notifications.dart';
+
+Future<void> boot() async {
+  await Magic.init(
+    configFactories: [
+      () => appConfig,
+      () => notificationConfig,
+    ],
+  );
+}
 ```
 
 <a name="ioc"></a>
@@ -118,6 +140,9 @@ await Magic.init(
 `app.singleton` registers a lazy singleton factory: the factory runs once on first resolution and the result is cached.
 
 ```dart
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
 // By key
 final manager = Magic.make<NotificationManager>('notifications');
 

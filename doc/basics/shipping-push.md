@@ -60,10 +60,17 @@ A development `.env` usually points at a local API. On a phone `localhost` is th
 `Magic.init` takes the filename, so select it by build mode:
 
 ```dart
-await Magic.init(
-  envFileName: kReleaseMode ? '.env.production' : '.env',
-  configFactories: [...],
-);
+import 'package:flutter/foundation.dart';
+import 'package:magic/magic.dart';
+
+Future<void> boot() async {
+  await Magic.init(
+    envFileName: kReleaseMode ? '.env.production' : '.env',
+    configFactories: [
+      // Your config factories.
+    ],
+  );
+}
 ```
 
 Register both files as assets in `pubspec.yaml` when you do. The alternative is a release script that swaps the file in, builds, restores it, and then reads the built artifact back to confirm what actually shipped; either way, no gate catches this on your behalf.
@@ -92,12 +99,19 @@ The same split decides what a click does with a tab that is already open. On Cus
 Everything above decides whether a push can arrive. Whether your backend knows is a separate question: OneSignal accepts a push for a subscription that is denied, opted out or gone, and reports nothing back. If your backend escalates on push alone, `Notify.pushState` gives it the device's own answer. Configure both endpoints (see [Laravel Backend Setup](./laravel-backend-setup.md#onesignal-push) for the server half), arm the watch once, and release before the token goes:
 
 ```dart
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
 // In a provider's boot(), once auth is registered.
-Notify.pushState.watch();
+void watchPushState() {
+  Notify.pushState.watch();
+}
 
 // On sign-out, BEFORE Auth.logout(): a release after it is a guaranteed 401.
-if (Notify.pushState.isConfigured) await Notify.pushState.release();
-await Auth.logout();
+Future<void> signOut() async {
+  if (Notify.pushState.isConfigured) await Notify.pushState.release();
+  await Auth.logout();
+}
 ```
 
 `watch()` reports after every identity reconcile for the signed-in person (`<external_id_prefix><Auth.id()>`, `user_` by default), whenever the driver's permission or subscription moves, and once as `unavailable` for a build with no push driver at all. A memo stops repeats and is forgotten on every `AuthLogout`. Skip the release and the server keeps vouching for a handset the person has left, under their name, until its own freshness horizon expires.

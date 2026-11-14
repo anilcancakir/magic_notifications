@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://pub.dev/packages/magic_notifications"><img src="https://img.shields.io/pub/v/magic_notifications.svg" alt="pub package"></a>
   <a href="https://github.com/anilcancakir/magic_notifications/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anilcancakir/magic_notifications/ci.yml?branch=master&label=CI" alt="CI"></a>
+  <a href="https://codecov.io/gh/anilcancakir/magic_notifications"><img src="https://codecov.io/gh/anilcancakir/magic_notifications/graph/badge.svg" alt="codecov"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://pub.dev/packages/magic_notifications/score"><img src="https://img.shields.io/pub/points/magic_notifications" alt="pub points"></a>
 </p>
@@ -89,8 +90,8 @@ Failure modes:
 | Situation | What happens |
 |-----------|--------------|
 | A row whose `data` has no string `title` or `body` | The decode throws: `fetchNotifications` logs it and keeps the previous list; `fetchPaginatedNotifications` throws `NOTIFICATIONS_DECODE_FAILED`. |
-| `unread-count` answers `{"data": {"count": 5}}` | The client reads `count` from the top level and returns `0`. Answer `{"count": 5}`. |
-| The backend ignores `perPage` | The client sends `page` and `perPage`; a backend that reads `per_page` always uses its own default. |
+| `unread-count` answers `{"data": {"count": 5}}` | The client reads `count` from the top level and returns `0`. Answer `{"count": 5}`. `magic-starter-laravel` answers the wrapped shape; a backend written to the contract is not affected. |
+| The backend ignores `perPage` | The client sends `page` and `perPage`; a backend that reads `per_page` always uses its own default. `magic-starter-laravel` reads `per_page`; a backend written to the contract is not affected. |
 | `markAsRead` or `markAllAsRead` and the request throws | The list is refetched to the server's state and nothing is rethrown. An HTTP error status does not throw in Magic's `Http`, so it is not rolled back. |
 | The signed-in person changes | The held list is cleared, so the next person never sees the previous person's rows. |
 

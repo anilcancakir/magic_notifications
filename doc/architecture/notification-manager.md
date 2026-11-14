@@ -18,6 +18,8 @@ How `NotificationManager` orchestrates channels, the push driver, polling, realt
 
 `NotificationManager` is a process-level singleton, built with a Dart factory constructor:
 
+Excerpt of `lib/src/notification_manager.dart`:
+
 ```dart
 class NotificationManager {
   static final NotificationManager _instance = NotificationManager._internal();
@@ -31,6 +33,8 @@ class NotificationManager {
 ```
 
 Every `NotificationManager()` call returns the same `_instance`, and the `Notify` facade delegates to it:
+
+Excerpt of `lib/src/facades/notify.dart`:
 
 ```dart
 class Notify {
@@ -47,6 +51,8 @@ class Notify {
 ## Channel Registration
 
 Channels live in a `Map<String, NotificationChannel>` keyed by `channel.name`:
+
+Excerpt of `lib/src/notification_manager.dart`:
 
 ```dart
 void registerChannel(NotificationChannel channel) {
@@ -69,6 +75,8 @@ Registering a name that exists replaces the previous instance, which is how a te
 ## Push Driver Setup
 
 The push driver resolves lazily through a name-keyed factory registry, not a single field the provider must fill before anything else runs:
+
+Excerpt of `lib/src/notification_manager.dart`:
 
 ```dart
 void extend(String name, PushDriver Function() factory) {
@@ -111,6 +119,8 @@ Resolving a driver attaches the manager to its streams: foreground pushes, taps 
 
 <a name="send-flow"></a>
 ## Send Dispatch Flow
+
+Excerpt of `lib/src/notification_manager.dart`:
 
 ```dart
 Future<void> send(Notifiable notifiable, Notification notification) async {
@@ -167,6 +177,8 @@ The dispatch flow:
 
 The manager owns the `NotificationPoller` lifecycle and delegates all timer logic to the poller:
 
+Excerpt of `lib/src/notification_manager.dart`:
+
 ```dart
 void startPolling() {
   if (isRealtime) return;
@@ -200,9 +212,15 @@ The poller fetches immediately on `start()` and on `resume()` after a pause, the
 Polling is the fallback, not the only path. When the app has a broadcast driver (see [magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels), which provides `Echo`), the manager can take notification state off the socket instead:
 
 ```dart
-final bool live = await Notify.startRealtime(
-  channel: 'App.Models.User.$userId',
-);
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<bool> arm(String userId) async {
+  final bool live = await Notify.startRealtime(
+    channel: 'App.Models.User.$userId',
+  );
+
+  return live;
+}
 ```
 
 `startRealtime()` does five things in order, and each one answers a specific failure:
@@ -216,6 +234,8 @@ final bool live = await Notify.startRealtime(
 ### The frame is the state
 
 A `notification.created` frame carries the whole row in the shape `GET /notifications` returns, so it is decoded and applied rather than treated as a signal to fetch:
+
+Excerpt of `lib/src/notification_manager.dart`:
 
 ```dart
 void _applyRealtimeFrame(BroadcastEvent event) {
@@ -255,6 +275,8 @@ Both calls on the login row are safe in either order and idempotent per channel,
 
 Database notifications are distributed through a broadcast `StreamController`:
 
+Excerpt of `lib/src/notification_manager.dart`:
+
 ```dart
 final StreamController<List<DatabaseNotification>> _notificationController =
     StreamController<List<DatabaseNotification>>.broadcast();
@@ -281,6 +303,8 @@ The stream emits when:
 
 Read-mutate operations apply the change locally before the HTTP request completes, then revert on failure. Whether the caller is told about the failure differs per operation, and the note below the `deleteNotification` snippet says which is which:
 
+Excerpt of `lib/src/notification_manager.dart`:
+
 ```dart
 Future<void> markAsRead(String id) async {
   // 1. Optimistic update
@@ -306,6 +330,8 @@ Future<void> markAsRead(String id) async {
 `markAllAsRead()` follows the same pattern. Rollback always calls `fetchNotifications()` to restore authoritative server state rather than undoing the local mutation, which avoids edge cases from concurrent updates.
 
 `deleteNotification` keeps the removed items for rollback and then **rethrows**:
+
+Excerpt of `lib/src/notification_manager.dart`:
 
 ```dart
 Future<void> deleteNotification(String id) async {
@@ -354,10 +380,19 @@ Future<void> deleteNotification(String id) async {
 `reconcilePushIdentity()` brings the device's subscribed identity in line with `pushIntent` (see [Push Driver Setup](#push-driver) for how a driver resolves). `onPushIdentityReconciled` reports the outcome of every pass that had a driver to act on:
 
 ```dart
-Notify.manager.onPushIdentityReconciled.listen((PushIdentityReconciled event) {
-  reportDeviceState(intent: event.intent, converged: event.converged);
-});
+import 'package:magic_notifications/magic_notifications.dart';
+
+// `reportDeviceState` is the host's own function.
+void reportDeviceState({required String? intent, required bool converged}) {}
+
+void watchIdentity() {
+  Notify.manager.onPushIdentityReconciled.listen((PushIdentityReconciled event) {
+    reportDeviceState(intent: event.intent, converged: event.converged);
+  });
+}
 ```
+
+Excerpt of `lib/src/models/push_identity_reconciled.dart`:
 
 ```dart
 class PushIdentityReconciled {

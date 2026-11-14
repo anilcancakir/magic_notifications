@@ -24,7 +24,9 @@ class MonitorDownNotification extends Notification {
   List<String> via(Notifiable notifiable) => ['database', 'push'];
 }
 
-await Notify.send(user, MonitorDownNotification());
+Future<void> alert(Notifiable user) async {
+  await Notify.send(user, MonitorDownNotification());
+}
 ```
 
 Channels are identified by a string name. For each name the manager:
@@ -41,6 +43,8 @@ Declaring a channel in `via()` is therefore safe without knowing at compile time
 ## NotificationChannel Interface
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 abstract class NotificationChannel {
   String get name;
   bool get isAvailable;
@@ -60,6 +64,8 @@ abstract class NotificationChannel {
 `NotificationServiceProvider.boot()` registers `DatabaseChannel` whether or not push is configured. It is always available, and its `send` does nothing:
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 class DatabaseChannel extends NotificationChannel {
   @override
   String get name => 'database';
@@ -125,13 +131,31 @@ Ordinary push to other people is sent by your backend through OneSignal; see [La
 > [!TIP]
 > Build the `toPush()` payload with `PushMessage`:
 > ```dart
-> @override
-> PushMessage? toPush(Notifiable notifiable) {
->   return PushMessage()
->       .heading('Monitor Down')
->       .content('api.example.com is not responding')
->       .data({'monitor_id': monitor.id})
->       .url('/monitors/${monitor.id}');
+> import 'package:magic_notifications/magic_notifications.dart';
+>
+> /// The host app's model.
+> class Monitor {
+>   const Monitor(this.id);
+>
+>   final int id;
+> }
+>
+> class MonitorDownNotification extends Notification {
+>   MonitorDownNotification(this.monitor);
+>
+>   final Monitor monitor;
+>
+>   @override
+>   List<String> via(Notifiable notifiable) => ['push'];
+>
+>   @override
+>   PushMessage? toPush(Notifiable notifiable) {
+>     return PushMessage()
+>         .heading('Monitor Down')
+>         .content('api.example.com is not responding')
+>         .data({'monitor_id': monitor.id})
+>         .url('/monitors/${monitor.id}');
+>   }
 > }
 > ```
 
@@ -170,8 +194,12 @@ class SlackChannel extends NotificationChannel {
 Then name it in `via()`:
 
 ```dart
-@override
-List<String> via(Notifiable notifiable) => ['database', 'slack'];
+import 'package:magic_notifications/magic_notifications.dart';
+
+class DeployFinishedNotification extends Notification {
+  @override
+  List<String> via(Notifiable notifiable) => ['database', 'slack'];
+}
 ```
 
 <a name="registration"></a>
@@ -180,16 +208,35 @@ List<String> via(Notifiable notifiable) => ['database', 'slack'];
 `NotificationServiceProvider` registers `database` and `push` itself. Register any other channel from the `boot()` of a provider of your own:
 
 ```dart
-@override
-Future<void> boot() async {
-  NotificationManager().registerChannel(SlackChannel(webhookUrl));
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+// The host's own channel from the section above, and its webhook url.
+const String webhookUrl = 'https://hooks.example.com/slack';
+
+class SlackServiceProvider extends ServiceProvider {
+  SlackServiceProvider(super.app);
+
+  @override
+  void register() {}
+
+  @override
+  Future<void> boot() async {
+    NotificationManager().registerChannel(SlackChannel(webhookUrl));
+  }
 }
 ```
 
 Registering a name that already exists replaces the previous instance, which is how a test swaps in a fake. `hasChannel` answers whether a name is registered:
 
 ```dart
-final bool exists = NotificationManager().hasChannel('push');
+import 'package:magic_notifications/magic_notifications.dart';
+
+bool hasPushChannel() {
+  final bool exists = NotificationManager().hasChannel('push');
+
+  return exists;
+}
 ```
 
 <a name="gotchas"></a>

@@ -17,6 +17,8 @@ The push driver layer: the `PushDriver` contract, the OneSignal drivers for mobi
 A push driver wraps a platform push SDK behind one API, so the manager and `PushChannel` never touch SDK internals. The manager resolves the driver lazily from a name-keyed registry (see [Push Driver Setup](../architecture/notification-manager.md#push-driver)); `notifications.push.driver` selects the name, and `'onesignal'` is the only driver the package ships.
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 final PushDriver? driver = Notify.manager.pushDriverOrNull; // null when push is not configured
 ```
 
@@ -85,7 +87,13 @@ Every field is nullable because one SDK event reports only part of the state: a 
 | `PushReachability.on` | Permitted, opted in and holding a subscription id: the only state a push can reach. |
 
 ```dart
-final reachability = await Notify.manager.pushDriver.reachability();
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<PushReachability> currentReachability() async {
+  final reachability = await Notify.manager.pushDriver.reachability();
+
+  return reachability;
+}
 ```
 
 This is the read a soft prompt gates on before showing itself, and the read that answers "can I send this device a push" without raising the OS dialog.
@@ -113,23 +121,28 @@ This is the read a soft prompt gates on before showing itself, and the read that
 Prefer the manager's streams over the driver's own. They are filtered to the signed-in identity, and `onPushClicked` holds taps that arrive before anything listens, which is the cold-start case, and replays them when a listener attaches.
 
 ```dart
-Notify.manager.onPushReceived.listen((event) {
-  final title = event.data['title'];
-  // show an in-app banner
-});
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
-Notify.manager.onPushClicked.listen((event) {
-  // `event.data` is the notification's `additionalData`, so a destination is
-  // only here when the backend put it there. Four keys, first match wins,
-  // because that is what `magic_deeplink`'s own handler looks for.
-  final url = event.data['url'] ??
-      event.data['deep_link'] ??
-      event.data['link'] ??
-      event.data['uri'];
+void listenToPush() {
+  Notify.manager.onPushReceived.listen((event) {
+    final title = event.data['title'];
+    // show an in-app banner
+  });
 
-  // Guarded: a notification with nowhere to go is a valid notification.
-  if (url is String && url.isNotEmpty) MagicRoute.to(url);
-});
+  Notify.manager.onPushClicked.listen((event) {
+    // `event.data` is the notification's `additionalData`, so a destination is
+    // only here when the backend put it there. Four keys, first match wins,
+    // because that is what `magic_deeplink`'s own handler looks for.
+    final url = event.data['url'] ??
+        event.data['deep_link'] ??
+        event.data['link'] ??
+        event.data['uri'];
+
+    // Guarded: a notification with nowhere to go is a valid notification.
+    if (url is String && url.isNotEmpty) MagicRoute.to(url);
+  });
+}
 ```
 
 A push received in the foreground also triggers a `fetchNotifications()`, so the in-app list catches up.
@@ -149,10 +162,22 @@ The ecosystem's answer is `magic_deeplink`, and the wiring between the two is al
 What is not done for you is the last link: **an app has to register a handler of its own**, because `magic_deeplink` publishes no handler stubs at install time. Without one, `DeeplinkManager.handleUri` walks an empty list, returns `false`, and nothing is logged. A pipeline that is correct at every step and does nothing at the end looks exactly like a notification that was never tapped.
 
 ```dart
-// In your AppServiceProvider.boot().
-app.make<DeeplinkManager>('deeplinks').registerHandler(
-  RouteDeeplinkHandler(paths: const ['/notifications', '/orders/:id']),
-);
+import 'package:magic/magic.dart';
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  void register() {}
+
+  @override
+  Future<void> boot() async {
+    app.make<DeeplinkManager>('deeplinks').registerHandler(
+      RouteDeeplinkHandler(paths: const ['/notifications', '/orders/:id']),
+    );
+  }
+}
 ```
 
 `RouteDeeplinkHandler` navigates to the path the link names through `MagicRoute.to`, so the paths you list are your own in-app routes. Handlers form a first-match chain in registration order; write your own `DeeplinkHandler` when a tap has to do something other than navigate.
@@ -297,9 +322,12 @@ class FcmServiceProvider extends ServiceProvider {
 ```
 
 ```dart
-'push': {
-  'driver': 'fcm',
-},
+// In `notificationConfig`, under the `notifications` key.
+const Map<String, dynamic> notifications = {
+  'push': {
+    'driver': 'fcm',
+  },
+};
 ```
 
 The provider then resolves your driver by that name, registers `PushChannel` on it and reconciles the push identity through it. A value of `driver` that nothing was registered under is logged at error level and push stays off. When `notifications.push.app_id` is non-empty the provider also calls `initialize` with the OneSignal-shaped config map; leave `app_id` unset and call `initialize` yourself when your driver takes other settings.

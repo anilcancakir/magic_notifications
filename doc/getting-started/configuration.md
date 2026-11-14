@@ -27,6 +27,8 @@ The generated file also contains a `mail` block. Nothing in the package reads it
 ## Full Config Map Reference
 
 ```dart
+import 'package:magic/magic.dart';
+
 Map<String, dynamic> get notificationConfig => {
   'notifications': {
     'push': {
@@ -109,22 +111,28 @@ It is never raised from `reconcilePushIdentity()`, which runs on every auth-stat
 Ask the package rather than deriving it:
 
 ```dart
-final advice = await Notify.manager.pushPromptAdvice(
-  declinedAt: await myOwnStorage.readPushPromptDeclinedAt(),
-);
+import 'package:flutter/widgets.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
-if (!advice.show) return const SizedBox.shrink();
+// `MyOwnStorage` and the three `My...Row` widgets are the host app's own.
+Future<Widget> pushPromptRow(MyOwnStorage myOwnStorage) async {
+  final advice = await Notify.manager.pushPromptAdvice(
+    declinedAt: await myOwnStorage.readPushPromptDeclinedAt(),
+  );
 
-return switch (advice.action) {
-  // A real dialog will appear: Notify.requestPushPermission().
-  PushPromptAction.request => MyEnableRow(),
-  // The prompt is spent, but this platform can open the app's own
-  // notification settings page: Notify.openPushSettings().
-  PushPromptAction.openSettings => MyOpenSettingsRow(),
-  // Nowhere to send the tap. Say where the switch lives instead.
-  PushPromptAction.instructions => MyBlockedInstructionsRow(),
-  PushPromptAction.none => const SizedBox.shrink(),
-};
+  if (!advice.show) return const SizedBox.shrink();
+
+  return switch (advice.action) {
+    // A real dialog will appear: Notify.requestPushPermission().
+    PushPromptAction.request => MyEnableRow(),
+    // The prompt is spent, but this platform can open the app's own
+    // notification settings page: Notify.openPushSettings().
+    PushPromptAction.openSettings => MyOpenSettingsRow(),
+    // Nowhere to send the tap. Say where the switch lives instead.
+    PushPromptAction.instructions => MyBlockedInstructionsRow(),
+    PushPromptAction.none => const SizedBox.shrink(),
+  };
+}
 ```
 
 `advice.show` already accounts for `reachability()`, `reprompt_after_hours`, `soft_prompt.enabled` and the timestamp you passed in. `advice.reachability` is the same four-state read, carried so a status row does not need a second platform call. The package ships this row as `PushPromptHost`; see [Push Prompt Component](../basics/preferences.md#push-prompt).
@@ -139,18 +147,24 @@ OneSignal segments and personalises on what it knows about a person: an email su
 Register the description once, at boot, next to wherever you register the driver:
 
 ```dart
-Notify.describePushUserUsing((String externalId) {
-  final user = Auth.user<User>();
-  if (user == null) return null; // nothing to describe for this identity
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
 
-  return PushUserAttributes(
-    email: user.email,
-    tags: <String, String>{
-      'first_name': user.firstName,
-      'last_name': user.lastName,
-    },
-  );
-});
+// `User` is the host app's own model.
+void describePushUser() {
+  Notify.describePushUserUsing((String externalId) {
+    final user = Auth.user<User>();
+    if (user == null) return null; // nothing to describe for this identity
+
+    return PushUserAttributes(
+      email: user.email,
+      tags: <String, String>{
+        'first_name': user.firstName,
+        'last_name': user.lastName,
+      },
+    );
+  });
+}
 ```
 
 `User` is your own model. `externalId` is the string you passed to `Notify.initializePush()`, so an app that keeps its user state elsewhere can look the right person up. The resolver is called on every login and every account switch, so nothing re-registers per login. Returning `null` says there is nothing to describe, which is the answer for a guest or for somebody who has not consented.
@@ -218,10 +232,14 @@ The installer writes `title` and `message` keys beside `enabled` as copy suggest
 A call site that needs the raw device state reads `reachability()` on the resolved driver (see [Drivers](../basics/drivers.md#abstract)); one deciding whether to interrupt somebody asks `pushPromptAdvice()` instead, which folds this key, the re-prompt interval and the platform's route back into one answer.
 
 ```dart
-final reachability = await Notify.manager.pushDriver.reachability();
+import 'package:magic_notifications/magic_notifications.dart';
 
-if (reachability == PushReachability.blocked) {
-  // The OS will not re-prompt. Point at the platform setting instead.
+Future<void> checkReachability() async {
+  final reachability = await Notify.manager.pushDriver.reachability();
+
+  if (reachability == PushReachability.blocked) {
+    // The OS will not re-prompt. Point at the platform setting instead.
+  }
 }
 ```
 
@@ -231,7 +249,12 @@ if (reachability == PushReachability.blocked) {
 The installer writes the App ID as a literal. To keep it out of source control, read it from `.env` with Magic's `env` helper:
 
 ```dart
-'app_id': env('ONESIGNAL_APP_ID'),
+import 'package:magic/magic.dart';
+
+// In `notificationConfig`, under `notifications.push`.
+final Map<String, dynamic> push = {
+  'app_id': env('ONESIGNAL_APP_ID'),
+};
 ```
 
 ```
@@ -248,6 +271,8 @@ Magic loads `.env` as a Flutter asset; see [Magic configuration](https://anilcan
 After Magic boots, any value is available through `Config.get`:
 
 ```dart
+import 'package:magic/magic.dart';
+
 final appId = Config.get<String>('notifications.push.app_id');
 final interval = Config.get<int>('notifications.database.polling_interval');
 final softPrompt = Config.get<bool>('notifications.soft_prompt.enabled');
@@ -256,6 +281,8 @@ final softPrompt = Config.get<bool>('notifications.soft_prompt.enabled');
 `Config.get` returns `null` when the key is absent or has another type; use `??` for a default:
 
 ```dart
+import 'package:magic/magic.dart';
+
 final selfTest = Config.get<bool>('notifications.push.self_test_enabled') ?? false;
 ```
 

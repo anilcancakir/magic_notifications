@@ -20,7 +20,7 @@ The backend contract Magic Notifications reads from, and a worked Laravel implem
 <a name="overview"></a>
 ## Overview
 
-Magic Notifications works with any backend that serves the REST endpoints listed under [API Contract Reference](#api-contract). This guide builds that backend on **Laravel's built-in notification system**, which is the natural fit. The `magic-starter-laravel` package already implements the whole contract; use this page when you hand-roll it or want to see what that package does.
+Magic Notifications works with any backend that serves the REST endpoints listed under [API Contract Reference](#api-contract). This guide builds that backend on **Laravel's built-in notification system**, which is the natural fit. The `magic-starter-laravel` package implements the contract except for two points: its `unread-count` answers `{"data": {"count": n}}` where the client reads a top-level `count` (so `Notify.unreadCount()` returns `0` against it), and its list endpoint reads the page size from `per_page` where the client sends `perPage` (so the list always uses its default of 15). A backend written to this page is not affected. Use this page when you hand-roll the backend or want to see what that package does.
 
 > [!NOTE]
 > This guide covers the Laravel side. For the Flutter client, see [Installation](../getting-started/installation.md) and [Configuration](../getting-started/configuration.md). Laravel's own `php artisan` commands appear below because they are Laravel's.
@@ -487,10 +487,13 @@ public function routeNotificationForOneSignal(): array
 OneSignal accepts a push for a subscription that cannot be woken, so only the device knows whether a page will arrive. `Notify.pushState` reports that to your backend and withdraws it on sign-out. It stays off until the client names both endpoints (there is no default path):
 
 ```dart
-'push_state': {
-  'report_path': '/devices/push-state',
-  'release_path': '/devices/push-state/release',
-},
+// In `notificationConfig`, under the `notifications` key.
+const Map<String, dynamic> notifications = {
+  'push_state': {
+    'report_path': '/devices/push-state',
+    'release_path': '/devices/push-state/release',
+  },
+};
 ```
 
 Both routes sit behind `auth:sanctum`. The user is always the session's; no body field names a person beyond the device's own alias.
@@ -586,7 +589,12 @@ Override `receivesBroadcastNotificationsOn()` on the notifiable if you want a di
 ### 3. Point the client at it
 
 ```dart
-await Notify.startRealtime(channel: 'App.Models.User.${user.id}');
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<void> listenForUser(Model user) async {
+  await Notify.startRealtime(channel: 'App.Models.User.${user.id}');
+}
 ```
 
 Nothing else changes. `Notify.startPolling()` stays wired to auth state and becomes a no-op while the socket is live, so a deployment with `BROADCAST_CONNECTION=null` keeps polling and needs no client change at all.

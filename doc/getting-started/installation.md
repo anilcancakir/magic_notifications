@@ -134,6 +134,10 @@ See [Service Provider](../architecture/service-provider.md) for the full boot se
 The notification config reaches `Magic.init` as a config factory:
 
 ```dart
+import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart';
+
+import 'config/app.dart'; // The host's own config: declares `appConfig`.
 import 'config/notifications.dart';
 
 void main() async {
@@ -146,7 +150,7 @@ void main() async {
     ],
   );
 
-  runApp(const MyApp());
+  runApp(const MyApp()); // `MyApp` is the host's own root widget.
 }
 ```
 

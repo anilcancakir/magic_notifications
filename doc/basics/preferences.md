@@ -28,6 +28,8 @@ Two things share the word "preferences" in this package, and they take different
 ## NotificationPreference Model
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 class NotificationPreference {
   final bool pushEnabled;
   final bool emailEnabled;
@@ -55,6 +57,8 @@ class NotificationPreference {
 ### Deserialisation
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 final pref = NotificationPreference.fromMap({
   'push_enabled': true,
   'email_enabled': false,
@@ -71,19 +75,31 @@ A missing toggle reads as `true`.
 ### Serialisation
 
 ```dart
-final map = pref.toMap();
-// {
-//   'push_enabled': true,
-//   'email_enabled': false,
-//   'in_app_enabled': true,
-//   'type_preferences': {...},
-// }
+import 'package:magic_notifications/magic_notifications.dart';
+
+Map<String, dynamic> serialise(NotificationPreference pref) {
+  final map = pref.toMap();
+  // {
+  //   'push_enabled': true,
+  //   'email_enabled': false,
+  //   'in_app_enabled': true,
+  //   'type_preferences': {...},
+  // }
+
+  return map;
+}
 ```
 
 ### copyWith
 
 ```dart
-final updated = pref.copyWith(emailEnabled: true);
+import 'package:magic_notifications/magic_notifications.dart';
+
+NotificationPreference enableEmail(NotificationPreference pref) {
+  final updated = pref.copyWith(emailEnabled: true);
+
+  return updated;
+}
 ```
 
 <a name="channel-preference"></a>
@@ -106,6 +122,8 @@ class ChannelPreference {
 `ChannelPreference` holds the per-type override for each channel. It deserialises from one entry of the `type_preferences` map:
 
 ```dart
+import 'package:magic_notifications/magic_notifications.dart';
+
 final monitorDown = ChannelPreference.fromMap({
   'push': true,
   'email': true,
@@ -119,16 +137,26 @@ final monitorDown = ChannelPreference.fromMap({
 `isEnabled(notificationType, channel)` applies a two-stage gate:
 
 ```dart
-bool isEnabled(String notificationType, String channel) {
-  // Stage 1: global toggle
-  final globalEnabled = _isGlobalChannelEnabled(channel);
-  if (!globalEnabled) return false;
+import 'package:magic_notifications/magic_notifications.dart';
 
-  // Stage 2: type-specific override
-  final typePref = typePreferences[notificationType];
-  if (typePref == null) return true; // default: enabled
+abstract class PreferenceGate {
+  Map<String, ChannelPreference> get typePreferences;
 
-  return _isTypeChannelEnabled(typePref, channel);
+  bool _isGlobalChannelEnabled(String channel);
+
+  bool _isTypeChannelEnabled(ChannelPreference preference, String channel);
+
+  bool isEnabled(String notificationType, String channel) {
+    // Stage 1: global toggle
+    final globalEnabled = _isGlobalChannelEnabled(channel);
+    if (!globalEnabled) return false;
+
+    // Stage 2: type-specific override
+    final typePref = typePreferences[notificationType];
+    if (typePref == null) return true; // default: enabled
+
+    return _isTypeChannelEnabled(typePref, channel);
+  }
 }
 ```
 
@@ -146,9 +174,13 @@ bool isEnabled(String notificationType, String channel) {
 `PushChannel.send` runs this check when the `Notifiable` has a non-null `notificationPreference`:
 
 ```dart
-final preference = notifiable.notificationPreference;
-if (preference != null) {
-  if (!preference.isEnabled(notification.type, 'push')) return;
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<void> send(Notifiable notifiable, Notification notification) async {
+  final preference = notifiable.notificationPreference;
+  if (preference != null) {
+    if (!preference.isEnabled(notification.type, 'push')) return;
+  }
 }
 ```
 
@@ -162,7 +194,7 @@ The preferences screen needs two endpoints from the backend:
 | `GET` | `/notification-preferences` | The type by channel matrix for the signed-in user |
 | `PUT` | `/notification-preferences` | Change one cell, or a batch of them |
 
-`magic-starter-laravel` implements both; see [Laravel Backend Setup](./laravel-backend-setup.md#api-contract).
+`magic-starter-laravel` implements both. It differs from the contract only on the inbox: its `unread-count` shape and its `per_page` query key do not match what the client reads and sends, and a backend written to the contract is not affected. See [Laravel Backend Setup](./laravel-backend-setup.md#overview).
 
 ### GET /notification-preferences Response
 
@@ -220,9 +252,11 @@ import 'package:flutter/widgets.dart' hide Notification;
 import 'package:magic_notifications/magic_notifications.dart';
 
 // Once, at boot: wrap the default with a back route.
-Notify.view.register('notifications.preferences', () {
-  return const NotificationPreferencesView(backRoute: '/settings');
-});
+void registerPreferencesView() {
+  Notify.view.register('notifications.preferences', () {
+    return const NotificationPreferencesView(backRoute: '/settings');
+  });
+}
 
 // In the page that hosts it:
 class NotificationPreferencesPage extends StatelessWidget {
@@ -241,7 +275,16 @@ class NotificationPreferencesPage extends StatelessWidget {
 > To make `PushChannel` respect per-type preferences, attach a `NotificationPreference` you have loaded to your `User` model by overriding `Notifiable.notificationPreference`:
 >
 > ```dart
+> import 'package:magic/magic.dart';
+> import 'package:magic_notifications/magic_notifications.dart';
+>
 > class User extends Model with Notifiable {
+>   @override
+>   String get table => 'users';
+>
+>   @override
+>   String get resource => 'users';
+>
 >   NotificationPreference? _cachedPreference;
 >
 >   @override
@@ -265,7 +308,12 @@ class NotificationPreferencesPage extends StatelessWidget {
 - **`PushPromptHost`** wires it to the live device. It owns nothing about when to ask (`pushPromptAdvice` does), but it owns the one thing the package refuses to decide: the key the decline is recorded under on this device. That is why it takes a `declinedVaultKey` constructor parameter rather than a fixed key:
 
   ```dart
-  const PushPromptHost(declinedVaultKey: 'my_app.push_prompt_declined')
+  import 'package:flutter/widgets.dart';
+  import 'package:magic_notifications/magic_notifications.dart';
+
+  Widget pushPrompt() {
+    return const PushPromptHost(declinedVaultKey: 'my_app.push_prompt_declined');
+  }
   ```
 
   It writes the decline as an ISO-8601 UTC instant and reads only that shape; a value some other shape wrote reads as "never declined", so an app carrying an older value migrates it once before constructing this widget.
@@ -273,9 +321,15 @@ class NotificationPreferencesPage extends StatelessWidget {
 - **`PushOffNotice`** is a quiet shell marker (a sidebar row, or a compact glyph with `compact: true` for a mobile top bar) that tells a person, on a screen they were already looking at, that this device cannot be reached by push. Tapping it calls the required `onOpenPreferences` callback, which a host wires to wherever `PushPromptHost` and its controls live:
 
   ```dart
-  PushOffNotice(
-    onOpenPreferences: () => MagicRoute.to('/settings/notifications'),
-  )
+  import 'package:flutter/widgets.dart';
+  import 'package:magic/magic.dart';
+  import 'package:magic_notifications/magic_notifications.dart';
+
+  Widget offNotice() {
+    return PushOffNotice(
+      onOpenPreferences: () => MagicRoute.to('/settings/notifications'),
+    );
+  }
   ```
 
 ### Translation keys
