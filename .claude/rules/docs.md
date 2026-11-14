@@ -43,7 +43,8 @@ One sentence: what the page covers.
 | :----- | :----- |
 | `NotificationChannel`, `DatabaseChannel`, `PushChannel` | `basics/channels.md` |
 | `PushDriver`, `OneSignalDriver`, `OneSignalWebDriver` | `basics/drivers.md` |
-| `NotificationPreference`, `PushPrompt`, preferences view | `basics/preferences.md` |
+| `NotificationPreference`, `PushPrompt`, preferences view, translation keys | `basics/preferences.md` |
+| `NotificationDropdown` | `basics/notification-dropdown.md` |
 | `lib/src/cli/`, `install.yaml` | `basics/cli.md`, `getting-started/installation.md` |
 | `notifications.*` config keys | `getting-started/configuration.md` |
 | `NotificationManager`, `NotificationServiceProvider` | `architecture/` |

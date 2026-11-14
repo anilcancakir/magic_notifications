@@ -12,6 +12,13 @@
 - **The package metadata names the new home, and the description says what the code offers.** `homepage`, `repository` and `issue_tracker` point at `anilcancakir`, the `documentation` key is gone, and the description no longer claims a mail channel, which this package never had: it lists the backend-driven inbox, OneSignal push and realtime delivery. (`pubspec.yaml`)
 - **The README and the `doc/` pages are rewritten.** They make no mail channel claim, and every command is written `dart run magic:dowel notifications:<command>`. (`README.md`, `doc/`)
 - **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)
+- **The generated config no longer carries a `mail` block.** `notifications:install` and `notifications:publish` wrote `'mail': {'enabled': false}`, a setting for a channel this package does not have and that no runtime code reads. An existing file can drop the block; `notifications:channels` still prints `mail` as `disabled` without it. (`assets/stubs/install/notification_config.stub`)
+
+### Fixed
+- **What `requestPushPermission()` does on a device that already answered is described correctly.** The README, `llms.txt`, the agent skill and the driver and configuration pages said it shows nothing. No OS dialog appears, but on a denied iOS or Android device OneSignal shows its own English dialog offering the app's settings while `notifications.push.fallback_to_settings` is `true`, the default; only on web, or with the key `false`, is nothing shown. (`README.md`, `llms.txt`, `skills/magic-notifications/SKILL.md`, `doc/basics/drivers.md`, `doc/getting-started/configuration.md`, `lib/src/drivers/push/push_driver.dart`)
+- **Every translation key the shipped widgets read is documented.** The docs named a handful, so a host following them shipped the inbox, the preferences screen and the dropdown with raw keys. One table now lists each `notifications.*` key, plus the `time.*`, `common.page_of`, `common.back` and `errors.unexpected` keys the same widgets read, with where it shows and English reference copy. (`doc/basics/preferences.md`)
+- **`NotificationDropdown` has a documentation page.** Its constructor parameters, what the panel shows in each stream state, restyling and type icons. (`doc/basics/notification-dropdown.md`, `llms.txt`, `README.md`)
+- **The agent skill's description is an instruction and fits the length budget, and the README logo's alt text names the package.** (`skills/magic-notifications/SKILL.md`, `README.md`)
 
 ## [1.0.0] - 2026-11-14
 

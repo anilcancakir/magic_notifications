@@ -356,7 +356,7 @@ Future<void> deleteNotification(String id) async {
 >
 > `markAsRead` and `markAllAsRead` swallow. Their failure is recoverable by looking again and costs a person nothing, while a delete that silently did not happen is the case where the screen and the server disagree about something destructive.
 >
-> A caller that wants silence adds a `catch`. `NotificationsListView` catches it and reports `notifications.delete_failed` through `Magic.error`, which is a key the host must supply: this package ships no translation catalogue, and a missing key renders as itself.
+> A caller that wants silence adds a `catch`. `NotificationsListView` catches it and reports `notifications.delete_failed` through `Magic.error`, which is a key the host must supply: this package ships no translation catalogue, and a missing key renders as itself. [Translation Keys](../basics/preferences.md#translation-keys) lists every key the shipped widgets read.
 
 > [!IMPORTANT]
 > **`NotificationsListView.onDelete` is `Future<bool> Function(String id)?`, and the `bool` is load-bearing.** The screen is a separately paginated fetch, so a delete the server accepted has to be followed by a reload: a row leaving page one pulls one up from page two, and only the server knows which. The answer decides whether that reload happens.
@@ -369,7 +369,7 @@ Future<void> deleteNotification(String id) async {
 >
 > `false` is what a confirmation dialog needs: a host that asks before deleting does not spend a `GET /notifications` every time somebody declines. A callback that always deletes returns `true`; one that can refuse returns `false` on that path.
 >
-> Translation keys the host must supply for the same reason: **`notifications.delete`** names the row's delete control for a screen reader (it is a bare glyph with no text of its own), **`notifications.channel_sms`** labels the SMS row on the preferences screen, and **`notifications.bulk_title`** and **`notifications.bulk_description`** head the card above the preference matrix. Without them each renders as its own key.
+> The row's delete control is a bare glyph with no text of its own, so a screen reader names it from `notifications.delete`; that key and every other one the screens read are in [Translation Keys](../basics/preferences.md#translation-keys).
 
 > [!TIP]
 > The `Notify` facade exposes every one of these operations as a static method (`Notify.markAsRead`, `Notify.deleteNotification` and so on), delegating to the same manager.
