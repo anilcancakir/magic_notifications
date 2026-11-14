@@ -32,10 +32,7 @@ void main() {
 
     group('login (non-web)', () {
       test('throws NotInitializedException when not initialized', () async {
-        expect(
-          () => driver.login('user-123'),
-          throwsA(isA<Exception>()),
-        );
+        expect(() => driver.login('user-123'), throwsA(isA<Exception>()));
       });
     });
 
@@ -49,22 +46,23 @@ void main() {
 
     group('requestPermission (non-web)', () {
       test('throws NotInitializedException when not initialized', () async {
-        expect(
-          () => driver.requestPermission(),
-          throwsA(isA<Exception>()),
-        );
+        expect(() => driver.requestPermission(), throwsA(isA<Exception>()));
       });
     });
 
     group('streams', () {
       test('onNotificationReceived returns a stream', () {
-        expect(driver.onNotificationReceived,
-            isA<Stream<PushNotificationEvent>>());
+        expect(
+          driver.onNotificationReceived,
+          isA<Stream<PushNotificationEvent>>(),
+        );
       });
 
       test('onNotificationClicked returns a stream', () {
         expect(
-            driver.onNotificationClicked, isA<Stream<PushNotificationEvent>>());
+          driver.onNotificationClicked,
+          isA<Stream<PushNotificationEvent>>(),
+        );
       });
 
       test('onPermissionChanged returns a stream', () {

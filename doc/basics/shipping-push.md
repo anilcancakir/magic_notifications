@@ -175,7 +175,7 @@ person has left, under their name, until its own freshness horizon expires.
 
 ## Before you submit
 
-- `dart run <app>:artisan notifications:doctor` is clean, including the iOS
+- `dart run magic:dowel notifications:doctor` is clean, including the iOS
   configuration rows.
 - If your backend reads device reachability, a sign-out from the release build
   posts to `notifications.push_state.release_path` before the token is gone.

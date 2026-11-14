@@ -1,13 +1,13 @@
-import 'package:fluttersdk_artisan/artisan.dart';
-import 'package:magic_notifications/src/cli/notifications_artisan_provider.dart';
+import 'package:dowel/dowel.dart';
+import 'package:magic_notifications/src/cli/notifications_dowel_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('MagicNotificationsArtisanProvider e2e surface', () {
-    late MagicNotificationsArtisanProvider provider;
+  group('MagicNotificationsDowelProvider e2e surface', () {
+    late MagicNotificationsDowelProvider provider;
 
     setUp(() {
-      provider = MagicNotificationsArtisanProvider();
+      provider = MagicNotificationsDowelProvider();
     });
 
     test('provider name is "notifications"', () {
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('mcpTools exposes exactly 2 read-only tools', () {
-      // Commands surface via ArtisanApplication registered in the host app;
+      // Commands surface via DowelApplication registered in the host app;
       // the provider exposes only read-only diagnostics as MCP tools.
       expect(provider.mcpTools(), hasLength(2));
     });
@@ -57,9 +57,9 @@ void main() {
       }
     });
 
-    test('all commands are ArtisanCommand instances', () {
+    test('all commands are DowelCommand instances', () {
       for (final command in provider.commands()) {
-        expect(command, isA<ArtisanCommand>());
+        expect(command, isA<DowelCommand>());
       }
     });
 

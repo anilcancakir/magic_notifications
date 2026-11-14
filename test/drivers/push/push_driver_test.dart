@@ -17,10 +17,7 @@ void main() {
 
     test('initialize() is callable', () async {
       final driver = TestPushDriver();
-      await expectLater(
-        driver.initialize({}),
-        completes,
-      );
+      await expectLater(driver.initialize({}), completes);
     });
 
     test('login() sets external ID', () async {
@@ -29,36 +26,40 @@ void main() {
       expect(driver.lastLoginId, 'user-123');
     });
 
-    test('currentExternalId() reads back who the device is subscribed as',
-        () async {
-      final driver = TestPushDriver();
-      expect(await driver.currentExternalId(), isNull);
+    test(
+      'currentExternalId() reads back who the device is subscribed as',
+      () async {
+        final driver = TestPushDriver();
+        expect(await driver.currentExternalId(), isNull);
 
-      await driver.login('user-123');
+        await driver.login('user-123');
 
-      expect(await driver.currentExternalId(), 'user-123');
-    });
+        expect(await driver.currentExternalId(), 'user-123');
+      },
+    );
 
-    test('onIdentityChanged carries the SDK change the driver observed',
-        () async {
-      final driver = TestPushDriver();
+    test(
+      'onIdentityChanged carries the SDK change the driver observed',
+      () async {
+        final driver = TestPushDriver();
 
-      final events = <PushIdentityChange>[];
-      driver.onIdentityChanged.listen(events.add);
-      driver.emitIdentityChange(
-        const PushIdentityChange(
-          externalId: 'user-123',
-          subscriptionId: 'sub-1',
-          optedIn: true,
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
+        final events = <PushIdentityChange>[];
+        driver.onIdentityChanged.listen(events.add);
+        driver.emitIdentityChange(
+          const PushIdentityChange(
+            externalId: 'user-123',
+            subscriptionId: 'sub-1',
+            optedIn: true,
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
 
-      expect(events, hasLength(1));
-      expect(events.single.externalId, 'user-123');
-      expect(events.single.subscriptionId, 'sub-1');
-      expect(events.single.optedIn, isTrue);
-    });
+        expect(events, hasLength(1));
+        expect(events.single.externalId, 'user-123');
+        expect(events.single.subscriptionId, 'sub-1');
+        expect(events.single.optedIn, isTrue);
+      },
+    );
 
     test('onIdentityChanged is a broadcast stream', () {
       final driver = TestPushDriver();
@@ -149,9 +150,8 @@ void main() {
   group('PushDriver.canRaisePermissionRequest', () {
     test('is true only for a device that has never been asked', () async {
       expect(
-        await TestPushDriver(
-          permission: PushPermissionState.notDetermined,
-        ).canRaisePermissionRequest(),
+        await TestPushDriver(permission: PushPermissionState.notDetermined)
+            .canRaisePermissionRequest(),
         isTrue,
       );
 
@@ -195,11 +195,11 @@ void main() {
 /// whose initialisation threw.
 class _UninitializedPushDriver extends TestPushDriver {
   _UninitializedPushDriver()
-      : super(
-          permission: PushPermissionState.authorized,
-          optedIn: true,
-          subscriptionId: 'sub-1',
-        );
+    : super(
+        permission: PushPermissionState.authorized,
+        optedIn: true,
+        subscriptionId: 'sub-1',
+      );
 
   @override
   bool get isInitialized => false;

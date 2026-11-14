@@ -4,8 +4,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-// cli.dart re-exports fluttersdk_artisan/artisan.dart (hiding only the builtin
-// DoctorCommand that collides with this class), so a direct artisan.dart import
+// cli.dart re-exports dowel/dowel.dart (hiding only the builtin
+// DoctorCommand that collides with this class), so a direct dowel.dart import
 // is redundant here.
 import 'package:magic_notifications/src/cli/cli.dart';
 import 'package:magic_notifications/src/cli/support/xcode_configurations.dart';
@@ -26,10 +26,10 @@ import 'package:magic_notifications/src/cli/support/xcode_configurations.dart';
 ///
 /// ## Usage
 /// ```bash
-/// dart run <app>:artisan notifications:doctor
-/// dart run <app>:artisan notifications:doctor --verbose
+/// dart run magic:dowel notifications:doctor
+/// dart run magic:dowel notifications:doctor --verbose
 /// ```
-class DoctorCommand extends ArtisanCommand {
+class DoctorCommand extends DowelCommand {
   /// Background mode iOS requires before APNs will wake the app.
   static const String _remoteNotificationMode = 'remote-notification';
 
@@ -85,9 +85,10 @@ class DoctorCommand extends ArtisanCommand {
   String getProjectRoot() => FileHelper.findProjectRoot();
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     // 1. Collect missing requirements before printing — we need both for output.
     final verbose = ctx.input.option('verbose') as bool;
@@ -118,10 +119,12 @@ class DoctorCommand extends ArtisanCommand {
     } else {
       ctx.output.writeln('');
       ctx.output.warning('Issues detected. Run the following to fix:');
-      ctx.output
-          .writeln('  • Install: dart run <app>:artisan notifications:install');
       ctx.output.writeln(
-          '  • Configure: dart run <app>:artisan notifications:configure');
+        '  • Install: dart run magic:dowel notifications:install',
+      );
+      ctx.output.writeln(
+        '  • Configure: dart run magic:dowel notifications:configure',
+      );
       return 1;
     }
   }
@@ -196,9 +199,8 @@ class DoctorCommand extends ArtisanCommand {
     }
 
     // 2. Validate polling_interval range (5–600 seconds).
-    final pollingMatch = RegExp(
-      r"'polling_interval':\s*(\d+)",
-    ).firstMatch(content);
+    final pollingMatch = RegExp(r"'polling_interval':\s*(\d+)")
+        .firstMatch(content);
     if (pollingMatch != null) {
       final interval = int.tryParse(pollingMatch.group(1)!);
       if (interval != null && (interval < 5 || interval > 600)) {
@@ -298,10 +300,10 @@ class DoctorCommand extends ArtisanCommand {
   /// ID with a blank `.env` entry once certified a build that could not send a
   /// single push.
   List<String> getWarnings() => <String>[
-        ...configWarnings(),
-        ...iosExtensionWarnings(),
-        ...apsEnvironmentWarnings(),
-      ];
+    ...configWarnings(),
+    ...iosExtensionWarnings(),
+    ...apsEnvironmentWarnings(),
+  ];
 
   /// The one line that follows a run whose warnings did not fail it.
   ///
@@ -325,7 +327,7 @@ class DoctorCommand extends ArtisanCommand {
   /// release build is the broken one when the development build is. Anything
   /// this cannot name honestly gets the generic line.
   ///
-  /// Public so it can be tested without an [ArtisanContext]; [handle] is the
+  /// Public so it can be tested without an [DowelContext]; [handle] is the
   /// only caller.
   String warningSummary() {
     if (configWarnings().isNotEmpty) {
@@ -416,11 +418,11 @@ class DoctorCommand extends ArtisanCommand {
     warnings.add(
       hasEnvFile()
           ? 'App ID is read from the $envKey environment variable, and '
-              '$envFileName carries no value for it, so push initialises with '
-              'an empty App ID'
+                '$envFileName carries no value for it, so push initialises with '
+                'an empty App ID'
           : 'App ID is read from the $envKey environment variable, and there '
-              'is no $envFileName at the project root to confirm it is '
-              'provisioned',
+                'is no $envFileName at the project root to confirm it is '
+                'provisioned',
     );
 
     return warnings;
@@ -792,8 +794,9 @@ class DoctorCommand extends ArtisanCommand {
   /// it has to address to write the split.
   Map<String, String> _entitlementsByConfiguration() {
     return {
-      for (final XcodeConfiguration configuration
-          in XcodeConfigurations.read(_pbxprojPath))
+      for (final XcodeConfiguration configuration in XcodeConfigurations.read(
+        _pbxprojPath,
+      ))
         if (configuration.entitlements != null)
           configuration.name: configuration.entitlements!,
     };
@@ -872,8 +875,8 @@ class DoctorCommand extends ArtisanCommand {
   /// A binary plist that happens to contain the identifier still matches, since
   /// the bytes of an ASCII string survive `allowMalformed`.
   bool _declaresExtensionPoint(File plist) => _withoutComments(
-        utf8.decode(plist.readAsBytesSync(), allowMalformed: true),
-      ).contains(_notificationServiceExtensionPoint);
+    utf8.decode(plist.readAsBytesSync(), allowMalformed: true),
+  ).contains(_notificationServiceExtensionPoint);
 
   /// The last path segment, separator-agnostic.
   String _basename(String path) => path.split(RegExp(r'[/\\]')).last;
@@ -1083,10 +1086,14 @@ class DoctorCommand extends ArtisanCommand {
               buffer.writeln('      Required: POST_NOTIFICATIONS permission');
             case 'ios':
               buffer.writeln('      Info.plist: ios/Runner/Info.plist');
-              buffer.writeln('      Entitlements: '
-                  'ios/Runner/Runner.entitlements');
-              buffer.writeln('      Project: '
-                  'ios/Runner.xcodeproj/project.pbxproj');
+              buffer.writeln(
+                '      Entitlements: '
+                'ios/Runner/Runner.entitlements',
+              );
+              buffer.writeln(
+                '      Project: '
+                'ios/Runner.xcodeproj/project.pbxproj',
+              );
               buffer.writeln(
                 '      Required: UIBackgroundModes/$_remoteNotificationMode, '
                 '$_apsEnvironmentKey, $_entitlementsSetting',

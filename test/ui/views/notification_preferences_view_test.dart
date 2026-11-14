@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/src/http/notification_preferences_controller.dart';
@@ -189,8 +189,7 @@ void main() {
   });
 
   group('headerBuilder', () {
-    testWidgets(
-        'hands its title, subtitle and back target over and draws '
+    testWidgets('hands its title, subtitle and back target over and draws '
         'none of them', (tester) async {
       fakeMatrix();
       NotificationsPageHeader? received;

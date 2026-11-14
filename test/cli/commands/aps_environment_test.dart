@@ -96,7 +96,8 @@ String _pbxproj({
 }
 ''';
 
-String _entitlements(String apsEnvironment) => '''
+String _entitlements(String apsEnvironment) =>
+    '''
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -138,10 +139,11 @@ void main() {
   /// own installer's correct output stops being read. Asserted through the
   /// public `getWarnings()` rather than the private helper, so a change that
   /// stops routing them anywhere at all fails these tests.
-  List<String> iosIssues() => _TestDoctorCommand(tempDir.path)
-      .getWarnings()
-      .where((w) => w.contains('configuration signs against'))
-      .toList();
+  List<String> iosIssues() =>
+      _TestDoctorCommand(tempDir.path)
+          .getWarnings()
+          .where((w) => w.contains('configuration signs against'))
+          .toList();
 
   group('the APNs environment each configuration signs against', () {
     test('names Release when one entitlements file serves every build', () {
@@ -151,10 +153,12 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final issues = iosIssues();
 
@@ -170,10 +174,12 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('production'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+            ),
+          );
 
       expect(iosIssues(), isEmpty);
     });
@@ -187,11 +193,13 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-        profileEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+              profileEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final issues = iosIssues();
 
@@ -201,22 +209,28 @@ void main() {
       expect(issues.where((i) => i.contains('Release')), hasLength(1));
     });
 
-    test('reports an entitlements file a configuration names and does not have',
-        () {
-      File('${tempDir.path}/ios/Runner/Runner.entitlements')
-          .writeAsStringSync(_entitlements('development'));
-      File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-      ));
+    test(
+      'reports an entitlements file a configuration names and does not have',
+      () {
+        File('${tempDir.path}/ios/Runner/Runner.entitlements')
+            .writeAsStringSync(_entitlements('development'));
+        File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
+            .writeAsStringSync(
+              _pbxproj(
+                debugEntitlements: 'Runner/Runner.entitlements',
+                releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+              ),
+            );
 
-      expect(
-        iosIssues().single,
-        allOf(
-            contains('RunnerRelease.entitlements'), contains('does not exist')),
-      );
-    });
+        expect(
+          iosIssues().single,
+          allOf(
+            contains('RunnerRelease.entitlements'),
+            contains('does not exist'),
+          ),
+        );
+      },
+    );
 
     test('names a twin that declares no aps-environment at all', () {
       // The gap this check was written to close and did not. The presence
@@ -239,10 +253,12 @@ void main() {
 </plist>
 ''');
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+            ),
+          );
 
       expect(
         iosIssues().single,
@@ -262,11 +278,13 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('production'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: r'"$(SRCROOT)/Runner/Runner.entitlements"',
-        releaseEntitlements:
-            r'"$(PROJECT_DIR)/Runner/RunnerRelease.entitlements"',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: r'"$(SRCROOT)/Runner/Runner.entitlements"',
+              releaseEntitlements:
+                  r'"$(PROJECT_DIR)/Runner/RunnerRelease.entitlements"',
+            ),
+          );
 
       expect(iosIssues(), isEmpty);
     });
@@ -277,11 +295,13 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements:
-            r'"$(CONFIGURATION_BUILD_DIR)/Custom.entitlements"',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements:
+                  r'"$(CONFIGURATION_BUILD_DIR)/Custom.entitlements"',
+            ),
+          );
 
       expect(
         iosIssues().where((i) => i.contains('configuration signs against')),
@@ -295,13 +315,14 @@ void main() {
       // Only the object ids are lowercased, which is the shape under test.
       // Lowercasing the whole document would change key names too and would
       // exercise nothing at all.
-      final String pbxproj = _pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-      ).replaceAllMapped(
-        RegExp(r'\b[0-9A-F]{24}\b'),
-        (Match m) => m.group(0)!.toLowerCase(),
-      );
+      final String pbxproj =
+          _pbxproj(
+            debugEntitlements: 'Runner/Runner.entitlements',
+            releaseEntitlements: 'Runner/Runner.entitlements',
+          ).replaceAllMapped(
+            RegExp(r'\b[0-9A-F]{24}\b'),
+            (Match m) => m.group(0)!.toLowerCase(),
+          );
 
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
           .writeAsStringSync(pbxproj);
@@ -318,18 +339,20 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final command = _TestDoctorCommand(tempDir.path);
 
       expect(iosIssues(), hasLength(1));
       expect(
-        command
-            .getMissingRequirements()
-            .where((i) => i.contains('configuration signs against')),
+        command.getMissingRequirements().where(
+          (i) => i.contains('configuration signs against'),
+        ),
         isEmpty,
       );
     });
@@ -341,10 +364,12 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final report = _TestDoctorCommand(tempDir.path).generateReport();
 
@@ -352,24 +377,27 @@ void main() {
       expect(report, contains('⚠ the Release configuration signs against'));
     });
 
-    test('says a release build will not send, when Release is the wrong one',
-        () {
-      File('${tempDir.path}/ios/Runner/Runner.entitlements')
-          .writeAsStringSync(_entitlements('development'));
-      File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-      ));
+    test(
+      'says a release build will not send, when Release is the wrong one',
+      () {
+        File('${tempDir.path}/ios/Runner/Runner.entitlements')
+            .writeAsStringSync(_entitlements('development'));
+        File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
+            .writeAsStringSync(
+              _pbxproj(
+                debugEntitlements: 'Runner/Runner.entitlements',
+                releaseEntitlements: 'Runner/Runner.entitlements',
+              ),
+            );
 
-      expect(
-        _TestDoctorCommand(tempDir.path).warningSummary(),
-        contains('a release build will not send'),
-      );
-    });
+        expect(
+          _TestDoctorCommand(tempDir.path).warningSummary(),
+          contains('a release build will not send'),
+        );
+      },
+    );
 
-    test('falls back to the generic line when Release is not the wrong one',
-        () {
+    test('falls back to the generic line when Release is not the wrong one', () {
       // The same warning list carries findings that name Debug or Profile, and
       // for those the release sentence asserts the inverse of what is broken.
       // A split project whose DEBUG twin was never created satisfies both of
@@ -380,11 +408,13 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('production'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/RunnerDebug.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-        profileEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/RunnerDebug.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+              profileEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final command = _TestDoctorCommand(tempDir.path);
 
@@ -409,11 +439,13 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/RunnerDebug.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-        profileEntitlements: 'Runner/Runner.entitlements',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/RunnerDebug.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+              profileEntitlements: 'Runner/Runner.entitlements',
+            ),
+          );
 
       final command = _TestDoctorCommand(tempDir.path);
 
@@ -427,8 +459,7 @@ void main() {
       );
     });
 
-    test('judges a flavoured project by the base name of its configuration',
-        () {
+    test('judges a flavoured project by the base name of its configuration', () {
       // Flutter flavours append the flavour to the base name
       // (https://docs.flutter.dev/deployment/flavors-ios), so an app with a
       // staging and a production build carries `Release-production` and its
@@ -439,13 +470,15 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-        debugName: 'Debug-production',
-        releaseName: 'Release-production',
-        profileName: 'Profile-production',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/Runner.entitlements',
+              debugName: 'Debug-production',
+              releaseName: 'Release-production',
+              profileName: 'Profile-production',
+            ),
+          );
 
       expect(
         iosIssues().single,
@@ -453,30 +486,33 @@ void main() {
       );
     });
 
-    test('says a release build will not send for a flavoured configuration',
-        () {
-      // The summary keys on the message prefix, and the narrower prefix read
-      // `Release-production` as "not the release build" while listing it as
-      // broken directly above.
-      File('${tempDir.path}/ios/Runner/Runner.entitlements')
-          .writeAsStringSync(_entitlements('development'));
-      File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-        debugName: 'Debug-staging',
-        releaseName: 'Release-staging',
-        profileName: 'Profile-staging',
-      ));
+    test(
+      'says a release build will not send for a flavoured configuration',
+      () {
+        // The summary keys on the message prefix, and the narrower prefix read
+        // `Release-production` as "not the release build" while listing it as
+        // broken directly above.
+        File('${tempDir.path}/ios/Runner/Runner.entitlements')
+            .writeAsStringSync(_entitlements('development'));
+        File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
+            .writeAsStringSync(
+              _pbxproj(
+                debugEntitlements: 'Runner/Runner.entitlements',
+                releaseEntitlements: 'Runner/Runner.entitlements',
+                debugName: 'Debug-staging',
+                releaseName: 'Release-staging',
+                profileName: 'Profile-staging',
+              ),
+            );
 
-      expect(
-        _TestDoctorCommand(tempDir.path).warningSummary(),
-        contains('a release build will not send'),
-      );
-    });
+        expect(
+          _TestDoctorCommand(tempDir.path).warningSummary(),
+          contains('a release build will not send'),
+        );
+      },
+    );
 
-    test('says so when it recognised no configuration, rather than passing',
-        () {
+    test('says so when it recognised no configuration, rather than passing', () {
       // The walk WORKED and named nothing this knows how to judge, which is a
       // different thing from a pbxproj it could not read and used to produce
       // the same silence. `ReleaseCandidate` is also the boundary case for the
@@ -484,13 +520,15 @@ void main() {
       File('${tempDir.path}/ios/Runner/Runner.entitlements')
           .writeAsStringSync(_entitlements('development'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/Runner.entitlements',
-        debugName: 'Dev',
-        releaseName: 'ReleaseCandidate',
-        profileName: 'Perf',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/Runner.entitlements',
+              debugName: 'Dev',
+              releaseName: 'ReleaseCandidate',
+              profileName: 'Perf',
+            ),
+          );
 
       final warnings = _TestDoctorCommand(tempDir.path).getWarnings();
 
@@ -525,12 +563,14 @@ void main() {
       File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .writeAsStringSync(_entitlements('production'));
       File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-          .writeAsStringSync(_pbxproj(
-        debugEntitlements: 'Runner/Runner.entitlements',
-        releaseEntitlements: 'Runner/RunnerRelease.entitlements',
-        profileEntitlements: 'Runner/Runner.entitlements',
-        profileName: 'Staging',
-      ));
+          .writeAsStringSync(
+            _pbxproj(
+              debugEntitlements: 'Runner/Runner.entitlements',
+              releaseEntitlements: 'Runner/RunnerRelease.entitlements',
+              profileEntitlements: 'Runner/Runner.entitlements',
+              profileName: 'Staging',
+            ),
+          );
 
       final warnings = _TestDoctorCommand(tempDir.path).getWarnings();
 

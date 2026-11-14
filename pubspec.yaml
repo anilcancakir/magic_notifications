@@ -1,6 +1,6 @@
 name: magic_notifications
 description: Multi-channel notification system for Magic Framework. Supports database (in-app), push (OneSignal), and mail channels.
-version: 0.3.12
+version: 0.4.0
 homepage: https://magic.fluttersdk.com/notifications
 documentation: https://magic.fluttersdk.com/packages/notifications/getting-started/installation
 repository: https://github.com/fluttersdk/magic_notifications
@@ -14,44 +14,42 @@ topics:
   - flutter-plugin
 
 environment:
-  sdk: ">=3.6.0 <4.0.0"
-  flutter: ">=3.27.0"
+  sdk: ">=3.13.0 <4.0.0"
+  flutter: ">=3.47.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  # ^0.0.6 is a FLOOR, not a pin: pub_semver's `Version.nextBreaking` raises the
-  # MINOR whenever the major is zero (`version.dart:245`), so `^0.0.6` resolves
-  # `>=0.0.6 <0.1.0`, the whole 0.0.x line, not one exact patch. The floor
-  # matters because `Echo.connection` does not exist below 0.0.6, and without
-  # it a solver may hand this package a magic that lacks the accessor the
-  # realtime notification path needs to avoid a second WebSocket on an
-  # already-open connection. It sits at 0.0.22 because `PushStateReporter`
-  # calls `Event.listenAny`, which does not exist below it; the floor is
-  # 0.0.29 because the realtime poller follows `BroadcastChannel.isSubscribed`
-  # and `onSubscriptionChanged`, which first ship there.
-  magic: ^0.0.29
+  # 0.1.0 is the first core without the broadcasting layer, which now lives in
+  # `magic_socket`.
+  magic: ^0.1.0
+  # Carries `Echo`, `BroadcastChannel` and `BroadcastEvent`, which the realtime
+  # notification path subscribes through. ^0.0.1 resolves `>=0.0.1 <0.1.0`.
+  magic_socket: ^0.0.1
   # 0.0.15 is the requirement: `XcodeProjectEditor.setEntitlementsPaths`,
   # which the iOS installer step calls to point Release at its own
-  # entitlements file, does not exist below it. The floor names 0.0.20, the
-  # newest release when the 2026-10-13 batch re-pinned every sibling.
-  fluttersdk_artisan: ^0.0.20
-  # ^5.6.6 is a floor: the login/logout identity race was patched across
-  # 5.5.3, 5.5.5, 5.6.2 and 5.6.6. `^5.4.6` was resolving 5.6.3 in uptizm,
-  # which carries some of those fixes but not the last one.
-  onesignal_flutter: ^5.6.6
+  # entitlements file, does not exist below it. The floor names 0.0.21, the
+  # newest release when the 2026-11 batch re-pinned every sibling.
+  dowel: ^0.0.21
+  # ^5.8.0 is a floor: the login/logout identity race was patched across
+  # 5.5.3, 5.5.5, 5.6.2 and 5.6.6, and 5.8.0 is the newest release when the
+  # 2026-11 batch re-pinned every sibling.
+  onesignal_flutter: ^5.8.0
   # Direct rather than transitive-through-flutter, because this package now
   # names `@internal` in its own source: `NotificationViewRegistry` is exported
   # from the barrel, so `registerDefault` is reachable by a host that must not
   # call it, and the annotation is the only thing that can say so under Dart's
   # library-level privacy. `depend_on_referenced_packages` asks for the import
   # to be declared where it is used.
-  meta: ^1.15.0
+  meta: ^1.19.0
   # Direct rather than transitive: this package ships widgets, so wind is a
-  # dependency of its own. No API newer than 1.2.0 is in use; the floor names
-  # 1.9.0, the newest release when the 2026-10-14 batch re-pinned every
-  # sibling.
-  fluttersdk_wind: ^1.9.0
+  # dependency of its own. The floor names 1.12.0, the first wind_kit release
+  # on material_ui.
+  wind_kit: ^1.12.0
+  # `Icons` and `CircularProgressIndicator` come from material_ui now that
+  # Flutter's own material library is deprecated. wind_kit 1.12.0 builds on the
+  # same package, so the two share one set of material types.
+  material_ui: ^1.11.0
   # Opens the app's own notification settings page for
   # `PushDriver.openPlatformSettings`, which OneSignal reaches only through its
   # untranslated fallback dialog. Held on 7.x on purpose: 8.0.0 dropped
@@ -64,9 +62,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  test: ^1.25.0
+  test: ^1.32.0
   flutter_lints: ^6.0.0
   # Declared so the polling-interval test can elapse a timer instead of
   # sleeping. It already arrives transitively through flutter_test; naming it
   # here is what makes importing it legal.
-  fake_async: ^1.3.0
+  fake_async: ^1.3.3

@@ -90,8 +90,12 @@ class _RecordingPushDriver extends PushDriver {
   /// the device from one person to another, so the list says which calls
   /// count instead of growing an exclusion every time a new one is recorded.
   List<String> get identityCalls => calls
-      .where((String call) =>
-          call == 'initialize' || call == 'logout' || call.startsWith('login:'))
+      .where(
+        (String call) =>
+            call == 'initialize' ||
+            call == 'logout' ||
+            call.startsWith('login:'),
+      )
       .toList();
 
   /// Every call but the read-back, in the order it was made.
@@ -319,24 +323,26 @@ void main() {
       expect(driver.identityCalls, <String>['logout', 'login:user_B']);
     });
 
-    test('the SDK observer confirms convergence, a stale id revokes it',
-        () async {
-      final _RecordingPushDriver driver = use(_RecordingPushDriver());
+    test(
+      'the SDK observer confirms convergence, a stale id revokes it',
+      () async {
+        final _RecordingPushDriver driver = use(_RecordingPushDriver());
 
-      await manager.want('user_B');
-      await manager.reconcilePushIdentity();
-      expect(manager.isPushIdentityConverged, isTrue);
+        await manager.want('user_B');
+        await manager.reconcilePushIdentity();
+        expect(manager.isPushIdentityConverged, isTrue);
 
-      driver.identity.add(const PushIdentityChange(externalId: 'user_A'));
-      await pumpEventQueue();
+        driver.identity.add(const PushIdentityChange(externalId: 'user_A'));
+        await pumpEventQueue();
 
-      expect(manager.isPushIdentityConverged, isFalse);
+        expect(manager.isPushIdentityConverged, isFalse);
 
-      driver.identity.add(const PushIdentityChange(externalId: 'user_B'));
-      await pumpEventQueue();
+        driver.identity.add(const PushIdentityChange(externalId: 'user_B'));
+        await pumpEventQueue();
 
-      expect(manager.isPushIdentityConverged, isTrue);
-    });
+        expect(manager.isPushIdentityConverged, isTrue);
+      },
+    );
 
     test('an event reporting no external id says nothing either way', () async {
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
@@ -414,8 +420,7 @@ void main() {
       expect(manager.isPushIdentityConverged, isTrue);
     });
 
-    test('an intent that moved under an in-flight pass gets its own pass',
-        () async {
+    test('an intent that moved under an in-flight pass gets its own pass', () async {
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
       await manager.want('user_A');
 
@@ -464,8 +469,7 @@ void main() {
       expect(manager.pushIntent, isNull);
     });
 
-    test('a sign-out racing the first vault read is not overtaken by it',
-        () async {
+    test('a sign-out racing the first vault read is not overtaken by it', () async {
       final _GatedVaultService vault = _GatedVaultService(<String, String>{
         NotificationManager.pushIntentKey: 'user_A',
       });
@@ -507,8 +511,7 @@ void main() {
       expect(manager.pushIntent, isNull);
     });
 
-    test('a pass in flight at forgetDrivers is not joined by the next one',
-        () async {
+    test('a pass in flight at forgetDrivers is not joined by the next one', () async {
       final FakeVaultService vault = Vault.fake(<String, String>{
         NotificationManager.pushIntentKey: 'user_A',
       });
@@ -579,8 +582,7 @@ void main() {
   });
 
   group('the receive-side subject guard', () {
-    test('drops a push addressed to somebody else, delivers an unaddressed one',
-        () async {
+    test('drops a push addressed to somebody else, delivers an unaddressed one', () async {
       final _RecordingPushDriver driver = use(
         _RecordingPushDriver(subscribedAs: 'user_B'),
       );
@@ -588,10 +590,9 @@ void main() {
       await manager.reconcilePushIdentity();
 
       final List<Map<String, dynamic>> delivered = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushReceived.listen(
-        (PushNotificationEvent event) => delivered.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushReceived
+          .listen((PushNotificationEvent event) => delivered.add(event.data));
       addTearDown(subscription.cancel);
 
       driver.received.add(
@@ -611,8 +612,10 @@ void main() {
       );
       await pumpEventQueue();
 
-      expect(delivered.map((Map<String, dynamic> d) => d['incident_id']),
-          <String>['i-2']);
+      expect(
+        delivered.map((Map<String, dynamic> d) => d['incident_id']),
+        <String>['i-2'],
+      );
 
       driver.received.add(
         const PushNotificationEvent(<String, dynamic>{
@@ -622,12 +625,13 @@ void main() {
       );
       await pumpEventQueue();
 
-      expect(delivered.map((Map<String, dynamic> d) => d['incident_id']),
-          <String>['i-2', 'i-3']);
+      expect(
+        delivered.map((Map<String, dynamic> d) => d['incident_id']),
+        <String>['i-2', 'i-3'],
+      );
     });
 
-    test('an intent nobody has read yet is not evidence of misaddressing',
-        () async {
+    test('an intent nobody has read yet is not evidence of misaddressing', () async {
       final _RecordingPushDriver driver = use(
         _RecordingPushDriver(subscribedAs: 'user_A'),
       );
@@ -637,10 +641,9 @@ void main() {
       expect(manager.pushDriverOrNull, isNotNull);
 
       final List<Map<String, dynamic>> delivered = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushReceived.listen(
-        (PushNotificationEvent event) => delivered.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushReceived
+          .listen((PushNotificationEvent event) => delivered.add(event.data));
       addTearDown(subscription.cancel);
 
       driver.received.add(
@@ -660,8 +663,7 @@ void main() {
       );
     });
 
-    test('a push arriving while the vault read is still open is delivered',
-        () async {
+    test('a push arriving while the vault read is still open is delivered', () async {
       final _GatedVaultService vault = _GatedVaultService(<String, String>{
         NotificationManager.pushIntentKey: 'user_A',
       });
@@ -674,10 +676,9 @@ void main() {
       expect(manager.pushDriverOrNull, isNotNull);
 
       final List<Map<String, dynamic>> delivered = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushReceived.listen(
-        (PushNotificationEvent event) => delivered.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushReceived
+          .listen((PushNotificationEvent event) => delivered.add(event.data));
       addTearDown(subscription.cancel);
 
       final Completer<void> read = Completer<void>();
@@ -709,8 +710,7 @@ void main() {
       await loading;
     });
 
-    test('the first listener receives a click published before it arrived',
-        () async {
+    test('the first listener receives a click published before it arrived', () async {
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
 
       // The manager listens to a driver when it RESOLVES one, so the click
@@ -735,17 +735,15 @@ void main() {
       await pumpEventQueue();
 
       final List<Map<String, dynamic>> opened = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushClicked.listen(
-        (PushNotificationEvent event) => opened.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushClicked
+          .listen((PushNotificationEvent event) => opened.add(event.data));
       addTearDown(subscription.cancel);
       await pumpEventQueue();
 
-      expect(
-        opened.map((Map<String, dynamic> d) => d['deep_link']),
-        <String>['/incidents/1'],
-      );
+      expect(opened.map((Map<String, dynamic> d) => d['deep_link']), <String>[
+        '/incidents/1',
+      ]);
     });
 
     test('a click is replayed once, not to every later listener', () async {
@@ -761,8 +759,9 @@ void main() {
       );
       await pumpEventQueue();
 
-      final StreamSubscription<PushNotificationEvent> first =
-          manager.onPushClicked.listen((_) {});
+      final StreamSubscription<PushNotificationEvent> first = manager
+          .onPushClicked
+          .listen((_) {});
       addTearDown(first.cancel);
       await pumpEventQueue();
 
@@ -770,18 +769,16 @@ void main() {
       // again: re-navigating an app somebody has since moved through is a
       // worse failure than the one the buffer closes.
       final List<Map<String, dynamic>> late = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> second =
-          manager.onPushClicked.listen(
-        (PushNotificationEvent event) => late.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> second = manager
+          .onPushClicked
+          .listen((PushNotificationEvent event) => late.add(event.data));
       addTearDown(second.cancel);
       await pumpEventQueue();
 
       expect(late, isEmpty);
     });
 
-    test(
-        'holds a click for a consumer that READS the stream and subscribes '
+    test('holds a click for a consumer that READS the stream and subscribes '
         'later', () async {
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
 
@@ -805,15 +802,14 @@ void main() {
       await pumpEventQueue();
 
       final List<Map<String, dynamic>> opened = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          stream.listen((PushNotificationEvent e) => opened.add(e.data));
+      final StreamSubscription<PushNotificationEvent> subscription = stream
+          .listen((PushNotificationEvent e) => opened.add(e.data));
       addTearDown(subscription.cancel);
       await pumpEventQueue();
 
-      expect(
-        opened.map((Map<String, dynamic> d) => d['deep_link']),
-        <String>['/incidents/1'],
-      );
+      expect(opened.map((Map<String, dynamic> d) => d['deep_link']), <String>[
+        '/incidents/1',
+      ]);
     });
 
     test('keeps delivering to a live subscriber after forgetDrivers', () async {
@@ -823,10 +819,9 @@ void main() {
       await manager.reconcilePushIdentity();
 
       final List<Map<String, dynamic>> opened = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushClicked.listen(
-        (PushNotificationEvent e) => opened.add(e.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushClicked
+          .listen((PushNotificationEvent e) => opened.add(e.data));
       addTearDown(subscription.cancel);
       await pumpEventQueue();
 
@@ -848,10 +843,9 @@ void main() {
       );
       await pumpEventQueue();
 
-      expect(
-        opened.map((Map<String, dynamic> d) => d['deep_link']),
-        <String>['/incidents/2'],
-      );
+      expect(opened.map((Map<String, dynamic> d) => d['deep_link']), <String>[
+        '/incidents/2',
+      ]);
     });
 
     test('does not replay a buffered click to a DIFFERENT identity', () async {
@@ -878,10 +872,9 @@ void main() {
       await manager.reconcilePushIdentity();
 
       final List<Map<String, dynamic>> opened = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushClicked.listen(
-        (PushNotificationEvent e) => opened.add(e.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushClicked
+          .listen((PushNotificationEvent e) => opened.add(e.data));
       addTearDown(subscription.cancel);
       await pumpEventQueue();
 
@@ -896,10 +889,9 @@ void main() {
       await manager.reconcilePushIdentity();
 
       final List<Map<String, dynamic>> opened = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushClicked.listen(
-        (PushNotificationEvent event) => opened.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushClicked
+          .listen((PushNotificationEvent event) => opened.add(event.data));
       addTearDown(subscription.cancel);
 
       driver.clicked.add(
@@ -910,8 +902,9 @@ void main() {
       );
       await pumpEventQueue();
 
-      expect(opened.map((Map<String, dynamic> d) => d['subject']),
-          <String>['user_B']);
+      expect(opened.map((Map<String, dynamic> d) => d['subject']), <String>[
+        'user_B',
+      ]);
     });
 
     test('a delivered push refreshes the list', () async {
@@ -974,33 +967,34 @@ void main() {
       expect(identical(manager.pushDriver, driver), isTrue);
     });
 
-    test('attaching a driver announces it, so a late one can be acted on',
-        () async {
-      final List<String> announced = <String>[];
-      final StreamSubscription<PushDriver> subscription =
-          manager.onPushDriverAttached.listen(
-        (PushDriver driver) => announced.add(driver.name),
-      );
-      addTearDown(subscription.cancel);
+    test(
+      'attaching a driver announces it, so a late one can be acted on',
+      () async {
+        final List<String> announced = <String>[];
+        final StreamSubscription<PushDriver> subscription = manager
+            .onPushDriverAttached
+            .listen((PushDriver driver) => announced.add(driver.name));
+        addTearDown(subscription.cancel);
 
-      // Subscribed with no driver at all, which is the only state a host that
-      // needs this signal can subscribe from: its own provider boots ahead of
-      // the one that resolves a driver.
-      expect(manager.pushDriverOrNull, isNull);
+        // Subscribed with no driver at all, which is the only state a host that
+        // needs this signal can subscribe from: its own provider boots ahead of
+        // the one that resolves a driver.
+        expect(manager.pushDriverOrNull, isNull);
 
-      final _RecordingPushDriver driver = _RecordingPushDriver();
-      addTearDown(driver.dispose);
-      Notify.extend(driver.name, () => driver);
-      addTearDown(Notify.forgetDrivers);
+        final _RecordingPushDriver driver = _RecordingPushDriver();
+        addTearDown(driver.dispose);
+        Notify.extend(driver.name, () => driver);
+        addTearDown(Notify.forgetDrivers);
 
-      // A registration alone builds nothing, so the announcement rides the
-      // ATTACHMENT, which is the moment a driver becomes usable.
-      expect(announced, isEmpty);
-      expect(identical(manager.pushDriver, driver), isTrue);
-      await pumpEventQueue();
+        // A registration alone builds nothing, so the announcement rides the
+        // ATTACHMENT, which is the moment a driver becomes usable.
+        expect(announced, isEmpty);
+        expect(identical(manager.pushDriver, driver), isTrue);
+        await pumpEventQueue();
 
-      expect(announced, <String>['recording']);
-    });
+        expect(announced, <String>['recording']);
+      },
+    );
 
     test('forgetDrivers drops the registry and the resolved instance', () {
       final _RecordingPushDriver driver = _RecordingPushDriver();
@@ -1022,53 +1016,56 @@ void main() {
       addTearDown(() => Config.forget(key));
     }
 
-    test('an app that sets neither key behaves exactly as it did before',
-        () async {
-      final _RecordingPushDriver driver = use(
-        _RecordingPushDriver(permission: PushPermissionState.notDetermined),
-      );
+    test(
+      'an app that sets neither key behaves exactly as it did before',
+      () async {
+        final _RecordingPushDriver driver = use(
+          _RecordingPushDriver(permission: PushPermissionState.notDetermined),
+        );
 
-      await manager.initializePushWithUserId('user_A');
-      await pumpEventQueue();
+        await manager.initializePushWithUserId('user_A');
+        await pumpEventQueue();
 
-      // The upgrade guarantee. A device that has never been asked is the one
-      // an automatic request would fire on, so if an absent key changed
-      // anything at all it would change it here.
-      expect(driver.permissionRequests, 0);
-      expect(driver.identityCalls, <String>['login:user_A']);
+        // The upgrade guarantee. A device that has never been asked is the one
+        // an automatic request would fire on, so if an absent key changed
+        // anything at all it would change it here.
+        expect(driver.permissionRequests, 0);
+        expect(driver.identityCalls, <String>['login:user_A']);
 
-      // And the second cadence is silent too: with no interval configured, a
-      // device that turned the reminder down is never reminded again.
-      final PushPromptAdvice advice = await manager.pushPromptAdvice(
-        declinedAt: DateTime.now().subtract(const Duration(days: 365)),
-      );
-      expect(advice.show, isFalse);
-    });
+        // And the second cadence is silent too: with no interval configured, a
+        // device that turned the reminder down is never reminded again.
+        final PushPromptAdvice advice = await manager.pushPromptAdvice(
+          declinedAt: DateTime.now().subtract(const Duration(days: 365)),
+        );
+        expect(advice.show, isFalse);
+      },
+    );
 
-    test('a device that was never asked is asked once, and only once',
-        () async {
-      configure(NotificationManager.autoRequestOnLoginKey, true);
-      final _RecordingPushDriver driver = use(
-        _RecordingPushDriver(permission: PushPermissionState.notDetermined),
-      );
+    test(
+      'a device that was never asked is asked once, and only once',
+      () async {
+        configure(NotificationManager.autoRequestOnLoginKey, true);
+        final _RecordingPushDriver driver = use(
+          _RecordingPushDriver(permission: PushPermissionState.notDetermined),
+        );
 
-      await manager.initializePushWithUserId('user_A');
-      await pumpEventQueue();
+        await manager.initializePushWithUserId('user_A');
+        await pumpEventQueue();
 
-      expect(driver.permissionRequests, 1);
+        expect(driver.permissionRequests, 1);
 
-      // A consumer wires this to auth state, which bumps on every cold-boot
-      // restore and every team switch. Asking again on each of those is a
-      // dialog the operator already answered.
-      await manager.initializePushWithUserId('user_A');
-      await manager.want('user_B');
-      await pumpEventQueue();
+        // A consumer wires this to auth state, which bumps on every cold-boot
+        // restore and every team switch. Asking again on each of those is a
+        // dialog the operator already answered.
+        await manager.initializePushWithUserId('user_A');
+        await manager.want('user_B');
+        await pumpEventQueue();
 
-      expect(driver.permissionRequests, 1);
-    });
+        expect(driver.permissionRequests, 1);
+      },
+    );
 
-    test('a declaration made before any driver exists does not spend the ask',
-        () async {
+    test('a declaration made before any driver exists does not spend the ask', () async {
       configure(NotificationManager.autoRequestOnLoginKey, true);
 
       // The ordering a consumer's provider list actually produces, and the one
@@ -1124,8 +1121,7 @@ void main() {
       expect(driver.permissionRequests, 0);
     });
 
-    test('a device that was asked once and opted out is not asked again',
-        () async {
+    test('a device that was asked once and opted out is not asked again', () async {
       configure(NotificationManager.autoRequestOnLoginKey, true);
       final _RecordingPushDriver driver = use(
         _RecordingPushDriver(optedIn: false),
@@ -1170,21 +1166,25 @@ void main() {
       expect(driver.permissionRequests, 0);
     });
 
-    test('a permission request that throws does not take the login with it',
-        () async {
-      configure(NotificationManager.autoRequestOnLoginKey, true);
-      final _RecordingPushDriver driver = use(
-        _ThrowingRequestDriver(permission: PushPermissionState.notDetermined),
-      );
+    test(
+      'a permission request that throws does not take the login with it',
+      () async {
+        configure(NotificationManager.autoRequestOnLoginKey, true);
+        final _RecordingPushDriver driver = use(
+          _ThrowingRequestDriver(permission: PushPermissionState.notDetermined),
+        );
 
-      await expectLater(manager.initializePushWithUserId('user_A'), completes);
-      await pumpEventQueue();
+        await expectLater(
+          manager.initializePushWithUserId('user_A'),
+          completes,
+        );
+        await pumpEventQueue();
 
-      expect(driver.identityCalls, <String>['login:user_A']);
-    });
+        expect(driver.identityCalls, <String>['login:user_A']);
+      },
+    );
 
-    test('a request that threw leaves the turn for the next declaration',
-        () async {
+    test('a request that threw leaves the turn for the next declaration', () async {
       configure(NotificationManager.autoRequestOnLoginKey, true);
       final _RecordingPushDriver driver = use(
         _ThrowingRequestDriver(permission: PushPermissionState.notDetermined),
@@ -1220,8 +1220,7 @@ void main() {
     DateTime hoursAgo(int hours) =>
         DateTime.now().subtract(Duration(hours: hours));
 
-    test(
-        'a device that was never asked may be reminded, and the reminder can '
+    test('a device that was never asked may be reminded, and the reminder can '
         'raise the OS prompt', () async {
       use(_RecordingPushDriver(permission: PushPermissionState.notDetermined));
 
@@ -1232,8 +1231,7 @@ void main() {
       expect(advice.action, PushPromptAction.request);
     });
 
-    test(
-        'a reachability read that throws answers unavailable rather than '
+    test('a reachability read that throws answers unavailable rather than '
         'taking the caller down with it', () async {
       use(_ThrowingReachabilityDriver());
 
@@ -1253,35 +1251,42 @@ void main() {
       use(_RecordingPushDriver(permission: PushPermissionState.notDetermined));
 
       // Before: the operator said no eleven hours ago and meant it.
-      expect((await manager.pushPromptAdvice(declinedAt: hoursAgo(11))).show,
-          isFalse);
+      expect(
+        (await manager.pushPromptAdvice(declinedAt: hoursAgo(11))).show,
+        isFalse,
+      );
 
       // At: a full interval has passed, so the reminder is due.
-      expect((await manager.pushPromptAdvice(declinedAt: hoursAgo(24))).show,
-          isTrue);
+      expect(
+        (await manager.pushPromptAdvice(declinedAt: hoursAgo(24))).show,
+        isTrue,
+      );
 
       // After.
-      expect((await manager.pushPromptAdvice(declinedAt: hoursAgo(48))).show,
-          isTrue);
+      expect(
+        (await manager.pushPromptAdvice(declinedAt: hoursAgo(48))).show,
+        isTrue,
+      );
     });
 
     test('with no interval configured a decline is permanent', () async {
       use(_RecordingPushDriver(permission: PushPermissionState.notDetermined));
 
       expect(
-          (await manager.pushPromptAdvice(declinedAt: hoursAgo(24 * 365))).show,
-          isFalse);
+        (await manager.pushPromptAdvice(declinedAt: hoursAgo(24 * 365))).show,
+        isFalse,
+      );
 
       // Explicit zero reads the same as absent, so an app can turn the cadence
       // back off without deleting the key.
       configure(NotificationManager.repromptAfterHoursKey, 0);
       expect(
-          (await manager.pushPromptAdvice(declinedAt: hoursAgo(24 * 365))).show,
-          isFalse);
+        (await manager.pushPromptAdvice(declinedAt: hoursAgo(24 * 365))).show,
+        isFalse,
+      );
     });
 
-    test(
-        'a blocked device is reminded too, and its action is the settings '
+    test('a blocked device is reminded too, and its action is the settings '
         'page when the platform has one', () async {
       configure(NotificationManager.repromptAfterHoursKey, 24);
       use(
@@ -1309,8 +1314,7 @@ void main() {
       );
     });
 
-    test(
-        'a blocked device on a platform with no settings route can only be '
+    test('a blocked device on a platform with no settings route can only be '
         'told where the switch is', () async {
       use(_RecordingPushDriver(permission: PushPermissionState.denied));
 
@@ -1335,14 +1339,16 @@ void main() {
       expect(advice.show, isFalse);
     });
 
-    test('a build with no push driver has nothing to remind anybody about',
-        () async {
-      final PushPromptAdvice advice = await manager.pushPromptAdvice();
+    test(
+      'a build with no push driver has nothing to remind anybody about',
+      () async {
+        final PushPromptAdvice advice = await manager.pushPromptAdvice();
 
-      expect(advice.reachability, PushReachability.unavailable);
-      expect(advice.action, PushPromptAction.none);
-      expect(advice.show, isFalse);
-    });
+        expect(advice.reachability, PushReachability.unavailable);
+        expect(advice.action, PushPromptAction.none);
+        expect(advice.show, isFalse);
+      },
+    );
 
     test('the host can switch the reminder off entirely', () async {
       configure('notifications.soft_prompt.enabled', false);
@@ -1357,27 +1363,31 @@ void main() {
       expect(advice.action, PushPromptAction.request);
     });
 
-    test('a decline timestamp in the future is not a licence to ask now',
-        () async {
-      configure(NotificationManager.repromptAfterHoursKey, 24);
-      use(_RecordingPushDriver(permission: PushPermissionState.notDetermined));
+    test(
+      'a decline timestamp in the future is not a licence to ask now',
+      () async {
+        configure(NotificationManager.repromptAfterHoursKey, 24);
+        use(
+          _RecordingPushDriver(permission: PushPermissionState.notDetermined),
+        );
 
-      // A device whose clock is ahead, or a timestamp written by a server in
-      // another timezone: the elapsed time is negative, which is not an
-      // interval that has passed.
-      expect(
-        (await manager.pushPromptAdvice(declinedAt: hoursAgo(-48))).show,
-        isFalse,
-      );
-    });
+        // A device whose clock is ahead, or a timestamp written by a server in
+        // another timezone: the elapsed time is negative, which is not an
+        // interval that has passed.
+        expect(
+          (await manager.pushPromptAdvice(declinedAt: hoursAgo(-48))).show,
+          isFalse,
+        );
+      },
+    );
   });
 
   group('the delivery snapshot', () {
     test('reports the address and the reachability a server needs', () async {
       use(_RecordingPushDriver(subscribedAs: 'user_A'));
 
-      final PushDeliverySnapshot snapshot =
-          await manager.pushDeliverySnapshot();
+      final PushDeliverySnapshot snapshot = await manager
+          .pushDeliverySnapshot();
 
       expect(snapshot.externalId, 'user_A');
       expect(snapshot.subscriptionId, 'sub-1');
@@ -1393,8 +1403,8 @@ void main() {
         ),
       );
 
-      final PushDeliverySnapshot snapshot =
-          await manager.pushDeliverySnapshot();
+      final PushDeliverySnapshot snapshot = await manager
+          .pushDeliverySnapshot();
 
       expect(snapshot.reachability, PushReachability.blocked);
       expect(snapshot.canReceive, isFalse);
@@ -1403,8 +1413,8 @@ void main() {
     test('a permitted device holding no subscription reports it', () async {
       use(_RecordingPushDriver(subscribedAs: 'user_A', subscriptionId: null));
 
-      final PushDeliverySnapshot snapshot =
-          await manager.pushDeliverySnapshot();
+      final PushDeliverySnapshot snapshot = await manager
+          .pushDeliverySnapshot();
 
       // The subtlest un-pageable state: permitted, opted in, and with no
       // address to deliver to. A server reading only the permission would page
@@ -1414,25 +1424,26 @@ void main() {
       expect(snapshot.canReceive, isFalse);
     });
 
-    test('a build with no push driver reports unavailable rather than throwing',
-        () async {
-      final PushDeliverySnapshot snapshot =
-          await manager.pushDeliverySnapshot();
+    test(
+      'a build with no push driver reports unavailable rather than throwing',
+      () async {
+        final PushDeliverySnapshot snapshot = await manager
+            .pushDeliverySnapshot();
 
-      expect(snapshot.reachability, PushReachability.unavailable);
-      expect(snapshot.externalId, isNull);
-      expect(snapshot.subscriptionId, isNull);
-    });
+        expect(snapshot.reachability, PushReachability.unavailable);
+        expect(snapshot.externalId, isNull);
+        expect(snapshot.subscriptionId, isNull);
+      },
+    );
 
-    test('a platform read that throws reports un-pageable, not an exception',
-        () async {
+    test('a platform read that throws reports un-pageable, not an exception', () async {
       use(_RecordingPushDriver(failRead: true));
 
       // The consumer posts this from a lifecycle path. A throw would take that
       // path down, and claiming reachable on a read that failed would leave an
       // escalation waiting on a device nobody can prove is there.
-      final PushDeliverySnapshot snapshot =
-          await manager.pushDeliverySnapshot();
+      final PushDeliverySnapshot snapshot = await manager
+          .pushDeliverySnapshot();
 
       expect(snapshot.canReceive, isFalse);
       expect(snapshot.reachability, PushReachability.unavailable);
@@ -1459,16 +1470,13 @@ void main() {
     PushUserAttributes? describe(String externalId) {
       return switch (externalId) {
         'user_A' => const PushUserAttributes(
-            email: 'ada@example.com',
-            tags: <String, String>{
-              'first_name': 'Ada',
-              'last_name': 'Lovelace',
-            },
-          ),
+          email: 'ada@example.com',
+          tags: <String, String>{'first_name': 'Ada', 'last_name': 'Lovelace'},
+        ),
         'user_B' => const PushUserAttributes(
-            email: 'grace@example.com',
-            tags: <String, String>{'first_name': 'Grace'},
-          ),
+          email: 'grace@example.com',
+          tags: <String, String>{'first_name': 'Grace'},
+        ),
         _ => null,
       };
     }
@@ -1487,8 +1495,7 @@ void main() {
       });
     });
 
-    test('an account switch leaves nothing of the previous person behind',
-        () async {
+    test('an account switch leaves nothing of the previous person behind', () async {
       optInToSharing();
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
       manager.describePushUserUsing(describe);
@@ -1518,33 +1525,34 @@ void main() {
       );
     });
 
-    test('a sign-out detaches the email and the tags before it logs out',
-        () async {
-      optInToSharing();
-      final _RecordingPushDriver driver = use(_RecordingPushDriver());
-      manager.describePushUserUsing(describe);
+    test(
+      'a sign-out detaches the email and the tags before it logs out',
+      () async {
+        optInToSharing();
+        final _RecordingPushDriver driver = use(_RecordingPushDriver());
+        manager.describePushUserUsing(describe);
 
-      await manager.initializePushWithUserId('user_A');
-      driver.calls.clear();
+        await manager.initializePushWithUserId('user_A');
+        driver.calls.clear();
 
-      await manager.logoutPush();
+        await manager.logoutPush();
 
-      expect(driver.emails, isEmpty);
-      expect(driver.tags, isEmpty);
+        expect(driver.emails, isEmpty);
+        expect(driver.tags, isEmpty);
 
-      // Before the logout, because a write made after it lands on the
-      // device-scoped user the SDK creates, and the operations of a
-      // device-scoped user are applied to the next user login CREATES.
-      final int logout = driver.orderedCalls.indexOf('logout');
-      expect(logout, greaterThanOrEqualTo(0));
-      expect(
-        driver.orderedCalls.indexOf('removeEmail:ada@example.com'),
-        inExclusiveRange(-1, logout),
-      );
-    });
+        // Before the logout, because a write made after it lands on the
+        // device-scoped user the SDK creates, and the operations of a
+        // device-scoped user are applied to the next user login CREATES.
+        final int logout = driver.orderedCalls.indexOf('logout');
+        expect(logout, greaterThanOrEqualTo(0));
+        expect(
+          driver.orderedCalls.indexOf('removeEmail:ada@example.com'),
+          inExclusiveRange(-1, logout),
+        );
+      },
+    );
 
-    test('the description is registered once and serves every later login',
-        () async {
+    test('the description is registered once and serves every later login', () async {
       optInToSharing();
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
       manager.describePushUserUsing(describe);
@@ -1564,35 +1572,39 @@ void main() {
       });
     });
 
-    test('a device already carrying the intent still gets its attributes',
-        () async {
-      optInToSharing();
-      final _RecordingPushDriver driver = use(
-        _RecordingPushDriver(subscribedAs: 'user_A'),
-      );
-      manager.describePushUserUsing(describe);
+    test(
+      'a device already carrying the intent still gets its attributes',
+      () async {
+        optInToSharing();
+        final _RecordingPushDriver driver = use(
+          _RecordingPushDriver(subscribedAs: 'user_A'),
+        );
+        manager.describePushUserUsing(describe);
 
-      await manager.initializePushWithUserId('user_A');
+        await manager.initializePushWithUserId('user_A');
 
-      // A cold boot onto a device the SDK already has logged in issues no
-      // identity call at all, and the attributes still have to land: nothing
-      // in this process has written them yet.
-      expect(driver.identityCalls, isEmpty);
-      expect(driver.emails, <String>{'ada@example.com'});
-    });
+        // A cold boot onto a device the SDK already has logged in issues no
+        // identity call at all, and the attributes still have to land: nothing
+        // in this process has written them yet.
+        expect(driver.identityCalls, isEmpty);
+        expect(driver.emails, <String>{'ada@example.com'});
+      },
+    );
 
-    test('a host that describes nothing behaves exactly as it does today',
-        () async {
-      optInToSharing();
-      final _RecordingPushDriver driver = use(_RecordingPushDriver());
+    test(
+      'a host that describes nothing behaves exactly as it does today',
+      () async {
+        optInToSharing();
+        final _RecordingPushDriver driver = use(_RecordingPushDriver());
 
-      await manager.initializePushWithUserId('user_A');
-      await manager.logoutPush();
+        await manager.initializePushWithUserId('user_A');
+        await manager.logoutPush();
 
-      expect(driver.orderedCalls, <String>['login:user_A', 'logout']);
-      expect(driver.tags, isEmpty);
-      expect(driver.emails, isEmpty);
-    });
+        expect(driver.orderedCalls, <String>['login:user_A', 'logout']);
+        expect(driver.tags, isEmpty);
+        expect(driver.emails, isEmpty);
+      },
+    );
 
     test('nothing is sent until the deployment opts in', () async {
       final _RecordingPushDriver driver = use(_RecordingPushDriver());
@@ -1608,8 +1620,7 @@ void main() {
       expect(driver.tags, isEmpty);
     });
 
-    test('an attribute write that fails leaves the identity converged',
-        () async {
+    test('an attribute write that fails leaves the identity converged', () async {
       optInToSharing();
       final _RecordingPushDriver driver = use(_ThrowingTagDriver());
       manager.describePushUserUsing(describe);

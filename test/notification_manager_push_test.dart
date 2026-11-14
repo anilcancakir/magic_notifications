@@ -11,10 +11,7 @@ void main() {
 
   group('NotificationManager - Push', () {
     test('pushDriver throws if not configured', () {
-      expect(
-        () => manager.pushDriver,
-        throwsA(isA<NotificationException>()),
-      );
+      expect(() => manager.pushDriver, throwsA(isA<NotificationException>()));
     });
 
     test('setPushDriver() configures driver', () {
@@ -38,10 +35,9 @@ void main() {
       final driver = MockPushDriver();
       manager.setPushDriver(driver);
 
-      await manager.initializePush(
-        {'app_id': 'test-123'},
-        externalId: 'user-123',
-      );
+      await manager.initializePush({
+        'app_id': 'test-123',
+      }, externalId: 'user-123');
 
       expect(driver.initialized, isTrue);
       expect(driver.loggedInAs, 'user-123');
@@ -58,31 +54,35 @@ void main() {
       expect(result, isTrue);
     });
 
-    test('initializePushWithUserId() records the intent with no driver',
-        () async {
-      // A build with push absent still has a person signed in, and the intent
-      // is what the boot that DOES have a driver reconciles against, so this
-      // records rather than throws.
-      await expectLater(
-        manager.initializePushWithUserId('user-123'),
-        completes,
-      );
+    test(
+      'initializePushWithUserId() records the intent with no driver',
+      () async {
+        // A build with push absent still has a person signed in, and the intent
+        // is what the boot that DOES have a driver reconciles against, so this
+        // records rather than throws.
+        await expectLater(
+          manager.initializePushWithUserId('user-123'),
+          completes,
+        );
 
-      expect(manager.pushIntent, 'user-123');
-      expect(manager.isPushIdentityConverged, isFalse);
-    });
+        expect(manager.pushIntent, 'user-123');
+        expect(manager.isPushIdentityConverged, isFalse);
+      },
+    );
 
-    test('initializePushWithUserId() logs in user when driver configured',
-        () async {
-      final driver = MockPushDriver();
-      manager.setPushDriver(driver);
-      // Initialize the driver first (as boot() would do)
-      await driver.initialize({'app_id': 'test'});
+    test(
+      'initializePushWithUserId() logs in user when driver configured',
+      () async {
+        final driver = MockPushDriver();
+        manager.setPushDriver(driver);
+        // Initialize the driver first (as boot() would do)
+        await driver.initialize({'app_id': 'test'});
 
-      await manager.initializePushWithUserId('user-456');
+        await manager.initializePushWithUserId('user-456');
 
-      expect(driver.loggedInAs, 'user-456');
-    });
+        expect(driver.loggedInAs, 'user-456');
+      },
+    );
   });
 }
 

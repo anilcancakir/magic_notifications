@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_notifications/src/cli/commands/uninstall_command.dart';
 import 'package:test/test.dart';
 
@@ -31,12 +31,11 @@ class _TestUninstallCommand extends UninstallCommand {
   bool confirmRemoval() => true;
 }
 
-/// Builds an [ArtisanContext] running the uninstall with `--force`.
-ArtisanContext _ctx(_TestUninstallCommand cmd) => ArtisanContext.bare(
-      MapInput(<String, dynamic>{'force': true},
-          signature: cmd.parsedSignature),
-      BufferedOutput(),
-    );
+/// Builds an [DowelContext] running the uninstall with `--force`.
+DowelContext _ctx(_TestUninstallCommand cmd) => DowelContext.bare(
+  MapInput(<String, dynamic>{'force': true}, signature: cmd.parsedSignature),
+  BufferedOutput(),
+);
 
 /// Writes a project whose config declares [getter] and whose `main.dart`
 /// imports the config with [importLine] and names [getter] in a factory.
@@ -116,12 +115,16 @@ void main() {
       expect(
         main,
         isNot(contains('notificationsConfig')),
-        reason: 'the factory names the getter the config declared, not the '
+        reason:
+            'the factory names the getter the config declared, not the '
             "stub's name, and uninstall has to match on that",
       );
       expect(main, isNot(contains('config/notifications.dart')));
-      expect(main, contains('() => appConfig,'),
-          reason: 'unrelated factories survive');
+      expect(
+        main,
+        contains('() => appConfig,'),
+        reason: 'unrelated factories survive',
+      );
     });
 
     test('removes a package: spelled import of the config', () async {
@@ -152,7 +155,8 @@ void main() {
       expect(
         File(mainPath).readAsStringSync(),
         before,
-        reason: 'nothing on disk names the getter, and a guessed match would '
+        reason:
+            'nothing on disk names the getter, and a guessed match would '
             'delete a line the project still needs',
       );
       expect(
@@ -162,23 +166,28 @@ void main() {
       );
     });
 
-    test('leaves main.dart untouched when the config declares no getter',
-        () async {
-      _writeWiredProject(tempDir, 'notificationsConfig');
-      File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
-        '// Hand-rolled: this file declares nothing the CLI can name.\n'
-        'const int placeholder = 1;\n',
-      );
-      final mainPath = '${tempDir.path}/lib/main.dart';
-      final before = File(mainPath).readAsStringSync();
-      final command = _TestUninstallCommand(tempDir.path);
+    test(
+      'leaves main.dart untouched when the config declares no getter',
+      () async {
+        _writeWiredProject(tempDir, 'notificationsConfig');
+        File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
+          '// Hand-rolled: this file declares nothing the CLI can name.\n'
+          'const int placeholder = 1;\n',
+        );
+        final mainPath = '${tempDir.path}/lib/main.dart';
+        final before = File(mainPath).readAsStringSync();
+        final command = _TestUninstallCommand(tempDir.path);
 
-      final ctx = _ctx(command);
-      await command.handle(ctx);
+        final ctx = _ctx(command);
+        await command.handle(ctx);
 
-      expect(File(mainPath).readAsStringSync(), before);
-      expect((ctx.output as BufferedOutput).content, contains('lib/main.dart'));
-    });
+        expect(File(mainPath).readAsStringSync(), before);
+        expect(
+          (ctx.output as BufferedOutput).content,
+          contains('lib/main.dart'),
+        );
+      },
+    );
 
     test('a commented-out declaration does not count as the getter', () async {
       _writeWiredProject(tempDir, 'notificationsConfig');

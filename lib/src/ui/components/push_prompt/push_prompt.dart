@@ -2,7 +2,7 @@ import 'dart:async' show StreamSubscription, unawaited;
 
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
-import 'package:flutter/material.dart' show Icons;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -126,19 +126,19 @@ class PushPrompt extends StatelessWidget {
   /// this platform can route the tap back), while [action] decides what the
   /// body offers.
   String get _state => switch (reachability) {
-        PushReachability.unavailable => kPushPromptStateUnavailable,
-        PushReachability.blocked => kPushPromptStateBlocked,
-        PushReachability.on => kPushPromptStateOn,
-        PushReachability.off => kPushPromptStateAsk,
-      };
+    PushReachability.unavailable => kPushPromptStateUnavailable,
+    PushReachability.blocked => kPushPromptStateBlocked,
+    PushReachability.on => kPushPromptStateOn,
+    PushReachability.off => kPushPromptStateAsk,
+  };
 
   /// The glyph for the current presentation.
   IconData get _icon => switch (reachability) {
-        PushReachability.unavailable => _blockedIcon,
-        PushReachability.blocked => _blockedIcon,
-        PushReachability.on => _onIcon,
-        PushReachability.off => _askIcon,
-      };
+    PushReachability.unavailable => _blockedIcon,
+    PushReachability.blocked => _blockedIcon,
+    PushReachability.on => _onIcon,
+    PushReachability.off => _askIcon,
+  };
 
   /// Where the user has to go to unblock notifications.
   ///
@@ -149,9 +149,9 @@ class PushPrompt extends StatelessWidget {
     if (kIsWeb) return trans('notifications.push_prompt.blocked_body_web');
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.iOS ||
-      TargetPlatform.macOS =>
-        trans('notifications.push_prompt.blocked_body_ios'),
+      TargetPlatform.iOS || TargetPlatform.macOS => trans(
+        'notifications.push_prompt.blocked_body_ios',
+      ),
       _ => trans('notifications.push_prompt.blocked_body_android'),
     };
   }
@@ -161,9 +161,7 @@ class PushPrompt extends StatelessWidget {
     final String state = _state;
 
     return WDiv(
-      className: pushPromptRecipe(
-        variants: {kPushPromptStateAxis: state},
-      ),
+      className: pushPromptRecipe(variants: {kPushPromptStateAxis: state}),
       children: [
         WDiv(
           className: pushPromptTileRecipe(
@@ -192,45 +190,39 @@ class PushPrompt extends StatelessWidget {
   List<Widget> _buildBody() {
     return switch (action) {
       PushPromptAction.none when reachability == PushReachability.on => [
-          _buildLine(trans('notifications.push_prompt.on_body')),
-        ],
+        _buildLine(trans('notifications.push_prompt.on_body')),
+      ],
       PushPromptAction.none => [
-          _buildLine(trans('notifications.push_prompt.unavailable_body')),
-        ],
+        _buildLine(trans('notifications.push_prompt.unavailable_body')),
+      ],
       // The OS prompt is spent, but this platform can open the app's own
       // notification settings page, so the row is a control again.
       PushPromptAction.openSettings => [
-          _buildTitle(trans('notifications.push_prompt.blocked_title')),
-          _buildLine(trans('notifications.push_prompt.blocked_body_settings')),
-          WDiv(
-            className: pushPromptActionsClassName,
-            children: [_buildEnable()],
-          ),
-        ],
+        _buildTitle(trans('notifications.push_prompt.blocked_title')),
+        _buildLine(trans('notifications.push_prompt.blocked_body_settings')),
+        WDiv(className: pushPromptActionsClassName, children: [_buildEnable()]),
+      ],
       // Nowhere to send a tap. A control here would silently do nothing, so
       // the row says where the switch actually lives instead.
       PushPromptAction.instructions => [
-          _buildTitle(trans('notifications.push_prompt.blocked_title')),
-          WDiv(
-            key: blockedInstructionKey,
-            child: _buildLine(_blockedInstruction),
-          ),
-        ],
+        _buildTitle(trans('notifications.push_prompt.blocked_title')),
+        WDiv(
+          key: blockedInstructionKey,
+          child: _buildLine(_blockedInstruction),
+        ),
+      ],
       PushPromptAction.request when declined => [
-          _buildLine(trans('notifications.push_prompt.declined_body')),
-          WDiv(
-            className: pushPromptActionsClassName,
-            children: [_buildEnable()],
-          ),
-        ],
+        _buildLine(trans('notifications.push_prompt.declined_body')),
+        WDiv(className: pushPromptActionsClassName, children: [_buildEnable()]),
+      ],
       PushPromptAction.request => [
-          _buildTitle(trans('notifications.push_prompt.ask_title')),
-          _buildLine(trans('notifications.push_prompt.ask_body')),
-          WDiv(
-            className: pushPromptActionsClassName,
-            children: [_buildEnable(), _buildDecline()],
-          ),
-        ],
+        _buildTitle(trans('notifications.push_prompt.ask_title')),
+        _buildLine(trans('notifications.push_prompt.ask_body')),
+        WDiv(
+          className: pushPromptActionsClassName,
+          children: [_buildEnable(), _buildDecline()],
+        ),
+      ],
     };
   }
 
@@ -561,10 +553,7 @@ class _PushPromptHostState extends State<PushPromptHost> {
   /// Writes [at] to this device, answering whether it landed.
   Future<bool> _persistDeclinedAt(DateTime at) async {
     try {
-      await Vault.put(
-        widget.declinedVaultKey,
-        at.toUtc().toIso8601String(),
-      );
+      await Vault.put(widget.declinedVaultKey, at.toUtc().toIso8601String());
 
       return true;
     } catch (error) {

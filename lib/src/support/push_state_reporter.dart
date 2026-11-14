@@ -279,9 +279,10 @@ class PushStateReporter {
     if (!Auth.check()) return;
 
     try {
-      final PushDeliverySnapshot snapshot =
-          await _manager.pushDeliverySnapshot();
-      final String state = '${snapshot.reachability.name}'
+      final PushDeliverySnapshot snapshot = await _manager
+          .pushDeliverySnapshot();
+      final String state =
+          '${snapshot.reachability.name}'
           '|${snapshot.externalId ?? ''}'
           '|${snapshot.subscriptionId ?? ''}';
 
@@ -320,8 +321,8 @@ class PushStateReporter {
     try {
       // 2. Which device this is. The manager's read answers `unavailable` with
       //    no ids for a driver that throws rather than failing the sign-out.
-      final PushDeliverySnapshot snapshot =
-          await _manager.pushDeliverySnapshot();
+      final PushDeliverySnapshot snapshot = await _manager
+          .pushDeliverySnapshot();
       final String? subscriptionId =
           snapshot.subscriptionId ?? _reportedSubscriptionId;
       if (subscriptionId == null) return;
@@ -329,9 +330,7 @@ class PushStateReporter {
 
       final MagicResponse response = await Http.post(
         path,
-        data: <String, dynamic>{
-          'subscription_id': subscriptionId,
-        },
+        data: <String, dynamic>{'subscription_id': subscriptionId},
       );
 
       if (!response.successful) {
@@ -390,15 +389,13 @@ class PushStateReporter {
 
     _identityChanges = driver.onIdentityChanged.listen(
       (PushIdentityChange _) => unawaited(_report()),
-      onError: (Object error) => NotificationLog.error(
-        'Push identity stream failed: $error',
-      ),
+      onError: (Object error) =>
+          NotificationLog.error('Push identity stream failed: $error'),
     );
     _permissionChanges = driver.onPermissionChanged.listen(
       (PushPermissionState _) => unawaited(_report()),
-      onError: (Object error) => NotificationLog.error(
-        'Push permission stream failed: $error',
-      ),
+      onError: (Object error) =>
+          NotificationLog.error('Push permission stream failed: $error'),
     );
   }
 

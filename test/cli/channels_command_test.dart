@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:magic_notifications/src/cli/commands/channels_command.dart';
 
@@ -16,8 +17,9 @@ void main() {
   late String projectRoot;
 
   setUp(() async {
-    tempDir =
-        await Directory.systemTemp.createTemp('magic_notifications_test_');
+    tempDir = await Directory.systemTemp.createTemp(
+      'magic_notifications_test_',
+    );
     projectRoot = tempDir.path;
     await Directory('${tempDir.path}/lib/config').create(recursive: true);
   });

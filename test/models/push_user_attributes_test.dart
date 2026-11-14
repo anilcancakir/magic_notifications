@@ -42,34 +42,42 @@ void main() {
       expect(first.hashCode, second.hashCode);
     });
 
-    test('a changed value, a changed key set and a changed email all differ',
-        () {
-      const PushUserAttributes base = PushUserAttributes(
-        email: 'ada@example.com',
-        tags: <String, String>{'first_name': 'Ada'},
-      );
-
-      expect(
-        base,
-        isNot(const PushUserAttributes(
+    test(
+      'a changed value, a changed key set and a changed email all differ',
+      () {
+        const PushUserAttributes base = PushUserAttributes(
           email: 'ada@example.com',
-          tags: <String, String>{'first_name': 'Grace'},
-        )),
-      );
-      expect(
-        base,
-        isNot(const PushUserAttributes(
-          email: 'ada@example.com',
-          tags: <String, String>{'first_name': 'Ada', 'locale': 'en'},
-        )),
-      );
-      expect(
-        base,
-        isNot(const PushUserAttributes(
-          email: 'grace@example.com',
           tags: <String, String>{'first_name': 'Ada'},
-        )),
-      );
-    });
+        );
+
+        expect(
+          base,
+          isNot(
+            const PushUserAttributes(
+              email: 'ada@example.com',
+              tags: <String, String>{'first_name': 'Grace'},
+            ),
+          ),
+        );
+        expect(
+          base,
+          isNot(
+            const PushUserAttributes(
+              email: 'ada@example.com',
+              tags: <String, String>{'first_name': 'Ada', 'locale': 'en'},
+            ),
+          ),
+        );
+        expect(
+          base,
+          isNot(
+            const PushUserAttributes(
+              email: 'grace@example.com',
+              tags: <String, String>{'first_name': 'Ada'},
+            ),
+          ),
+        );
+      },
+    );
   });
 }

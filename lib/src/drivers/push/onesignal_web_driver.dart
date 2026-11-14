@@ -435,8 +435,9 @@ class OneSignalWebDriver extends PushDriver {
     String? serviceWorkerPath,
     String? serviceWorkerScope,
   }) {
-    final safariLine =
-        safariWebId != null ? '\n      safari_web_id: "$safariWebId",' : '';
+    final safariLine = safariWebId != null
+        ? '\n      safari_web_id: "$safariWebId",'
+        : '';
     // A Flutter build owns the root scope with its own service worker, so the
     // OneSignal worker needs its own path and scope to avoid the collision.
     final workerPathLine = serviceWorkerPath != null
@@ -475,10 +476,9 @@ class OneSignalWebDriver extends PushDriver {
   }) {
     return {
       'app_id': appId,
-      if (safariWebId != null) 'safari_web_id': safariWebId,
-      if (serviceWorkerPath != null) 'service_worker_path': serviceWorkerPath,
-      if (serviceWorkerScope != null)
-        'service_worker_scope': serviceWorkerScope,
+      'safari_web_id': ?safariWebId,
+      'service_worker_path': ?serviceWorkerPath,
+      'service_worker_scope': ?serviceWorkerScope,
       'notify_button_enabled': notifyButtonEnabled,
     };
   }

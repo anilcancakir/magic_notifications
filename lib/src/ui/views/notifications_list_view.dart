@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart'
+    show Icons, CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -94,8 +95,12 @@ class NotificationsListView
   State<NotificationsListView> createState() => _NotificationsListViewState();
 }
 
-class _NotificationsListViewState extends MagicStatefulViewState<
-    NotificationsListController, NotificationsListView> {
+class _NotificationsListViewState
+    extends
+        MagicStatefulViewState<
+          NotificationsListController,
+          NotificationsListView
+        > {
   /// The card shell every section renders in.
   ///
   /// Full-bleed (`overflow-hidden`, no body padding) because the rows span edge
@@ -198,9 +203,9 @@ class _NotificationsListViewState extends MagicStatefulViewState<
               WDiv(
                 className: 'mt-6 flex flex-col gap-6',
                 children: [
-                  if (headerSlot != null) headerSlot,
+                  ?headerSlot,
                   _buildBody(context, notifications, totalPages),
-                  if (footerSlot != null) footerSlot,
+                  ?footerSlot,
                 ],
               ),
             ],
@@ -221,9 +226,7 @@ class _NotificationsListViewState extends MagicStatefulViewState<
   Widget _buildHeader(BuildContext context, {required bool hasUnread}) {
     final String title = trans('notifications.title');
     final String subtitle = trans('notifications.list_subtitle');
-    final List<Widget> actions = [
-      if (hasUnread) _buildMarkAllReadButton(),
-    ];
+    final List<Widget> actions = [if (hasUnread) _buildMarkAllReadButton()];
 
     final NotificationsPageHeaderBuilder? headerBuilder = widget.headerBuilder;
     if (headerBuilder != null) {
@@ -243,14 +246,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
         WDiv(
           className: 'flex flex-col gap-1 flex-initial min-w-0',
           children: [
-            WText(
-              title,
-              className: 'text-2xl font-semibold text-fg',
-            ),
-            WText(
-              subtitle,
-              className: 'text-sm text-fg-muted',
-            ),
+            WText(title, className: 'text-2xl font-semibold text-fg'),
+            WText(subtitle, className: 'text-sm text-fg-muted'),
           ],
         ),
         ...actions,
@@ -271,7 +268,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
         }
         controller.refresh();
       },
-      className: 'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
+      className:
+          'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
           'text-white font-medium text-sm',
       child: WText(
         trans('notifications.mark_all_read'),
@@ -287,7 +285,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
   ) {
     if (controller.isLoading && notifications.isEmpty) {
       return const WDiv(
-        className: 'w-full bg-surface-container border border-color-border '
+        className:
+            'w-full bg-surface-container border border-color-border '
             'rounded-2xl p-6 flex items-center justify-center',
         child: CircularProgressIndicator(),
       );
@@ -336,7 +335,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
   /// answer in the first place.
   Widget _buildPlaceholder({required IconData icon, required String message}) {
     return WDiv(
-      className: 'w-full bg-surface-container border border-color-border '
+      className:
+          'w-full bg-surface-container border border-color-border '
           'rounded-2xl p-6 flex flex-col gap-4',
       // `w-full` is what centres it: the card is a column, which hands a child
       // its width only as a maximum, so without it this column shrank to its
@@ -361,7 +361,7 @@ class _NotificationsListViewState extends MagicStatefulViewState<
     // falls back to one neutral bell.
     final Widget leadingIcon =
         Notify.view.buildTypeIcon(notification.type, context) ??
-            WIcon(_defaultNotificationIcon, className: 'text-xl text-fg-muted');
+        WIcon(_defaultNotificationIcon, className: 'text-xl text-fg-muted');
 
     return WAnchor(
       onTap: () async {
@@ -387,11 +387,13 @@ class _NotificationsListViewState extends MagicStatefulViewState<
         }
       },
       child: WDiv(
-        className: 'px-6 py-4 flex flex-row items-center gap-4 '
+        className:
+            'px-6 py-4 flex flex-row items-center gap-4 '
             'border-b border-color-border-subtle hover:bg-surface-container',
         children: [
           WDiv(
-            className: 'w-10 h-10 rounded-full bg-surface-container-high '
+            className:
+                'w-10 h-10 rounded-full bg-surface-container-high '
                 'flex items-center justify-center flex-shrink-0',
             child: leadingIcon,
           ),
@@ -463,15 +465,13 @@ class _NotificationsListViewState extends MagicStatefulViewState<
                 }
               },
               child: WDiv(
-                className:
-                    'p-2 ml-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
+                className: 'p-2 ml-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20',
                 child: WIcon(
                   Icons.delete_outline,
                   // The hover tone needs its `dark:` peer like every other
                   // colour token: `red-500` was written alone, so dark mode
                   // hovered to a red tuned for a white background.
-                  className:
-                      'text-lg text-fg-muted hover:text-red-500 dark:hover:text-red-400',
+                  className: 'text-lg text-fg-muted hover:text-red-500 dark:hover:text-red-400',
                 ),
               ),
             ),
@@ -491,7 +491,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
               ? () => controller.loadPage(currentPage - 1)
               : null,
           disabled: currentPage <= 1,
-          className: 'px-3 py-2 rounded-lg bg-surface-container-high '
+          className:
+              'px-3 py-2 rounded-lg bg-surface-container-high '
               'border border-color-border disabled:opacity-50',
           child: WIcon(Icons.chevron_left, className: 'text-fg-muted'),
         ),
@@ -507,7 +508,8 @@ class _NotificationsListViewState extends MagicStatefulViewState<
               ? () => controller.loadPage(currentPage + 1)
               : null,
           disabled: currentPage >= totalPages,
-          className: 'px-3 py-2 rounded-lg bg-surface-container-high '
+          className:
+              'px-3 py-2 rounded-lg bg-surface-container-high '
               'border border-color-border disabled:opacity-50',
           child: WIcon(Icons.chevron_right, className: 'text-fg-muted'),
         ),

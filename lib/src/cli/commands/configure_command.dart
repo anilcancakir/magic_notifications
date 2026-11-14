@@ -1,17 +1,18 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 
 /// CLI command for reading and updating Magic Notifications configuration.
 ///
 /// Supports displaying the current config (--show) and mutating individual
 /// fields via named options. All file I/O is delegated to [FileHelper] so that
 /// tests can safely intercept by overriding [getProjectRoot].
-class ConfigureCommand extends ArtisanCommand {
+class ConfigureCommand extends DowelCommand {
   @override
-  String get signature => 'notifications:configure '
+  String get signature =>
+      'notifications:configure '
       '{--show : Show current configuration} '
       '{--app-id= : Update OneSignal App ID} '
       '{--polling-interval= : Update polling interval (seconds, 5-600)} '
@@ -39,15 +40,17 @@ class ConfigureCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     // Check if config exists before proceeding with any operation.
     if (!configExists()) {
       ctx.output.error('Configuration file not found');
       ctx.output.info(
-          'Run installation first: dart run <app>:artisan notifications:install');
+        'Run installation first: dart run magic:dowel notifications:install',
+      );
       return 1;
     }
 
@@ -121,7 +124,7 @@ class ConfigureCommand extends ArtisanCommand {
   }
 
   /// Print a formatted summary of the current config values.
-  void _showConfig(ArtisanContext ctx) {
+  void _showConfig(DowelContext ctx) {
     try {
       final config = readCurrentConfig();
 
@@ -178,14 +181,12 @@ class ConfigureCommand extends ArtisanCommand {
 
     // 3. Extract database.polling_interval and database.enabled.
     // Matches: 'polling_interval': 30
-    final pollingMatch = RegExp(
-      r"'polling_interval':\s*(\d+)",
-    ).firstMatch(content);
+    final pollingMatch = RegExp(r"'polling_interval':\s*(\d+)")
+        .firstMatch(content);
 
     // Matches: 'enabled': true|false within the database section specifically.
-    final dbEnabledMatch = RegExp(
-      r"'enabled':\s*(true|false)",
-    ).firstMatch(content.substring(content.indexOf("'database'")));
+    final dbEnabledMatch = RegExp(r"'enabled':\s*(true|false)")
+        .firstMatch(content.substring(content.indexOf("'database'")));
 
     if (pollingMatch != null || dbEnabledMatch != null) {
       config['database'] = {

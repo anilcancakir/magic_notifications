@@ -62,7 +62,9 @@ void main() {
 
       test('addNotificationClickListener accepts callback', () {
         expect(
-            OneSignalJsInterop.addNotificationClickListener, isA<Function>());
+          OneSignalJsInterop.addNotificationClickListener,
+          isA<Function>(),
+        );
       });
 
       test('addNotificationForegroundListener accepts callback', () {

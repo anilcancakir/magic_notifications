@@ -68,21 +68,14 @@ void main() {
     });
 
     test('markAsRead() completes without error', () async {
-      await expectLater(
-        manager.markAsRead('test-id'),
-        completes,
-      );
+      await expectLater(manager.markAsRead('test-id'), completes);
     });
 
     test('markAllAsRead() completes without error', () async {
-      await expectLater(
-        manager.markAllAsRead(),
-        completes,
-      );
+      await expectLater(manager.markAllAsRead(), completes);
     });
 
-    test('deleteNotification() reports a failed request instead of hiding it',
-        () async {
+    test('deleteNotification() reports a failed request instead of hiding it', () async {
       // This case used to assert `completes`, which was the defect written down
       // as the requirement: no network is bound here, so the `DELETE` throws and
       // the manager swallowed it, and a caller holding a normally-completed
@@ -95,10 +88,7 @@ void main() {
     });
 
     test('refreshNotifications() is alias for fetchNotifications', () async {
-      await expectLater(
-        manager.refreshNotifications(),
-        completes,
-      );
+      await expectLater(manager.refreshNotifications(), completes);
     });
   });
 }

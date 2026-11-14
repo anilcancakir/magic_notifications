@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:magic/magic.dart';
+import 'package:magic_socket/magic_socket.dart';
 
 import 'contracts/channel.dart';
 import 'contracts/notifiable.dart';
@@ -158,15 +159,15 @@ class NotificationManager {
       StreamController<PushNotificationEvent>.broadcast();
   late final StreamController<PushNotificationEvent> _pushClickedController =
       StreamController<PushNotificationEvent>.broadcast(
-    // The drain hangs off the controller's own subscribe callback rather
-    // than off a flag the getter sets, because reading a stream and
-    // listening to it are different moments and only the second one can
-    // receive anything. `onListen` fires on every 0 -> 1 transition, and
-    // the microtask defers so a subscriber that finishes wiring itself in
-    // the same turn is ready when the replay lands, which is the same
-    // reason `onesignal_flutter` defers its own drain.
-    onListen: () => scheduleMicrotask(_drainPendingClicks),
-  );
+        // The drain hangs off the controller's own subscribe callback rather
+        // than off a flag the getter sets, because reading a stream and
+        // listening to it are different moments and only the second one can
+        // receive anything. `onListen` fires on every 0 -> 1 transition, and
+        // the microtask defers so a subscriber that finishes wiring itself in
+        // the same turn is ready when the replay lands, which is the same
+        // reason `onesignal_flutter` defers its own drain.
+        onListen: () => scheduleMicrotask(_drainPendingClicks),
+      );
 
   /// Clicks republished before anything subscribed to [onPushClicked].
   ///
@@ -178,7 +179,7 @@ class NotificationManager {
   /// A consumer whose provider list puts notifications BEFORE the package that
   /// bridges clicks into deep links therefore publishes the launch tap into an
   /// empty stream: no exception, no log, and the app finishes booting onto its
-  /// own initial route. `fluttersdk_artisan`'s installer appends each provider
+  /// own initial route. dowel's installer appends each provider
   /// to the END of the list, so which order a consumer ends up with is decided
   /// by the order the two packages happened to be installed in.
   ///
@@ -211,7 +212,7 @@ class NotificationManager {
   /// One outcome per reconcile pass that had a driver to act on. See
   /// [onPushIdentityReconciled].
   final StreamController<PushIdentityReconciled>
-      _pushIdentityReconciledController =
+  _pushIdentityReconciledController =
       StreamController<PushIdentityReconciled>.broadcast();
 
   /// The end of a session, for anything holding notification state of its own.
@@ -333,9 +334,7 @@ class NotificationManager {
       final channel = _channels[channelName];
 
       if (channel == null) {
-        NotificationLog.warning(
-          'Unknown notification channel: $channelName',
-        );
+        NotificationLog.warning('Unknown notification channel: $channelName');
 
         continue;
       }
@@ -548,10 +547,10 @@ class NotificationManager {
     //    package's own failure.
     final MagicResponse response;
     try {
-      response = await Http.get('/notifications', query: {
-        'page': page.toString(),
-        'perPage': perPage.toString(),
-      });
+      response = await Http.get(
+        '/notifications',
+        query: {'page': page.toString(), 'perPage': perPage.toString()},
+      );
     } catch (e) {
       _failedPageRead(page, '$e', code: 'NOTIFICATIONS_FETCH_FAILED');
     }
@@ -805,12 +804,15 @@ class NotificationManager {
     _attachedPushDriver = driver;
     driver.subjectGuard = _addressedToIntent;
 
-    _pushReceivedSubscription =
-        driver.onNotificationReceived.listen(_onPushReceived);
-    _pushClickedSubscription =
-        driver.onNotificationClicked.listen(_onPushClicked);
-    _pushIdentitySubscription =
-        driver.onIdentityChanged.listen(_onPushIdentityChanged);
+    _pushReceivedSubscription = driver.onNotificationReceived.listen(
+      _onPushReceived,
+    );
+    _pushClickedSubscription = driver.onNotificationClicked.listen(
+      _onPushClicked,
+    );
+    _pushIdentitySubscription = driver.onIdentityChanged.listen(
+      _onPushIdentityChanged,
+    );
 
     // Announced LAST, so a listener that reads the manager back sees a fully
     // attached driver rather than one halfway through being wired.
@@ -856,8 +858,9 @@ class NotificationManager {
     if (_pushClickedController.isClosed) return;
     if (!_pushClickedController.hasListener) return;
 
-    final List<PushNotificationEvent> pending =
-        List<PushNotificationEvent>.of(_pendingClicks);
+    final List<PushNotificationEvent> pending = List<PushNotificationEvent>.of(
+      _pendingClicks,
+    );
     _pendingClicks.clear();
 
     for (final PushNotificationEvent event in pending) {
@@ -1721,12 +1724,12 @@ class NotificationManager {
   ) {
     return switch (reachability) {
       PushReachability.unavailable ||
-      PushReachability.on =>
-        PushPromptAction.none,
+      PushReachability.on => PushPromptAction.none,
       PushReachability.off => PushPromptAction.request,
-      PushReachability.blocked => driver?.canOpenPlatformSettings ?? false
-          ? PushPromptAction.openSettings
-          : PushPromptAction.instructions,
+      PushReachability.blocked =>
+        driver?.canOpenPlatformSettings ?? false
+            ? PushPromptAction.openSettings
+            : PushPromptAction.instructions,
     };
   }
 
@@ -1815,9 +1818,7 @@ class NotificationManager {
       //    failing would be a dialog attempt nobody asked for.
       _autoRequestRaised = false;
 
-      NotificationLog.error(
-        'The automatic push permission request failed: $e',
-      );
+      NotificationLog.error('The automatic push permission request failed: $e');
     }
   }
 
@@ -2057,7 +2058,8 @@ class NotificationManager {
       if (Config.has(key)) {
         return (
           interval: _defaultPollingInterval,
-          warning: 'Ignoring $key: expected an int in seconds, got '
+          warning:
+              'Ignoring $key: expected an int in seconds, got '
               '${Config.get<Object>(key)}. Using '
               '${_defaultPollingInterval.inSeconds}s.',
         );
@@ -2076,7 +2078,7 @@ class NotificationManager {
         interval: Duration(seconds: clamped),
         warning:
             'Clamping $key from ${configured}s to ${clamped}s: the supported '
-                'range is $_minPollingSeconds to $_maxPollingSeconds seconds.',
+            'range is $_minPollingSeconds to $_maxPollingSeconds seconds.',
       );
     }
 

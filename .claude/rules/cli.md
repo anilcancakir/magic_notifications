@@ -5,14 +5,14 @@ paths:
 
 # CLI Domain
 
-Commands are built on `fluttersdk_artisan` and surface via the host app's unified `artisan` binary.
+Commands are built on `dowel` and surface via the host app's unified `dowel` binary (`dart run magic:dowel`).
 
 ## Command shape
 
-- Commands extend `ArtisanCommand` — implement `signature` (DSL: `'name {arg} {--flag}'`), `description`, `boot` (return `CommandBoot.none`), `Future<int> handle(ArtisanContext ctx)`
+- Commands extend `DowelCommand` — implement `signature` (DSL: `'name {arg} {--flag}'`), `description`, `boot` (return `CommandBoot.none`), `Future<int> handle(DowelContext ctx)`
 - `signature` defines arguments and options; `ctx.argument('name')` and `ctx.option('flag')` retrieve values
 - `handle()` returns exit code: `0` for success, `1` for error; use `ctx.output.error(msg)` for diagnostic messaging
-- Install extends `ArtisanInstallCommand` — drives manifest-based install via `install.yaml` + transactional `PluginInstaller`; fluent override adds dynamic logic (UUID validation, conditional prompts, arbitrary file writes)
+- Install extends `DowelInstallCommand` — drives manifest-based install via `install.yaml` + transactional `PluginInstaller`; fluent override adds dynamic logic (UUID validation, conditional prompts, arbitrary file writes)
 
 ## Install infrastructure
 
@@ -25,7 +25,7 @@ Commands are built on `fluttersdk_artisan` and surface via the host app's unifie
 
 ## MCP tools
 
-`MagicNotificationsArtisanProvider.mcpTools()` exposes two read-only diagnostic tools:
+`MagicNotificationsDowelProvider.mcpTools()` exposes two read-only diagnostic tools:
 - `notifications_doctor` — health check (config presence, OneSignal App ID format, polling interval, platform setup)
 - `notifications_channels` — list channel status and configuration
 

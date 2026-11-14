@@ -145,7 +145,7 @@ class PushChannel extends NotificationChannel {
       data: <String, dynamic>{
         'title': pushMessage.headingValue,
         'body': pushMessage.contentValue,
-        if (payload != null) 'data': payload,
+        'data': ?payload,
       },
     );
 

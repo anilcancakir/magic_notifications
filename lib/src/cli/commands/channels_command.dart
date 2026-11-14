@@ -1,6 +1,6 @@
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 
 /// CLI command to display all notification channels and their configuration.
 ///
@@ -9,9 +9,9 @@ import '../notifications_artisan_provider.dart';
 ///
 /// ## Usage
 /// ```bash
-/// dart run <app>:artisan notifications:channels
+/// dart run magic:dowel notifications:channels
 /// ```
-class ChannelsCommand extends ArtisanCommand {
+class ChannelsCommand extends DowelCommand {
   @override
   String get signature => 'notifications:channels';
 
@@ -31,10 +31,11 @@ class ChannelsCommand extends ArtisanCommand {
   String get projectRoot => getProjectRoot();
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     // 1. Display banner with version.
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     final configPath = '$projectRoot/lib/config/notifications.dart';
 
@@ -42,7 +43,7 @@ class ChannelsCommand extends ArtisanCommand {
     if (!FileHelper.fileExists(configPath)) {
       ctx.output.error('Configuration file not found.');
       ctx.output.info(
-        'Run: ${ConsoleStyle.cyan}dart run <app>:artisan notifications:install${ConsoleStyle.reset} to set up notifications.',
+        'Run: ${ConsoleStyle.cyan}dart run magic:dowel notifications:install${ConsoleStyle.reset} to set up notifications.',
       );
       return 1;
     }
@@ -64,9 +65,8 @@ class ChannelsCommand extends ArtisanCommand {
 
     // 2. Parse push channel configuration.
     final appIdMatch = RegExp(r"'app_id':\s*'([^']*)'").firstMatch(content);
-    final notifyButtonMatch = RegExp(
-      r"'notify_button_enabled':\s*(true|false)",
-    ).firstMatch(content);
+    final notifyButtonMatch = RegExp(r"'notify_button_enabled':\s*(true|false)")
+        .firstMatch(content);
 
     result['push'] = {
       'driver': 'onesignal',
@@ -75,15 +75,13 @@ class ChannelsCommand extends ArtisanCommand {
     };
 
     // 3. Parse database channel configuration.
-    final pollingMatch = RegExp(
-      r"'polling_interval':\s*(\d+)",
-    ).firstMatch(content);
+    final pollingMatch = RegExp(r"'polling_interval':\s*(\d+)")
+        .firstMatch(content);
     final dbContent = content.contains("'database'")
         ? content.substring(content.indexOf("'database'"))
         : '';
-    final dbEnabledMatch = RegExp(
-      r"'enabled':\s*(true|false)",
-    ).firstMatch(dbContent);
+    final dbEnabledMatch = RegExp(r"'enabled':\s*(true|false)")
+        .firstMatch(dbContent);
 
     result['database'] = {
       'enabled': dbEnabledMatch?.group(1) == 'true',
@@ -96,9 +94,8 @@ class ChannelsCommand extends ArtisanCommand {
     final mailContent = content.contains("'mail'")
         ? content.substring(content.indexOf("'mail'"))
         : '';
-    final mailEnabledMatch = RegExp(
-      r"'enabled':\s*(true|false)",
-    ).firstMatch(mailContent);
+    final mailEnabledMatch = RegExp(r"'enabled':\s*(true|false)")
+        .firstMatch(mailContent);
 
     result['mail'] = {'enabled': mailEnabledMatch?.group(1) == 'true'};
 
@@ -106,9 +103,8 @@ class ChannelsCommand extends ArtisanCommand {
     final softContent = content.contains("'soft_prompt'")
         ? content.substring(content.indexOf("'soft_prompt'"))
         : '';
-    final softEnabledMatch = RegExp(
-      r"'enabled':\s*(true|false)",
-    ).firstMatch(softContent);
+    final softEnabledMatch = RegExp(r"'enabled':\s*(true|false)")
+        .firstMatch(softContent);
 
     result['soft_prompt'] = {'enabled': softEnabledMatch?.group(1) == 'true'};
 
@@ -118,7 +114,7 @@ class ChannelsCommand extends ArtisanCommand {
   /// Display the parsed configuration in a formatted output.
   ///
   /// @param config The parsed configuration map.
-  void _displayChannels(ArtisanContext ctx, Map<String, dynamic> config) {
+  void _displayChannels(DowelContext ctx, Map<String, dynamic> config) {
     ctx.output.writeln('');
     ctx.output.info('Notification Channels');
     ctx.output.info('=' * 50);

@@ -96,10 +96,7 @@ class PushUserAttributes {
   /// [tags] is treated as owned by this object; mutating the map after
   /// construction leaves the manager comparing against a value that has
   /// changed underneath it.
-  const PushUserAttributes({
-    this.email,
-    this.tags = const <String, String>{},
-  });
+  const PushUserAttributes({this.email, this.tags = const <String, String>{}});
 
   /// Nothing to say about this person.
   ///

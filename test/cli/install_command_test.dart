@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_notifications/src/cli/commands/install_command.dart'
     as mn;
-// Prefixed: fluttersdk_artisan exports its own DoctorCommand from the barrel
+// Prefixed: dowel exports its own DoctorCommand from the barrel
 // imported above.
 import 'package:magic_notifications/src/cli/commands/doctor_command.dart'
     as doctor;
-import 'package:magic_notifications/src/cli/notifications_artisan_provider.dart';
+import 'package:magic_notifications/src/cli/notifications_dowel_provider.dart';
 import 'package:test/test.dart';
 
 /// Test subclass pinning the project root + stub search paths so install ops
@@ -29,8 +29,8 @@ class _TestInstallCommand extends mn.InstallCommand {
 
   @override
   List<String> getStubSearchPaths() => <String>[
-        '${Directory.current.path}/assets/stubs',
-      ];
+    '${Directory.current.path}/assets/stubs',
+  ];
 
   @override
   String resolveManifestPath() => '${Directory.current.path}/install.yaml';
@@ -53,7 +53,7 @@ class _TestDoctorCommand extends doctor.DoctorCommand {
 /// Small on purpose: this test proves the installer REACHES the Xcode editor,
 /// while the editor's own parser, round-trip guard and application-target
 /// scoping are covered against a real Flutter project in
-/// `fluttersdk_artisan`'s own suite. The RunnerTests configuration is here so
+/// `dowel`'s own suite. The RunnerTests configuration is here so
 /// the integration still shows an entitlement never landing on the test bundle.
 
 /// A configuration name as the pbxproj spells it: Xcode quotes anything a
@@ -61,7 +61,8 @@ class _TestDoctorCommand extends doctor.DoctorCommand {
 String _name(String base, String suffix) =>
     suffix.isEmpty ? base : '"$base$suffix"';
 
-String _pbxproj(String suffix) => '''// !\$*UTF8*\$!
+String _pbxproj(String suffix) =>
+    '''// !\$*UTF8*\$!
 {
 	archiveVersion = 1;
 	objectVersion = 54;
@@ -119,9 +120,11 @@ String _pbxproj(String suffix) => '''// !\$*UTF8*\$!
 /// Creates `ios/Runner/Info.plist` and `ios/Runner.xcodeproj/project.pbxproj`
 /// under [tempDir], with no entitlements file: the state every Flutter project
 /// is in until somebody opens Xcode.
-void _writeIosProject(Directory tempDir,
-    {List<String> backgroundModes = const [],
-    String configurationSuffix = ''}) {
+void _writeIosProject(
+  Directory tempDir, {
+  List<String> backgroundModes = const [],
+  String configurationSuffix = '',
+}) {
   Directory('${tempDir.path}/ios/Runner').createSync(recursive: true);
   Directory('${tempDir.path}/ios/Runner.xcodeproj').createSync(recursive: true);
 
@@ -239,9 +242,9 @@ Map<String, dynamic> _options(Map<String, dynamic> overrides) =>
       ...overrides,
     };
 
-/// Builds an [ArtisanContext] backed by a [MapInput] + [BufferedOutput].
-ArtisanContext _ctx(_TestInstallCommand cmd, Map<String, dynamic> overrides) =>
-    ArtisanContext.bare(
+/// Builds an [DowelContext] backed by a [MapInput] + [BufferedOutput].
+DowelContext _ctx(_TestInstallCommand cmd, Map<String, dynamic> overrides) =>
+    DowelContext.bare(
       MapInput(_options(overrides), signature: cmd.parsedSignature),
       BufferedOutput(),
     );
@@ -294,13 +297,15 @@ void main() async {
   });
 
   group('InstallCommand metadata', () {
-    test('extends ArtisanInstallCommand and carries the base flags', () {
-      expect(command, isA<ArtisanInstallCommand>());
+    test('extends DowelInstallCommand and carries the base flags', () {
+      expect(command, isA<DowelInstallCommand>());
       expect(command.signature, contains('--force'));
       expect(command.signature, contains('--dry-run'));
       expect(command.signature, contains('--non-interactive'));
       expect(
-          command.pluginName(_ctx(command, const {})), 'magic_notifications');
+        command.pluginName(_ctx(command, const {})),
+        'magic_notifications',
+      );
     });
 
     test('validateOneSignalAppId accepts valid UUID, rejects garbage', () {
@@ -329,54 +334,56 @@ void main() async {
         File('${tempDir.path}/lib/config/notifications.dart').existsSync(),
         isFalse,
       );
-      final appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final appContent = File('${tempDir.path}/lib/config/app.dart')
+          .readAsStringSync();
       expect(appContent, isNot(contains('NotificationServiceProvider')));
     });
 
-    test('creates config + injects provider + configFactory on fresh install',
-        () async {
-      final exit = await command.handle(
-        _ctx(command, const {
-          'app-id': '12345678-1234-1234-1234-123456789012',
-          'platforms': 'android,ios',
-          'force': true,
-        }),
-      );
-      expect(exit, 0);
+    test(
+      'creates config + injects provider + configFactory on fresh install',
+      () async {
+        final exit = await command.handle(
+          _ctx(command, const {
+            'app-id': '12345678-1234-1234-1234-123456789012',
+            'platforms': 'android,ios',
+            'force': true,
+          }),
+        );
+        expect(exit, 0);
 
-      final configPath = '${tempDir.path}/lib/config/notifications.dart';
-      expect(File(configPath).existsSync(), isTrue);
-      final configContent = File(configPath).readAsStringSync();
-      expect(configContent, contains('12345678-1234-1234-1234-123456789012'));
-      expect(configContent, contains("'notify_button_enabled': false"));
-      expect(configContent, contains("'enabled': true")); // soft prompt
+        final configPath = '${tempDir.path}/lib/config/notifications.dart';
+        expect(File(configPath).existsSync(), isTrue);
+        final configContent = File(configPath).readAsStringSync();
+        expect(configContent, contains('12345678-1234-1234-1234-123456789012'));
+        expect(configContent, contains("'notify_button_enabled': false"));
+        expect(configContent, contains("'enabled': true")); // soft prompt
 
-      final appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-      expect(
-        appContent,
-        contains(
-          "import 'package:magic_notifications/magic_notifications.dart';",
-        ),
-      );
-      expect(
-          appContent, contains('(app) => NotificationServiceProvider(app),'));
+        final appContent = File('${tempDir.path}/lib/config/app.dart')
+            .readAsStringSync();
+        expect(
+          appContent,
+          contains(
+            "import 'package:magic_notifications/magic_notifications.dart';",
+          ),
+        );
+        expect(
+          appContent,
+          contains('(app) => NotificationServiceProvider(app),'),
+        );
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(mainContent, contains("import 'config/notifications.dart';"));
-      expect(mainContent, contains('() => notificationConfig,'));
-    });
+        final mainContent = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
+        expect(mainContent, contains("import 'config/notifications.dart';"));
+        expect(mainContent, contains('() => notificationConfig,'));
+      },
+    );
 
     test('does not overwrite existing config without force', () async {
       final configPath = '${tempDir.path}/lib/config/notifications.dart';
       File(configPath).writeAsStringSync('existing-content');
 
       final exit = await command.handle(
-        _ctx(command, const {
-          'app-id': '12345678-1234-1234-1234-123456789012',
-        }),
+        _ctx(command, const {'app-id': '12345678-1234-1234-1234-123456789012'}),
       );
       expect(exit, 0);
       expect(File(configPath).readAsStringSync(), 'existing-content');
@@ -401,9 +408,9 @@ void main() async {
       );
       expect(exit, 0);
 
-      final manifest =
-          File('${tempDir.path}/android/app/src/main/AndroidManifest.xml')
-              .readAsStringSync();
+      final manifest = File(
+        '${tempDir.path}/android/app/src/main/AndroidManifest.xml',
+      ).readAsStringSync();
       expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     });
 
@@ -431,13 +438,13 @@ void main() async {
         ),
       );
 
-      final indexContent =
-          File('${tempDir.path}/web/index.html').readAsStringSync();
+      final indexContent = File('${tempDir.path}/web/index.html')
+          .readAsStringSync();
       expect(indexContent, contains('OneSignalSDK.page.js'));
 
-      final configContent =
-          File('${tempDir.path}/lib/config/notifications.dart')
-              .readAsStringSync();
+      final configContent = File(
+        '${tempDir.path}/lib/config/notifications.dart',
+      ).readAsStringSync();
       expect(
         configContent,
         contains("'safari_web_id': 'web.onesignal.auto.123'"),
@@ -464,8 +471,8 @@ void main() async {
         File('${tempDir.path}/web/OneSignalSDKWorker.js').existsSync(),
         isFalse,
       );
-      final indexContent =
-          File('${tempDir.path}/web/index.html').readAsStringSync();
+      final indexContent = File('${tempDir.path}/web/index.html')
+          .readAsStringSync();
       expect(indexContent, isNot(contains('OneSignalSDK.page.js')));
     });
 
@@ -485,37 +492,41 @@ void main() async {
       final second = _TestInstallCommand(tempDir.path);
       expect(await second.handle(_ctx(second, opts)), 0);
 
-      final indexContent =
-          File('${tempDir.path}/web/index.html').readAsStringSync();
-      final scriptCount =
-          'OneSignalSDK.page.js'.allMatches(indexContent).length;
+      final indexContent = File('${tempDir.path}/web/index.html')
+          .readAsStringSync();
+      final scriptCount = 'OneSignalSDK.page.js'
+          .allMatches(indexContent)
+          .length;
       expect(scriptCount, 1, reason: 'head script must be injected only once');
     });
 
-    test('re-running provider inject is idempotent (no double provider)',
-        () async {
-      const opts = {
-        'app-id': '12345678-1234-1234-1234-123456789012',
-        'platforms': 'android',
-        'force': true,
-      };
+    test(
+      're-running provider inject is idempotent (no double provider)',
+      () async {
+        const opts = {
+          'app-id': '12345678-1234-1234-1234-123456789012',
+          'platforms': 'android',
+          'force': true,
+        };
 
-      expect(await command.handle(_ctx(command, opts)), 0);
-      final second = _TestInstallCommand(tempDir.path);
-      expect(await second.handle(_ctx(second, opts)), 0);
+        expect(await command.handle(_ctx(command, opts)), 0);
+        final second = _TestInstallCommand(tempDir.path);
+        expect(await second.handle(_ctx(second, opts)), 0);
 
-      final appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-      final providerCount =
-          'NotificationServiceProvider(app)'.allMatches(appContent).length;
-      expect(providerCount, 1, reason: 'provider must be injected only once');
-    });
+        final appContent = File('${tempDir.path}/lib/config/app.dart')
+            .readAsStringSync();
+        final providerCount = 'NotificationServiceProvider(app)'
+            .allMatches(appContent)
+            .length;
+        expect(providerCount, 1, reason: 'provider must be injected only once');
+      },
+    );
   });
 
   group('InstallCommand main.dart wiring', () {
     /// Runs a fresh non-interactive android install (no --force, so an existing
     /// config file is left exactly as the project wrote it).
-    Future<ArtisanContext> installAndroid() async {
+    Future<DowelContext> installAndroid() async {
       final fresh = _TestInstallCommand(tempDir.path);
       final ctx = _ctx(fresh, const {
         'app-id': '12345678-1234-1234-1234-123456789012',
@@ -525,32 +536,36 @@ void main() async {
       return ctx;
     }
 
-    test('appends the getter the existing config declares, not the stub name',
-        () async {
-      _writeHandWrittenConfig(tempDir, 'notificationsConfig');
+    test(
+      'appends the getter the existing config declares, not the stub name',
+      () async {
+        _writeHandWrittenConfig(tempDir, 'notificationsConfig');
 
-      await installAndroid();
+        await installAndroid();
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(mainContent, contains("import 'config/notifications.dart';"));
-      expect(
-        mainContent,
-        contains('() => notificationsConfig,'),
-        reason: 'the factory must name the getter the config actually declares',
-      );
-      expect(
-        mainContent,
-        isNot(contains('() => notificationConfig,')),
-        reason: 'the stub getter name does not exist in this project',
-      );
-    });
+        final mainContent = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
+        expect(mainContent, contains("import 'config/notifications.dart';"));
+        expect(
+          mainContent,
+          contains('() => notificationsConfig,'),
+          reason:
+              'the factory must name the getter the config actually declares',
+        );
+        expect(
+          mainContent,
+          isNot(contains('() => notificationConfig,')),
+          reason: 'the stub getter name does not exist in this project',
+        );
+      },
+    );
 
-    test('a project already wired is untouched whatever the getter is called',
-        () async {
-      _writeHandWrittenConfig(tempDir, 'notificationsConfig');
-      final mainPath = '${tempDir.path}/lib/main.dart';
-      File(mainPath).writeAsStringSync('''
+    test(
+      'a project already wired is untouched whatever the getter is called',
+      () async {
+        _writeHandWrittenConfig(tempDir, 'notificationsConfig');
+        final mainPath = '${tempDir.path}/lib/main.dart';
+        File(mainPath).writeAsStringSync('''
 import 'package:magic/magic.dart';
 import 'config/app.dart';
 import 'config/notifications.dart';
@@ -564,36 +579,39 @@ void main() async {
   );
 }
 ''');
-      final before = File(mainPath).readAsStringSync();
+        final before = File(mainPath).readAsStringSync();
 
-      await installAndroid();
+        await installAndroid();
 
-      expect(File(mainPath).readAsStringSync(), before);
-    });
+        expect(File(mainPath).readAsStringSync(), before);
+      },
+    );
 
-    test('a config declaring no getter is skipped rather than guessed at',
-        () async {
-      Directory('${tempDir.path}/lib/config').createSync(recursive: true);
-      File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
-        '// Hand-rolled: this file declares nothing the installer can name.\n'
-        'const int placeholder = 1;\n',
-      );
+    test(
+      'a config declaring no getter is skipped rather than guessed at',
+      () async {
+        Directory('${tempDir.path}/lib/config').createSync(recursive: true);
+        File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
+          '// Hand-rolled: this file declares nothing the installer can name.\n'
+          'const int placeholder = 1;\n',
+        );
 
-      final ctx = await installAndroid();
+        final ctx = await installAndroid();
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(
-        mainContent,
-        isNot(contains('config/notifications.dart')),
-        reason: 'a wrong symbol is worse than a missing one',
-      );
-      expect(
-        (ctx.output as BufferedOutput).content,
-        contains('lib/config/notifications.dart'),
-        reason: 'the operator has to be told main.dart was left alone',
-      );
-    });
+        final mainContent = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
+        expect(
+          mainContent,
+          isNot(contains('config/notifications.dart')),
+          reason: 'a wrong symbol is worse than a missing one',
+        );
+        expect(
+          (ctx.output as BufferedOutput).content,
+          contains('lib/config/notifications.dart'),
+          reason: 'the operator has to be told main.dart was left alone',
+        );
+      },
+    );
 
     test('a commented-out import does not read as already wired', () async {
       _writeHandWrittenConfig(tempDir, 'notificationsConfig');
@@ -624,7 +642,7 @@ void main() async {
   group('InstallCommand --force config regeneration', () {
     /// Runs a fresh non-interactive android install with `--force`, which
     /// rewrites `lib/config/notifications.dart` from the stub.
-    Future<ArtisanContext> forceInstall() async {
+    Future<DowelContext> forceInstall() async {
       final fresh = _TestInstallCommand(tempDir.path);
       final ctx = _ctx(fresh, const {
         'app-id': '12345678-1234-1234-1234-123456789012',
@@ -635,27 +653,29 @@ void main() async {
       return ctx;
     }
 
-    test('re-points an already-wired main.dart at the regenerated getter',
-        () async {
-      _writeHandWrittenConfig(tempDir, 'notificationsConfig');
-      _writeWiredMain(tempDir, 'notificationsConfig');
+    test(
+      're-points an already-wired main.dart at the regenerated getter',
+      () async {
+        _writeHandWrittenConfig(tempDir, 'notificationsConfig');
+        _writeWiredMain(tempDir, 'notificationsConfig');
 
-      await forceInstall();
+        await forceInstall();
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
-      expect(
-        mainContent,
-        contains('() => notificationConfig,'),
-        reason: '--force regenerated the config, so the wiring follows it',
-      );
-      expect(
-        mainContent,
-        isNot(contains('() => notificationsConfig,')),
-        reason: 'the old getter no longer exists anywhere in the project',
-      );
-      _expectMainNamesTheDeclaredGetter(tempDir);
-    });
+        final mainContent = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
+        expect(
+          mainContent,
+          contains('() => notificationConfig,'),
+          reason: '--force regenerated the config, so the wiring follows it',
+        );
+        expect(
+          mainContent,
+          isNot(contains('() => notificationsConfig,')),
+          reason: 'the old getter no longer exists anywhere in the project',
+        );
+        _expectMainNamesTheDeclaredGetter(tempDir);
+      },
+    );
 
     test('holds the invariant when main.dart was never wired', () async {
       _writeHandWrittenConfig(tempDir, 'notificationsConfig');
@@ -676,134 +696,170 @@ void main() async {
       _writeWiredMain(tempDir, 'notificationsConfig');
 
       await forceInstall();
-      final afterFirst =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final afterFirst = File('${tempDir.path}/lib/main.dart')
+          .readAsStringSync();
       await forceInstall();
 
       expect(
-          File('${tempDir.path}/lib/main.dart').readAsStringSync(), afterFirst);
-      _expectMainNamesTheDeclaredGetter(tempDir);
-    });
-
-    test('leaves a wired main.dart alone when the old getter is unreadable',
-        () async {
-      Directory('${tempDir.path}/lib/config').createSync(recursive: true);
-      File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
-        '// Hand-rolled: this file declares nothing the installer can name.\n'
-        'const int placeholder = 1;\n',
-      );
-      _writeWiredMain(tempDir, 'somethingElse');
-      final before = File('${tempDir.path}/lib/main.dart').readAsStringSync();
-
-      final ctx = await forceInstall();
-
-      expect(
         File('${tempDir.path}/lib/main.dart').readAsStringSync(),
-        before,
-        reason: 'the name to replace is unknowable, and guessing is what '
-            'broke the project in the first place',
+        afterFirst,
       );
-      expect(
-        (ctx.output as BufferedOutput).content,
-        contains('lib/main.dart'),
-        reason: 'the operator has to be told the wiring needs a hand fix',
-      );
-    });
-
-    test('does not touch main.dart when the config was left in place',
-        () async {
-      _writeHandWrittenConfig(tempDir, 'notificationsConfig');
-      _writeWiredMain(tempDir, 'notificationsConfig');
-      final before = File('${tempDir.path}/lib/main.dart').readAsStringSync();
-
-      final fresh = _TestInstallCommand(tempDir.path);
-      expect(
-        await fresh.handle(_ctx(fresh, const {
-          'app-id': '12345678-1234-1234-1234-123456789012',
-          'platforms': 'android',
-        })),
-        0,
-      );
-
-      expect(File('${tempDir.path}/lib/main.dart').readAsStringSync(), before);
       _expectMainNamesTheDeclaredGetter(tempDir);
     });
+
+    test(
+      'leaves a wired main.dart alone when the old getter is unreadable',
+      () async {
+        Directory('${tempDir.path}/lib/config').createSync(recursive: true);
+        File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
+          '// Hand-rolled: this file declares nothing the installer can name.\n'
+          'const int placeholder = 1;\n',
+        );
+        _writeWiredMain(tempDir, 'somethingElse');
+        final before = File('${tempDir.path}/lib/main.dart').readAsStringSync();
+
+        final ctx = await forceInstall();
+
+        expect(
+          File('${tempDir.path}/lib/main.dart').readAsStringSync(),
+          before,
+          reason:
+              'the name to replace is unknowable, and guessing is what '
+              'broke the project in the first place',
+        );
+        expect(
+          (ctx.output as BufferedOutput).content,
+          contains('lib/main.dart'),
+          reason: 'the operator has to be told the wiring needs a hand fix',
+        );
+      },
+    );
+
+    test(
+      'does not touch main.dart when the config was left in place',
+      () async {
+        _writeHandWrittenConfig(tempDir, 'notificationsConfig');
+        _writeWiredMain(tempDir, 'notificationsConfig');
+        final before = File('${tempDir.path}/lib/main.dart').readAsStringSync();
+
+        final fresh = _TestInstallCommand(tempDir.path);
+        expect(
+          await fresh.handle(
+            _ctx(fresh, const {
+              'app-id': '12345678-1234-1234-1234-123456789012',
+              'platforms': 'android',
+            }),
+          ),
+          0,
+        );
+
+        expect(
+          File('${tempDir.path}/lib/main.dart').readAsStringSync(),
+          before,
+        );
+        _expectMainNamesTheDeclaredGetter(tempDir);
+      },
+    );
   });
 
   group('InstallCommand iOS', () {
     /// Runs a fresh non-interactive install for the ios platform.
     Future<int> installIos() {
       final fresh = _TestInstallCommand(tempDir.path);
-      return fresh.handle(_ctx(fresh, const {
-        'app-id': '12345678-1234-1234-1234-123456789012',
-        'platforms': 'ios',
-        'force': true,
-      }));
+      return fresh.handle(
+        _ctx(fresh, const {
+          'app-id': '12345678-1234-1234-1234-123456789012',
+          'platforms': 'ios',
+          'force': true,
+        }),
+      );
     }
 
-    test('writes the background mode, the entitlement and the build setting',
-        () async {
-      _writeIosProject(tempDir);
+    test(
+      'writes the background mode, the entitlement and the build setting',
+      () async {
+        _writeIosProject(tempDir);
 
-      expect(await installIos(), 0);
+        expect(await installIos(), 0);
 
-      final plist =
-          File('${tempDir.path}/ios/Runner/Info.plist').readAsStringSync();
-      expect(plist, contains('<key>UIBackgroundModes</key>'));
-      expect(plist, contains('<string>remote-notification</string>'));
+        final plist = File('${tempDir.path}/ios/Runner/Info.plist')
+            .readAsStringSync();
+        expect(plist, contains('<key>UIBackgroundModes</key>'));
+        expect(plist, contains('<string>remote-notification</string>'));
 
-      final entitlements =
-          File('${tempDir.path}/ios/Runner/Runner.entitlements');
-      expect(entitlements.existsSync(), isTrue,
-          reason: 'the entitlements file is created when absent');
-      expect(entitlements.readAsStringSync(),
-          contains('<key>aps-environment</key>'));
-      expect(entitlements.readAsStringSync(),
-          contains('<string>development</string>'));
+        final entitlements = File(
+          '${tempDir.path}/ios/Runner/Runner.entitlements',
+        );
+        expect(
+          entitlements.existsSync(),
+          isTrue,
+          reason: 'the entitlements file is created when absent',
+        );
+        expect(
+          entitlements.readAsStringSync(),
+          contains('<key>aps-environment</key>'),
+        );
+        expect(
+          entitlements.readAsStringSync(),
+          contains('<string>development</string>'),
+        );
 
-      final release =
-          File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements');
-      expect(release.existsSync(), isTrue,
-          reason: 'the Release twin is created alongside the development one');
-      expect(
-          release.readAsStringSync(), contains('<string>production</string>'),
-          reason: 'a distribution profile carries only production');
+        final release = File(
+          '${tempDir.path}/ios/Runner/RunnerRelease.entitlements',
+        );
+        expect(
+          release.existsSync(),
+          isTrue,
+          reason: 'the Release twin is created alongside the development one',
+        );
+        expect(
+          release.readAsStringSync(),
+          contains('<string>production</string>'),
+          reason: 'a distribution profile carries only production',
+        );
 
-      final pbxproj =
-          File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-              .readAsStringSync();
-      expect(
-        'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;'
-            .allMatches(pbxproj)
-            .length,
-        1,
-        reason: 'Debug only: Release moved to the twin, and RunnerTests signs '
-            'nothing',
-      );
-      expect(
-        'CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;'
-            .allMatches(pbxproj)
-            .length,
-        1,
-        reason: 'the one configuration that ships',
-      );
-      expect(
-        pbxproj,
-        contains('PRODUCT_BUNDLE_IDENTIFIER = com.example.app.RunnerTests;\n'
-            '\t\t\t};'),
-        reason: 'the test bundle keeps its single build setting',
-      );
-    });
+        final pbxproj = File(
+          '${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj',
+        ).readAsStringSync();
+        expect(
+          'CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;'
+              .allMatches(pbxproj)
+              .length,
+          1,
+          reason:
+              'Debug only: Release moved to the twin, and RunnerTests signs '
+              'nothing',
+        );
+        expect(
+          'CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;'
+              .allMatches(pbxproj)
+              .length,
+          1,
+          reason: 'the one configuration that ships',
+        );
+        expect(
+          pbxproj,
+          contains(
+            'PRODUCT_BUNDLE_IDENTIFIER = com.example.app.RunnerTests;\n'
+            '\t\t\t};',
+          ),
+          reason: 'the test bundle keeps its single build setting',
+        );
+      },
+    );
 
     test('keeps background modes the app already declares', () async {
       _writeIosProject(tempDir, backgroundModes: const ['fetch']);
 
       expect(await installIos(), 0);
 
-      final plist =
-          File('${tempDir.path}/ios/Runner/Info.plist').readAsStringSync();
-      expect(plist, contains('<string>fetch</string>'),
-          reason: 'replacing the array would drop an unrelated mode');
+      final plist = File('${tempDir.path}/ios/Runner/Info.plist')
+          .readAsStringSync();
+      expect(
+        plist,
+        contains('<string>fetch</string>'),
+        reason: 'replacing the array would drop an unrelated mode',
+      );
       expect(plist, contains('<string>remote-notification</string>'));
     });
 
@@ -828,8 +884,11 @@ void main() async {
       final health = _TestDoctorCommand(tempDir.path);
 
       final before = health.checkPlatformSetup()['ios'] as Map<String, dynamic>;
-      expect(before['configured'], isFalse,
-          reason: 'a project nobody installed into must read red');
+      expect(
+        before['configured'],
+        isFalse,
+        reason: 'a project nobody installed into must read red',
+      );
       expect(before['issues'], hasLength(3));
 
       expect(await installIos(), 0);
@@ -839,8 +898,7 @@ void main() async {
       expect(after['configured'], isTrue);
     });
 
-    test('leaves the doctor with nothing to say about the APNs environment',
-        () async {
+    test('leaves the doctor with nothing to say about the APNs environment', () async {
       // The acceptance criterion for the split, and the one the red-to-green
       // test above cannot carry: the APNs check reports through the WARNING
       // channel by design, so a project with the wrong Release entitlement has
@@ -858,8 +916,9 @@ void main() async {
       // empty because it understood nothing: an unreadable pbxproj returns
       // the same empty list, so silence alone proves nothing. Breaking the
       // value the install just wrote has to bring the warning back.
-      final twin =
-          File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements');
+      final twin = File(
+        '${tempDir.path}/ios/Runner/RunnerRelease.entitlements',
+      );
       twin.writeAsStringSync(
         twin.readAsStringSync().replaceFirst('production', 'development'),
       );
@@ -881,9 +940,9 @@ void main() async {
 
       expect(await installIos(), 0);
 
-      final pbxproj =
-          File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj')
-              .readAsStringSync();
+      final pbxproj = File(
+        '${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj',
+      ).readAsStringSync();
       expect(
         'CODE_SIGN_ENTITLEMENTS = Runner/RunnerRelease.entitlements;'
             .allMatches(pbxproj)
@@ -922,8 +981,11 @@ void main() async {
 
       final twin = File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
           .readAsStringSync();
-      expect(twin, contains('applinks:example.com'),
-          reason: 'every other key is identical between the two');
+      expect(
+        twin,
+        contains('applinks:example.com'),
+        reason: 'every other key is identical between the two',
+      );
       expect(twin, contains('<string>production</string>'));
     });
 
@@ -931,8 +993,9 @@ void main() async {
       // An adopter who split the file by hand is the person this is helping,
       // and their file may carry more than this command knows about.
       _writeIosProject(tempDir);
-      final twin =
-          File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements');
+      final twin = File(
+        '${tempDir.path}/ios/Runner/RunnerRelease.entitlements',
+      );
       twin.writeAsStringSync(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" '
@@ -950,10 +1013,16 @@ void main() async {
       expect(await installIos(), 0);
 
       final after = twin.readAsStringSync();
-      expect(after, contains('keychain-access-groups'),
-          reason: 'the file is kept, not replaced');
-      expect(after, contains('<string>production</string>'),
-          reason: 'and only the one key is ensured');
+      expect(
+        after,
+        contains('keychain-access-groups'),
+        reason: 'the file is kept, not replaced',
+      );
+      expect(
+        after,
+        contains('<string>production</string>'),
+        reason: 'and only the one key is ensured',
+      );
     });
 
     test('reports rather than dies on a pbxproj the parser refuses', () async {
@@ -964,11 +1033,15 @@ void main() async {
       // one `\U00e7` escape away on any project with a non-ASCII product
       // name, which is not an exotic shape in this codebase's own language.
       _writeIosProject(tempDir);
-      final pbxproj =
-          File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj');
-      pbxproj.writeAsStringSync(pbxproj.readAsStringSync().replaceFirst(
+      final pbxproj = File(
+        '${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj',
+      );
+      pbxproj.writeAsStringSync(
+        pbxproj.readAsStringSync().replaceFirst(
           'productType = "com.apple.product-type.application";',
-          'productName = "\\U00e7ekirdek";\n\t\t\tproductType = "com.apple.product-type.application";'));
+          'productName = "\\U00e7ekirdek";\n\t\t\tproductType = "com.apple.product-type.application";',
+        ),
+      );
 
       expect(await installIos(), 0, reason: 'the install itself succeeded');
 
@@ -980,22 +1053,26 @@ void main() async {
       );
     });
 
-    test('reports rather than dies on an entitlements file it cannot read',
-        () async {
-      // The same post-commit hazard as the pbxproj one, a step earlier and
-      // missed by two reviews before this. `PlistWriter` throws `StateError`
-      // on a plist with no root <dict> and an XmlParserException (a
-      // FormatException) on one that does not parse, and a hand-edited
-      // entitlements file is both of those shapes away from ordinary. The
-      // staged op this replaced got this guarantee for free from the
-      // transaction dispatcher.
-      _writeIosProject(tempDir);
-      File('${tempDir.path}/ios/Runner/Runner.entitlements')
-          .writeAsStringSync('<?xml version="1.0" encoding="UTF-8"?>\n'
-              '<plist version="1.0">\n<array/>\n</plist>\n');
+    test(
+      'reports rather than dies on an entitlements file it cannot read',
+      () async {
+        // The same post-commit hazard as the pbxproj one, a step earlier and
+        // missed by two reviews before this. `PlistWriter` throws `StateError`
+        // on a plist with no root <dict> and an XmlParserException (a
+        // FormatException) on one that does not parse, and a hand-edited
+        // entitlements file is both of those shapes away from ordinary. The
+        // staged op this replaced got this guarantee for free from the
+        // transaction dispatcher.
+        _writeIosProject(tempDir);
+        File('${tempDir.path}/ios/Runner/Runner.entitlements')
+            .writeAsStringSync(
+              '<?xml version="1.0" encoding="UTF-8"?>\n'
+              '<plist version="1.0">\n<array/>\n</plist>\n',
+            );
 
-      expect(await installIos(), 0, reason: 'the install itself succeeded');
-    });
+        expect(await installIos(), 0, reason: 'the install itself succeeded');
+      },
+    );
 
     test('leaves a project that already points elsewhere alone', () async {
       // The state of EVERY project a previous version of this installer
@@ -1003,18 +1080,25 @@ void main() async {
       // `setEntitlementsPaths` is all-or-nothing across the configurations it
       // is asked about, so nothing moves and the command has to say so.
       _writeIosProject(tempDir);
-      final pbxproj =
-          File('${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj');
-      pbxproj.writeAsStringSync(pbxproj.readAsStringSync().replaceAll(
+      final pbxproj = File(
+        '${tempDir.path}/ios/Runner.xcodeproj/project.pbxproj',
+      );
+      pbxproj.writeAsStringSync(
+        pbxproj.readAsStringSync().replaceAll(
           'PRODUCT_BUNDLE_IDENTIFIER = com.example.app;',
           'CODE_SIGN_ENTITLEMENTS = Runner/Custom.entitlements;\n'
-              '\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.example.app;'));
+              '\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = com.example.app;',
+        ),
+      );
       final before = pbxproj.readAsStringSync();
 
       expect(await installIos(), 0);
 
-      expect(pbxproj.readAsStringSync(), before,
-          reason: 'not one build setting moved');
+      expect(
+        pbxproj.readAsStringSync(),
+        before,
+        reason: 'not one build setting moved',
+      );
       expect(
         File('${tempDir.path}/ios/Runner/RunnerRelease.entitlements')
             .readAsStringSync(),
@@ -1034,10 +1118,12 @@ void main() async {
 
   group('InstallCommand banner', () {
     test('prints the version pubspec.yaml declares', () async {
-      final pubspec =
-          File('${Directory.current.path}/pubspec.yaml').readAsStringSync();
-      final declared =
-          RegExp(r'^version:\s*(\S+)', multiLine: true).firstMatch(pubspec);
+      final pubspec = File('${Directory.current.path}/pubspec.yaml')
+          .readAsStringSync();
+      final declared = RegExp(
+        r'^version:\s*(\S+)',
+        multiLine: true,
+      ).firstMatch(pubspec);
       expect(declared, isNotNull, reason: 'pubspec.yaml declares a version');
       expect(magicNotificationsVersion, declared!.group(1));
 
@@ -1055,27 +1141,31 @@ void main() async {
   });
 
   group('InstallCommand web service worker', () {
-    test('scopes the OneSignal worker away from the Flutter root worker',
-        () async {
-      Directory('${tempDir.path}/web').createSync();
-      File('${tempDir.path}/web/index.html')
-          .writeAsStringSync('<html><head></head><body></body></html>');
+    test(
+      'scopes the OneSignal worker away from the Flutter root worker',
+      () async {
+        Directory('${tempDir.path}/web').createSync();
+        File('${tempDir.path}/web/index.html')
+            .writeAsStringSync('<html><head></head><body></body></html>');
 
-      final exit = await command.handle(
-        _ctx(command, const {
-          'app-id': '12345678-1234-1234-1234-123456789012',
-          'platforms': 'web',
-          'force': true,
-        }),
-      );
-      expect(exit, 0);
+        final exit = await command.handle(
+          _ctx(command, const {
+            'app-id': '12345678-1234-1234-1234-123456789012',
+            'platforms': 'web',
+            'force': true,
+          }),
+        );
+        expect(exit, 0);
 
-      final config = File('${tempDir.path}/lib/config/notifications.dart')
-          .readAsStringSync();
-      expect(
-          config, contains("'service_worker_path': 'OneSignalSDKWorker.js'"));
-      expect(config, contains("'service_worker_scope': '/onesignal/'"));
-    });
+        final config = File('${tempDir.path}/lib/config/notifications.dart')
+            .readAsStringSync();
+        expect(
+          config,
+          contains("'service_worker_path': 'OneSignalSDKWorker.js'"),
+        );
+        expect(config, contains("'service_worker_scope': '/onesignal/'"));
+      },
+    );
   });
 
   group('InstallCommand dry-run', () {

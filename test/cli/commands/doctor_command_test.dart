@@ -1,8 +1,8 @@
 import 'dart:io';
 
-// Import artisan without DoctorCommand to avoid collision with the
+// Import dowel without DoctorCommand to avoid collision with the
 // notifications-specific DoctorCommand below.
-import 'package:fluttersdk_artisan/artisan.dart' hide DoctorCommand;
+import 'package:dowel/dowel.dart' hide DoctorCommand;
 import 'package:magic_notifications/src/cli/commands/doctor_command.dart';
 import 'package:test/test.dart';
 
@@ -120,9 +120,9 @@ $groups</dict>
   // case that used to read as an NSE.
   final extensionProduct = serviceExtension || otherExtension
       ? '        3A1B2C3D /* ${serviceExtension ? 'OneSignalNotificationServiceExtension' : 'WidgetExtension'}.appex */ = '
-          '{isa = PBXFileReference; explicitFileType = '
-          '"wrapper.app-extension"; path = '
-          '${serviceExtension ? 'OneSignalNotificationServiceExtension' : 'WidgetExtension'}.appex; };\n'
+            '{isa = PBXFileReference; explicitFileType = '
+            '"wrapper.app-extension"; path = '
+            '${serviceExtension ? 'OneSignalNotificationServiceExtension' : 'WidgetExtension'}.appex; };\n'
       : '';
 
   // What identifies the kind: the extension POINT, which lives in the target's
@@ -153,9 +153,9 @@ $groups</dict>
     // valid UTF-8, which is what makes `readAsStringSync` throw.
     File('${tempDir.path}/ios/Pods/OneSignalXCFramework.framework/Info.plist')
         .writeAsBytesSync(<int>[
-      0x62, 0x70, 0x6C, 0x69, 0x73, 0x74, 0x30, 0x30, // bplist00
-      0xD1, 0x01, 0x02, 0x5F, 0x10, 0x0B, 0xFF, 0xFE, 0x80, 0x81,
-    ]);
+          0x62, 0x70, 0x6C, 0x69, 0x73, 0x74, 0x30, 0x30, // bplist00
+          0xD1, 0x01, 0x02, 0x5F, 0x10, 0x0B, 0xFF, 0xFE, 0x80, 0x81,
+        ]);
   }
 
   if (podsWithServiceExtensionTemplate) {
@@ -177,9 +177,8 @@ $groups</dict>
   }
 
   if (otherExtension) {
-    Directory('${tempDir.path}/ios/WidgetExtension').createSync(
-      recursive: true,
-    );
+    Directory('${tempDir.path}/ios/WidgetExtension')
+        .createSync(recursive: true);
     File('${tempDir.path}/ios/WidgetExtension/Info.plist').writeAsStringSync('''
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -543,7 +542,7 @@ Map<String, dynamic> get notificationsConfig => {
     test('an env-driven config exits 0', () async {
       writeConfigWithAppId("envString('ONESIGNAL_APP_ID', '')");
 
-      final ctx = ArtisanContext.bare(
+      final ctx = DowelContext.bare(
         MapInput({'verbose': false}, signature: command.parsedSignature),
         BufferedOutput(),
       );
@@ -673,23 +672,25 @@ Map<String, dynamic> get notificationsConfig => {
         expect(command.generateReport(), contains('All requirements met'));
       });
 
-      test('an unprovisioned key does not fail the command, but says so',
-          () async {
-        // A developer working before provisioning is a normal state, and a
-        // doctor that always fails gets ignored. The tick is what has to go.
-        writeConfigWithAppId("envString('ONESIGNAL_APP_ID', '')");
-        writeEnvFile('ONESIGNAL_APP_ID=\n');
+      test(
+        'an unprovisioned key does not fail the command, but says so',
+        () async {
+          // A developer working before provisioning is a normal state, and a
+          // doctor that always fails gets ignored. The tick is what has to go.
+          writeConfigWithAppId("envString('ONESIGNAL_APP_ID', '')");
+          writeEnvFile('ONESIGNAL_APP_ID=\n');
 
-        final output = BufferedOutput();
-        final ctx = ArtisanContext.bare(
-          MapInput({'verbose': false}, signature: command.parsedSignature),
-          output,
-        );
+          final output = BufferedOutput();
+          final ctx = DowelContext.bare(
+            MapInput({'verbose': false}, signature: command.parsedSignature),
+            output,
+          );
 
-        expect(await command.handle(ctx), 0);
-        expect(output.content, isNot(contains('All checks passed')));
-        expect(output.content, contains('ONESIGNAL_APP_ID'));
-      });
+          expect(await command.handle(ctx), 0);
+          expect(output.content, isNot(contains('All checks passed')));
+          expect(output.content, contains('ONESIGNAL_APP_ID'));
+        },
+      );
 
       test('a warning never hides a real failure', () {
         // The env warning rides alongside the existing failures; it does not
@@ -733,10 +734,7 @@ dependencies:
     test('includes config issue when config is missing', () {
       File('${tempDir.path}/lib/config/notifications.dart').deleteSync();
       final missing = command.getMissingRequirements();
-      expect(
-        missing.any((m) => m.toLowerCase().contains('config')),
-        isTrue,
-      );
+      expect(missing.any((m) => m.toLowerCase().contains('config')), isTrue);
     });
 
     test('includes validation issue when app_id is invalid', () {
@@ -820,15 +818,14 @@ Map<String, dynamic> get notificationConfig => {
       _writeIosProject(tempDir, entitlement: true);
 
       expect(
-        command
-            .iosExtensionWarnings()
-            .any((w) => w.contains('Notification Service Extension')),
+        command.iosExtensionWarnings().any(
+          (w) => w.contains('Notification Service Extension'),
+        ),
         isTrue,
       );
     });
 
-    test(
-        'still warns when the only app extension is not a notification '
+    test('still warns when the only app extension is not a notification '
         'service', () {
       _writeValidConfig(tempDir);
       _writeIosProject(tempDir, entitlement: true, otherExtension: true);
@@ -839,9 +836,9 @@ Map<String, dynamic> get notificationConfig => {
       // the one check whose justification is that its subject looks exactly
       // like the product working.
       expect(
-        command
-            .iosExtensionWarnings()
-            .any((w) => w.contains('No Notification Service Extension')),
+        command.iosExtensionWarnings().any(
+          (w) => w.contains('No Notification Service Extension'),
+        ),
         isTrue,
       );
     });
@@ -863,33 +860,35 @@ Map<String, dynamic> get notificationConfig => {
       // OneSignal's own iOS SDK arrives as an XCFramework through CocoaPods.
       expect(command.iosExtensionWarnings, returnsNormally);
       expect(
-        command
-            .iosExtensionWarnings()
-            .any((w) => w.contains('No Notification Service Extension')),
+        command.iosExtensionWarnings().any(
+          (w) => w.contains('No Notification Service Extension'),
+        ),
         isTrue,
       );
     });
 
-    test("does not count a dependency's NSE template as this app's extension",
-        () {
-      _writeValidConfig(tempDir);
-      _writeIosProject(
-        tempDir,
-        entitlement: true,
-        otherExtension: true,
-        podsWithServiceExtensionTemplate: true,
-      );
+    test(
+      "does not count a dependency's NSE template as this app's extension",
+      () {
+        _writeValidConfig(tempDir);
+        _writeIosProject(
+          tempDir,
+          entitlement: true,
+          otherExtension: true,
+          podsWithServiceExtensionTemplate: true,
+        );
 
-      // Walking all of ios/ recursively reached into Pods and the pub-cache
-      // symlinks, so somebody else's template read as this app's target: the
-      // exact false green the extension-point check was added to remove.
-      expect(
-        command
-            .iosExtensionWarnings()
-            .any((w) => w.contains('No Notification Service Extension')),
-        isTrue,
-      );
-    });
+        // Walking all of ios/ recursively reached into Pods and the pub-cache
+        // symlinks, so somebody else's template read as this app's target: the
+        // exact false green the extension-point check was added to remove.
+        expect(
+          command.iosExtensionWarnings().any(
+            (w) => w.contains('No Notification Service Extension'),
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('warns when the extension exists without a shared App Group', () {
       _writeValidConfig(tempDir);
@@ -901,7 +900,9 @@ Map<String, dynamic> get notificationConfig => {
       // and badges do not, because the container is the way back.
       expect(warnings.any((w) => w.contains('App Group')), isTrue);
       expect(
-          warnings.any((w) => w.contains('No Notification Service')), isFalse);
+        warnings.any((w) => w.contains('No Notification Service')),
+        isFalse,
+      );
     });
 
     test('says nothing when both halves are present', () {
@@ -916,12 +917,14 @@ Map<String, dynamic> get notificationConfig => {
       expect(command.iosExtensionWarnings(), isEmpty);
     });
 
-    test('says nothing about iOS on a project that ships no ios/ directory',
-        () {
-      _writeValidConfig(tempDir);
+    test(
+      'says nothing about iOS on a project that ships no ios/ directory',
+      () {
+        _writeValidConfig(tempDir);
 
-      expect(command.iosExtensionWarnings(), isEmpty);
-    });
+        expect(command.iosExtensionWarnings(), isEmpty);
+      },
+    );
 
     test('an extension warning does not print as a config finding', () {
       _writeValidConfig(tempDir);
@@ -941,18 +944,29 @@ Map<String, dynamic> get notificationConfig => {
         .where((issue) => issue.startsWith('[ios]'))
         .toList();
 
-    test('reports all three markers missing on a stock Flutter iOS project',
-        () {
-      _writeIosProject(tempDir);
+    test(
+      'reports all three markers missing on a stock Flutter iOS project',
+      () {
+        _writeIosProject(tempDir);
 
-      final issues = iosIssues();
-      expect(issues.any((i) => i.contains('UIBackgroundModes')), isTrue,
-          reason: 'a project without remote-notification must fail');
-      expect(issues.any((i) => i.contains('aps-environment')), isTrue,
-          reason: 'a project without an entitlements file must fail');
-      expect(issues.any((i) => i.contains('CODE_SIGN_ENTITLEMENTS')), isTrue,
-          reason: 'an entitlements file Xcode does not read must fail');
-    });
+        final issues = iosIssues();
+        expect(
+          issues.any((i) => i.contains('UIBackgroundModes')),
+          isTrue,
+          reason: 'a project without remote-notification must fail',
+        );
+        expect(
+          issues.any((i) => i.contains('aps-environment')),
+          isTrue,
+          reason: 'a project without an entitlements file must fail',
+        );
+        expect(
+          issues.any((i) => i.contains('CODE_SIGN_ENTITLEMENTS')),
+          isTrue,
+          reason: 'an entitlements file Xcode does not read must fail',
+        );
+      },
+    );
 
     test('reports configured when all three markers are present', () {
       _writeIosProject(
@@ -980,10 +994,7 @@ Map<String, dynamic> get notificationConfig => {
       final status =
           command.checkPlatformSetup()['ios'] as Map<String, dynamic>;
       expect(status['configured'], isFalse);
-      expect(
-        (status['issues'] as List).single,
-        contains('UIBackgroundModes'),
-      );
+      expect((status['issues'] as List).single, contains('UIBackgroundModes'));
     });
 
     test('fails when the entitlements file has no aps-environment', () {
@@ -1036,10 +1047,7 @@ Map<String, dynamic> get notificationConfig => {
       final status =
           command.checkPlatformSetup()['ios'] as Map<String, dynamic>;
       expect(status['configured'], isFalse);
-      expect(
-        (status['issues'] as List).single,
-        contains('UIBackgroundModes'),
-      );
+      expect((status['issues'] as List).single, contains('UIBackgroundModes'));
     });
 
     test('reports the iOS row as configured in the report', () {
@@ -1064,19 +1072,19 @@ Map<String, dynamic> get notificationConfig => {
   });
 
   // ---------------------------------------------------------------------------
-  // --verbose flag via ArtisanContext
+  // --verbose flag via DowelContext
   // ---------------------------------------------------------------------------
 
   group('--verbose flag', () {
     test('verbose flag produces a longer report than non-verbose', () async {
-      // Drive the command directly through an ArtisanContext so there is no
+      // Drive the command directly through an DowelContext so there is no
       // stdin/stdout dependency. The verbose report includes per-check detail
       // lines (file paths, package names); the default report omits them.
-      final verboseCtx = ArtisanContext.bare(
+      final verboseCtx = DowelContext.bare(
         MapInput({'verbose': true}, signature: command.parsedSignature),
         BufferedOutput(),
       );
-      final defaultCtx = ArtisanContext.bare(
+      final defaultCtx = DowelContext.bare(
         MapInput({'verbose': false}, signature: command.parsedSignature),
         BufferedOutput(),
       );

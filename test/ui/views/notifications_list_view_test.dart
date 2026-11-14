@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/src/facades/notify.dart';
@@ -55,9 +55,7 @@ void main() {
     return MaterialApp(
       home: WindTheme(
         data: WindThemeData(),
-        child: Scaffold(
-          body: SizedBox(width: 1024, height: 900, child: child),
-        ),
+        child: Scaffold(body: SizedBox(width: 1024, height: 900, child: child)),
       ),
     );
   }
@@ -161,12 +159,15 @@ void main() {
     // With no padding the card spans the view, so the two share a centre. The
     // icon used to sit near the card's left edge: the inner column shrank to
     // its content and `items-center` centred within that alone.
-    final double cardCentre =
-        tester.getCenter(find.byType(NotificationsListView)).dx;
-    final double iconCentre =
-        tester.getCenter(find.byIcon(Icons.notifications_off_outlined)).dx;
-    final double messageCentre =
-        tester.getCenter(find.text('Nothing here yet')).dx;
+    final double cardCentre = tester
+        .getCenter(find.byType(NotificationsListView))
+        .dx;
+    final double iconCentre = tester
+        .getCenter(find.byIcon(Icons.notifications_off_outlined))
+        .dx;
+    final double messageCentre = tester
+        .getCenter(find.text('Nothing here yet'))
+        .dx;
 
     expect(iconCentre, closeTo(cardCentre, 1));
     expect(messageCentre, closeTo(cardCentre, 1));
@@ -206,9 +207,7 @@ void main() {
     expect(find.text('Nothing here yet'), findsNothing);
   });
 
-  testWidgets('renders notification items with title and body', (
-    tester,
-  ) async {
+  testWidgets('renders notification items with title and body', (tester) async {
     fakeNotifications([
       makeNotificationMap(
         id: '1',
@@ -345,9 +344,7 @@ void main() {
     });
 
     await tester.pumpWidget(
-      wrap(
-        NotificationsListView(onDelete: (String id) async => true),
-      ),
+      wrap(NotificationsListView(onDelete: (String id) async => true)),
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));

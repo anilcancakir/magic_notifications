@@ -52,10 +52,9 @@ void main() {
 
     test('send() carries a .url() destination into the payload', () async {
       final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-        'notifications/push-test': Http.response(
-          <String, dynamic>{'delivered': true},
-          202,
-        ),
+        'notifications/push-test': Http.response(<String, dynamic>{
+          'delivered': true,
+        }, 202),
       });
 
       final channel = PushChannel(MockPushDriver());
@@ -83,53 +82,53 @@ void main() {
       expect(body.keys, isNot(contains('url')));
     });
 
-    test('send() POSTs to notifications/push-test with no recipient field',
-        () async {
-      final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-        'notifications/push-test': Http.response(
-          <String, dynamic>{'delivered': true},
-          202,
-        ),
-      });
+    test(
+      'send() POSTs to notifications/push-test with no recipient field',
+      () async {
+        final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
+          'notifications/push-test': Http.response(<String, dynamic>{
+            'delivered': true,
+          }, 202),
+        });
 
-      final channel = PushChannel(MockPushDriver());
-      final message = PushMessage()
-        ..heading('Monitor Down')
-        ..content('api.example.com is not responding');
-      final notification = TestNotification(pushMessage: message);
+        final channel = PushChannel(MockPushDriver());
+        final message = PushMessage()
+          ..heading('Monitor Down')
+          ..content('api.example.com is not responding');
+        final notification = TestNotification(pushMessage: message);
 
-      await channel.send(TestNotifiable('1'), notification);
+        await channel.send(TestNotifiable('1'), notification);
 
-      network.assertSentCount(1);
-      final MagicRequest request = network.recorded.single.$1;
-      expect(request.method, 'POST');
+        network.assertSentCount(1);
+        final MagicRequest request = network.recorded.single.$1;
+        expect(request.method, 'POST');
 
-      final Map<String, dynamic> body = request.data as Map<String, dynamic>;
-      // The recipient is derived server-side from the session; the request
-      // must not carry any recipient-shaped key, not even a null one.
-      const recipientKeys = <String>[
-        'user_id',
-        'external_id',
-        'to',
-        'recipient'
-      ];
-      for (final key in recipientKeys) {
-        expect(
-          body.keys,
-          isNot(contains(key)),
-          reason: 'body must not carry recipient key "$key"',
-        );
-      }
-      expect(body['title'], 'Monitor Down');
-      expect(body['body'], 'api.example.com is not responding');
-    });
+        final Map<String, dynamic> body = request.data as Map<String, dynamic>;
+        // The recipient is derived server-side from the session; the request
+        // must not carry any recipient-shaped key, not even a null one.
+        const recipientKeys = <String>[
+          'user_id',
+          'external_id',
+          'to',
+          'recipient',
+        ];
+        for (final key in recipientKeys) {
+          expect(
+            body.keys,
+            isNot(contains(key)),
+            reason: 'body must not carry recipient key "$key"',
+          );
+        }
+        expect(body['title'], 'Monitor Down');
+        expect(body['body'], 'api.example.com is not responding');
+      },
+    );
 
     test('send() forwards data as the additionalData payload', () async {
       final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-        'notifications/push-test': Http.response(
-          <String, dynamic>{'delivered': true},
-          202,
-        ),
+        'notifications/push-test': Http.response(<String, dynamic>{
+          'delivered': true,
+        }, 202),
       });
 
       final channel = PushChannel(MockPushDriver());
@@ -146,45 +145,15 @@ void main() {
       expect(body['data'], <String, dynamic>{'monitor_id': '123'});
     });
 
-    test('send() surfaces a non-2xx response rather than swallowing it',
-        () async {
-      Http.fake(<String, MagicResponse>{
-        'notifications/push-test': Http.response(
-          <String, dynamic>{
+    test(
+      'send() surfaces a non-2xx response rather than swallowing it',
+      () async {
+        Http.fake(<String, MagicResponse>{
+          'notifications/push-test': Http.response(<String, dynamic>{
             'message':
                 'Push notifications are not provisioned for this application.',
-          },
-          409,
-        ),
-      });
-
-      final channel = PushChannel(MockPushDriver());
-      final message = PushMessage()
-        ..heading('Monitor Down')
-        ..content('api.example.com is not responding');
-      final notification = TestNotification(pushMessage: message);
-
-      await expectLater(
-        channel.send(TestNotifiable('1'), notification),
-        throwsA(isA<NotificationException>()),
-      );
-    });
-
-    // The endpoint derives the recipient from the authenticated session, so
-    // this channel can only ever page the CALLER. A notifiable naming somebody
-    // else used to page the caller instead, silently.
-    group('the recipient is the authenticated user, or nobody', () {
-      tearDown(Auth.unfake);
-
-      test('send() refuses a notifiable that is not the authenticated user',
-          () async {
-        final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-          'notifications/push-test': Http.response(
-            <String, dynamic>{'delivered': true},
-            202,
-          ),
+          }, 409),
         });
-        Auth.fake(user: _makeUser(1));
 
         final channel = PushChannel(MockPushDriver());
         final message = PushMessage()
@@ -193,18 +162,47 @@ void main() {
         final notification = TestNotification(pushMessage: message);
 
         await expectLater(
-          channel.send(TestNotifiable('2'), notification),
+          channel.send(TestNotifiable('1'), notification),
           throwsA(isA<NotificationException>()),
         );
-        network.assertNothingSent();
-      });
+      },
+    );
+
+    // The endpoint derives the recipient from the authenticated session, so
+    // this channel can only ever page the CALLER. A notifiable naming somebody
+    // else used to page the caller instead, silently.
+    group('the recipient is the authenticated user, or nobody', () {
+      tearDown(Auth.unfake);
+
+      test(
+        'send() refuses a notifiable that is not the authenticated user',
+        () async {
+          final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
+            'notifications/push-test': Http.response(<String, dynamic>{
+              'delivered': true,
+            }, 202),
+          });
+          Auth.fake(user: _makeUser(1));
+
+          final channel = PushChannel(MockPushDriver());
+          final message = PushMessage()
+            ..heading('Monitor Down')
+            ..content('api.example.com is not responding');
+          final notification = TestNotification(pushMessage: message);
+
+          await expectLater(
+            channel.send(TestNotifiable('2'), notification),
+            throwsA(isA<NotificationException>()),
+          );
+          network.assertNothingSent();
+        },
+      );
 
       test('send() sends for the authenticated user', () async {
         final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-          'notifications/push-test': Http.response(
-            <String, dynamic>{'delivered': true},
-            202,
-          ),
+          'notifications/push-test': Http.response(<String, dynamic>{
+            'delivered': true,
+          }, 202),
         });
         Auth.fake(user: _makeUser(1));
 
@@ -223,10 +221,9 @@ void main() {
         // Nothing here can tell whose device this is, so the check has no
         // answer to give and the endpoint answers 401 instead.
         final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-          'notifications/push-test': Http.response(
-            <String, dynamic>{'delivered': true},
-            202,
-          ),
+          'notifications/push-test': Http.response(<String, dynamic>{
+            'delivered': true,
+          }, 202),
         });
         Auth.fake();
 
@@ -242,24 +239,26 @@ void main() {
       });
     });
 
-    test('send() respects the preference matrix and makes no request',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
+    test(
+      'send() respects the preference matrix and makes no request',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
 
-      final channel = PushChannel(MockPushDriver());
-      final message = PushMessage()
-        ..heading('Monitor Down')
-        ..content('api.example.com is not responding');
-      final notification = TestNotification(pushMessage: message);
-      final notifiable = TestNotifiable(
-        '1',
-        preference: const NotificationPreference(pushEnabled: false),
-      );
+        final channel = PushChannel(MockPushDriver());
+        final message = PushMessage()
+          ..heading('Monitor Down')
+          ..content('api.example.com is not responding');
+        final notification = TestNotification(pushMessage: message);
+        final notifiable = TestNotifiable(
+          '1',
+          preference: const NotificationPreference(pushEnabled: false),
+        );
 
-      await channel.send(notifiable, notification);
+        await channel.send(notifiable, notification);
 
-      network.assertNothingSent();
-    });
+        network.assertNothingSent();
+      },
+    );
 
     // The endpoint behind this channel makes the platform emit a push on a
     // client's say-so, and nothing in this release asks it to. It therefore
@@ -302,17 +301,19 @@ void main() {
         network.assertNothingSent();
       });
 
-      test('send() issues no request while the switch is explicitly false',
-          () async {
-        Config.set(_switchKey, false);
-        final FakeNetworkDriver network = Http.fake();
+      test(
+        'send() issues no request while the switch is explicitly false',
+        () async {
+          Config.set(_switchKey, false);
+          final FakeNetworkDriver network = Http.fake();
 
-        final channel = PushChannel(MockPushDriver());
+          final channel = PushChannel(MockPushDriver());
 
-        await channel.send(TestNotifiable('1'), _pushNotification());
+          await channel.send(TestNotifiable('1'), _pushNotification());
 
-        network.assertNothingSent();
-      });
+          network.assertNothingSent();
+        },
+      );
 
       // A value this channel cannot read as a boolean is a configuration
       // mistake, and the safe reading of a mistake on a switch that guards an
@@ -333,21 +334,23 @@ void main() {
       // The switch is read FIRST, ahead of the recipient guard. A channel that
       // is switched off cannot page anybody, so there is no mis-page to refuse
       // and nothing to raise about.
-      test('send() skips a foreign notifiable instead of refusing it',
-          () async {
-        Config.set(_switchKey, false);
-        final FakeNetworkDriver network = Http.fake();
-        Auth.fake(user: _makeUser(1));
-        addTearDown(Auth.unfake);
+      test(
+        'send() skips a foreign notifiable instead of refusing it',
+        () async {
+          Config.set(_switchKey, false);
+          final FakeNetworkDriver network = Http.fake();
+          Auth.fake(user: _makeUser(1));
+          addTearDown(Auth.unfake);
 
-        final channel = PushChannel(MockPushDriver());
+          final channel = PushChannel(MockPushDriver());
 
-        await expectLater(
-          channel.send(TestNotifiable('2'), _pushNotification()),
-          completes,
-        );
-        network.assertNothingSent();
-      });
+          await expectLater(
+            channel.send(TestNotifiable('2'), _pushNotification()),
+            completes,
+          );
+          network.assertNothingSent();
+        },
+      );
     });
   });
 }
@@ -428,8 +431,7 @@ class MockPushDriver extends PushDriver {
 class TestNotifiable with Notifiable {
   final String _id;
   final NotificationPreference? _preference;
-  TestNotifiable(this._id, {NotificationPreference? preference})
-      : _preference = preference;
+  TestNotifiable(this._id, {this._preference});
 
   @override
   String get notifiableId => _id;

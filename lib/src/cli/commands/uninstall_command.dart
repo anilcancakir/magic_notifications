@@ -1,6 +1,6 @@
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 import 'install_command.dart' show NotificationsConfigWiring;
 
 /// CLI command to uninstall Magic Notifications from the project.
@@ -32,10 +32,10 @@ import 'install_command.dart' show NotificationsConfigWiring;
 ///
 /// ## Usage
 /// ```bash
-/// dart run <app>:artisan notifications:uninstall
-/// dart run <app>:artisan notifications:uninstall --force
+/// dart run magic:dowel notifications:uninstall
+/// dart run magic:dowel notifications:uninstall --force
 /// ```
-class UninstallCommand extends ArtisanCommand {
+class UninstallCommand extends DowelCommand {
   @override
   String get signature =>
       'notifications:uninstall {--force : Skip confirmation prompt}';
@@ -59,14 +59,15 @@ class UninstallCommand extends ArtisanCommand {
   /// Returns `true` to proceed, `false` to cancel. Overridable in tests so the
   /// confirmation can be decided without reading real stdin.
   bool confirmRemoval() => Prompt.confirm(
-        'Are you sure you want to uninstall Magic Notifications?',
-        defaultValue: false,
-      );
+    'Are you sure you want to uninstall Magic Notifications?',
+    defaultValue: false,
+  );
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     final force = ctx.input.option('force') as bool? ?? false;
 
@@ -104,7 +105,8 @@ class UninstallCommand extends ArtisanCommand {
       return null;
     }
     return NotificationsConfigWiring.getterName(
-        FileHelper.readFile(configPath));
+      FileHelper.readFile(configPath),
+    );
   }
 
   /// Print a summary of what will be removed before asking for confirmation.
@@ -112,7 +114,7 @@ class UninstallCommand extends ArtisanCommand {
   /// [configGetter] is the symbol read off the project's own config, so the
   /// summary promises the line this run can actually remove rather than the one
   /// a stub-generated project would have.
-  void _showRemovalSummary(ArtisanContext ctx, String? configGetter) {
+  void _showRemovalSummary(DowelContext ctx, String? configGetter) {
     ctx.output.info('The following will be removed:');
     ctx.output.info('  • lib/config/notifications.dart');
     ctx.output.info('  • magic_notifications dependency from pubspec.yaml');
@@ -120,9 +122,9 @@ class UninstallCommand extends ArtisanCommand {
     ctx.output.info(
       configGetter == null
           ? '  • nothing from lib/main.dart: the config getter cannot be read, '
-              'so its wiring is reported instead of guessed at'
+                'so its wiring is reported instead of guessed at'
           : '  • the config import and the "() => $configGetter," factory '
-              'from lib/main.dart',
+                'from lib/main.dart',
     );
     ctx.output.writeln('');
     ctx.output.warning(
@@ -139,10 +141,7 @@ class UninstallCommand extends ArtisanCommand {
   /// Each step is guarded: a missing file emits a warning instead of throwing,
   /// so partial uninstalls are handled gracefully. [configGetter] was read in
   /// [handle], before step 1 deleted the file that declared it.
-  Future<void> _executeUninstall(
-    ArtisanContext ctx,
-    String? configGetter,
-  ) async {
+  Future<void> _executeUninstall(DowelContext ctx, String? configGetter) async {
     // 1. Delete notifications config file.
     _deleteConfigFile(ctx);
 
@@ -157,7 +156,7 @@ class UninstallCommand extends ArtisanCommand {
   }
 
   /// Delete `lib/config/notifications.dart`.
-  void _deleteConfigFile(ArtisanContext ctx) {
+  void _deleteConfigFile(DowelContext ctx) {
     final configPath = '$projectRoot/lib/config/notifications.dart';
     if (FileHelper.fileExists(configPath)) {
       FileHelper.deleteFile(configPath);
@@ -168,7 +167,7 @@ class UninstallCommand extends ArtisanCommand {
   }
 
   /// Remove `magic_notifications` from `pubspec.yaml`.
-  void _removePubspecDependency(ArtisanContext ctx) {
+  void _removePubspecDependency(DowelContext ctx) {
     final pubspecPath = '$projectRoot/pubspec.yaml';
     if (!FileHelper.fileExists(pubspecPath)) {
       return;
@@ -186,7 +185,7 @@ class UninstallCommand extends ArtisanCommand {
   }
 
   /// Remove import and `NotificationServiceProvider` from `lib/config/app.dart`.
-  void _removeFromApp(ArtisanContext ctx) {
+  void _removeFromApp(DowelContext ctx) {
     final appPath = '$projectRoot/lib/config/app.dart';
     if (!FileHelper.fileExists(appPath)) {
       return;
@@ -228,7 +227,7 @@ class UninstallCommand extends ArtisanCommand {
   /// before it decides a project is wired at all: a project whose import is
   /// commented out is correctly judged "not wired", and cutting that text out
   /// of the middle of its comment anyway leaves a dangling `//`.
-  void _removeFromMain(ArtisanContext ctx, String? configGetter) {
+  void _removeFromMain(DowelContext ctx, String? configGetter) {
     final mainPath = '$projectRoot/lib/main.dart';
     if (!FileHelper.fileExists(mainPath)) {
       return;
@@ -289,7 +288,7 @@ class UninstallCommand extends ArtisanCommand {
   }
 
   /// Print manual cleanup instructions for platform-specific files.
-  void _showPlatformCleanupInstructions(ArtisanContext ctx) {
+  void _showPlatformCleanupInstructions(DowelContext ctx) {
     ctx.output.writeln('');
     ctx.output.warning('Manual cleanup required for platform files:');
     ctx.output.info('');

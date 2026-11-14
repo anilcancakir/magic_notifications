@@ -48,8 +48,10 @@ class NotificationsListController extends MagicController
   /// `build` paints A's incident titles out of [pageNotifier] before `onInit`'s
   /// refresh lands. [loadPage]'s catch then deliberately leaves the rows up, so
   /// a refresh that fails leaves A's rows on B's screen indefinitely.
-  late final StreamSubscription<void> _sessionCleared =
-      Notify.manager.onSessionCleared.listen((_) => _clearSession());
+  late final StreamSubscription<void> _sessionCleared = Notify
+      .manager
+      .onSessionCleared
+      .listen((_) => _clearSession());
 
   @override
   void onInit() {

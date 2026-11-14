@@ -14,7 +14,7 @@ import 'test_helper.dart';
 /// [onPushIdentityReconciled] has to survive.
 class _FakePushDriver extends PushDriver {
   _FakePushDriver({String? subscribedAs, this.failLogin = false})
-      : _externalId = subscribedAs;
+    : _externalId = subscribedAs;
 
   /// Whether [login] throws, standing in for a call the SDK refused.
   final bool failLogin;
@@ -144,22 +144,24 @@ void main() {
   }
 
   group('onPushIdentityReconciled', () {
-    test('a converging pass emits the intent, converged and no error',
-        () async {
-      use(_FakePushDriver());
-      await manager.want('user_1');
+    test(
+      'a converging pass emits the intent, converged and no error',
+      () async {
+        use(_FakePushDriver());
+        await manager.want('user_1');
 
-      final List<PushIdentityReconciled> events = <PushIdentityReconciled>[];
-      manager.onPushIdentityReconciled.listen(events.add);
+        final List<PushIdentityReconciled> events = <PushIdentityReconciled>[];
+        manager.onPushIdentityReconciled.listen(events.add);
 
-      await manager.reconcilePushIdentity();
-      await pumpEventQueue();
+        await manager.reconcilePushIdentity();
+        await pumpEventQueue();
 
-      expect(events, hasLength(1));
-      expect(events.single.intent, 'user_1');
-      expect(events.single.converged, isTrue);
-      expect(events.single.error, isNull);
-    });
+        expect(events, hasLength(1));
+        expect(events.single.intent, 'user_1');
+        expect(events.single.converged, isTrue);
+        expect(events.single.error, isNull);
+      },
+    );
 
     test('a pass whose login throws still emits, carrying the error', () async {
       use(_FakePushDriver(failLogin: true));
@@ -177,8 +179,7 @@ void main() {
       expect(events.single.error, isNotNull);
     });
 
-    test(
-        'a pass whose intent moved before it finished emits nothing for the '
+    test('a pass whose intent moved before it finished emits nothing for the '
         'stale intent', () async {
       final _FakePushDriver driver = use(_FakePushDriver());
       await manager.want('user_1');

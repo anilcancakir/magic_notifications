@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/src/facades/notify.dart';
@@ -19,7 +19,10 @@ void main() {
 
   Widget wrap(Widget child) {
     return MaterialApp(
-      home: WindTheme(data: WindThemeData(), child: Scaffold(body: child)),
+      home: WindTheme(
+        data: WindThemeData(),
+        child: Scaffold(body: child),
+      ),
     );
   }
 
@@ -162,7 +165,9 @@ void main() {
 
     test('resolves the package views by key', () {
       expect(
-          Notify.view.make('notifications.list'), isA<NotificationsListView>());
+        Notify.view.make('notifications.list'),
+        isA<NotificationsListView>(),
+      );
       expect(
         Notify.view.make('notifications.preferences'),
         isA<NotificationPreferencesView>(),

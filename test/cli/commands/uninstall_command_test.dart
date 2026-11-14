@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_notifications/src/cli/commands/uninstall_command.dart';
 import 'package:test/test.dart';
 
@@ -10,8 +10,7 @@ class _TestUninstallCommand extends UninstallCommand {
   final String _root;
   final bool _confirm;
 
-  _TestUninstallCommand(this._root, {bool confirm = false})
-      : _confirm = confirm;
+  _TestUninstallCommand(this._root, {this._confirm = false});
 
   @override
   String getProjectRoot() => _root;
@@ -20,16 +19,10 @@ class _TestUninstallCommand extends UninstallCommand {
   bool confirmRemoval() => _confirm;
 }
 
-/// Builds an [ArtisanContext] for [cmd] with the given flag overrides.
-ArtisanContext _ctx(
-  _TestUninstallCommand cmd, {
-  bool force = false,
-}) =>
-    ArtisanContext.bare(
-      MapInput(
-        {'force': force},
-        signature: cmd.parsedSignature,
-      ),
+/// Builds an [DowelContext] for [cmd] with the given flag overrides.
+DowelContext _ctx(_TestUninstallCommand cmd, {bool force = false}) =>
+    DowelContext.bare(
+      MapInput({'force': force}, signature: cmd.parsedSignature),
       BufferedOutput(),
     );
 
@@ -38,9 +31,9 @@ void _writeInstalledProject(Directory tempDir) {
   Directory('${tempDir.path}/lib/config').createSync(recursive: true);
 
   // notifications.dart config
-  File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
-    "Map<String, dynamic> get notificationConfig => {};\n",
-  );
+  File(
+    '${tempDir.path}/lib/config/notifications.dart',
+  ).writeAsStringSync("Map<String, dynamic> get notificationConfig => {};\n");
 
   // pubspec.yaml with magic_notifications dependency
   File('${tempDir.path}/pubspec.yaml').writeAsStringSync('''
@@ -131,62 +124,65 @@ void main() {
         expect(content, isNot(contains('magic_notifications')));
       });
 
-      test('removes magic_notifications import from lib/config/app.dart',
-          () async {
+      test('removes magic_notifications import from lib/config/app.dart', () async {
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/config/app.dart')
+            .readAsStringSync();
         expect(
           content,
-          isNot(contains(
-              "import 'package:magic_notifications/magic_notifications.dart';")),
+          isNot(
+            contains(
+              "import 'package:magic_notifications/magic_notifications.dart';",
+            ),
+          ),
         );
       });
 
-      test('removes NotificationServiceProvider from lib/config/app.dart',
-          () async {
-        await command.handle(_ctx(command, force: true));
+      test(
+        'removes NotificationServiceProvider from lib/config/app.dart',
+        () async {
+          await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-        expect(content, isNot(contains('NotificationServiceProvider')));
-      });
+          final content = File('${tempDir.path}/lib/config/app.dart')
+              .readAsStringSync();
+          expect(content, isNot(contains('NotificationServiceProvider')));
+        },
+      );
 
-      test('preserves non-notification content in lib/config/app.dart',
-          () async {
-        await command.handle(_ctx(command, force: true));
+      test(
+        'preserves non-notification content in lib/config/app.dart',
+        () async {
+          await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
-        expect(content, contains("import 'package:magic/magic.dart';"));
-        expect(content, contains('RouteServiceProvider'));
-      });
+          final content = File('${tempDir.path}/lib/config/app.dart')
+              .readAsStringSync();
+          expect(content, contains("import 'package:magic/magic.dart';"));
+          expect(content, contains('RouteServiceProvider'));
+        },
+      );
 
       test('removes notifications.dart import from lib/main.dart', () async {
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
-        expect(
-          content,
-          isNot(contains("import 'config/notifications.dart';")),
-        );
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
+        expect(content, isNot(contains("import 'config/notifications.dart';")));
       });
 
       test('removes notificationConfig factory from lib/main.dart', () async {
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
         expect(content, isNot(contains('notificationConfig')));
       });
 
       test('preserves non-notification content in lib/main.dart', () async {
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
         expect(content, contains("import 'package:magic/magic.dart';"));
         expect(content, contains('Magic.init'));
         expect(content, contains('appConfig'));
@@ -214,8 +210,8 @@ void main() async {
 
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
         expect(content, contains("// import 'config/notifications.dart';"));
       });
 
@@ -235,8 +231,8 @@ void main() async {
 
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
         expect(content, contains('// () => notificationConfig,'));
       });
 
@@ -259,26 +255,22 @@ void main() async {
 
         await command.handle(_ctx(command, force: true));
 
-        final content =
-            File('${tempDir.path}/lib/main.dart').readAsStringSync();
+        final content = File('${tempDir.path}/lib/main.dart')
+            .readAsStringSync();
         expect(content, contains('// Wiring reference: '));
         expect(content, contains('// "() => notificationConfig," to '));
         expect(
           content,
           isNot(contains("\nimport 'config/notifications.dart';")),
         );
-        expect(
-          content,
-          isNot(contains('      () => notificationConfig,')),
-        );
+        expect(content, isNot(contains('      () => notificationConfig,')));
       });
     });
 
     group('platform files are NOT touched', () {
       test('does not touch AndroidManifest.xml when present', () async {
-        final manifestDir = Directory(
-          '${tempDir.path}/android/app/src/main',
-        )..createSync(recursive: true);
+        final manifestDir = Directory('${tempDir.path}/android/app/src/main')
+          ..createSync(recursive: true);
         final manifestFile = File('${manifestDir.path}/AndroidManifest.xml');
         const originalContent =
             '<manifest><uses-permission android:name="android.permission.POST_NOTIFICATIONS"/></manifest>';

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/src/drivers/push/push_driver.dart';
@@ -207,10 +207,10 @@ class _ThrowingRequestPushDriver extends _RecordingPushDriver {
 /// building it, so [openPlatformSettings] throws as the base contract does.
 class _UnbuiltSettingsPushDriver extends _RecordingPushDriver {
   _UnbuiltSettingsPushDriver()
-      : super(
-          permission: PushPermissionState.denied,
-          opensPlatformSettings: true,
-        );
+    : super(
+        permission: PushPermissionState.denied,
+        opensPlatformSettings: true,
+      );
 
   /// How many times [permissionState] was read; proves the row re-read the
   /// platform after the throw instead of sticking on the spinner.
@@ -389,12 +389,12 @@ class _HeldPutVaultService extends MagicVaultService {
 /// whether this platform can route the tap back to a setting.
 const List<(PushReachability, PushPromptAction)> _everyState =
     <(PushReachability, PushPromptAction)>[
-  (PushReachability.off, PushPromptAction.request),
-  (PushReachability.blocked, PushPromptAction.openSettings),
-  (PushReachability.blocked, PushPromptAction.instructions),
-  (PushReachability.on, PushPromptAction.none),
-  (PushReachability.unavailable, PushPromptAction.none),
-];
+      (PushReachability.off, PushPromptAction.request),
+      (PushReachability.blocked, PushPromptAction.openSettings),
+      (PushReachability.blocked, PushPromptAction.instructions),
+      (PushReachability.on, PushPromptAction.none),
+      (PushReachability.unavailable, PushPromptAction.none),
+    ];
 
 void main() {
   setUpAll(() async {
@@ -618,9 +618,7 @@ void main() {
         // 2. The decline runs to completion while the read above is still
         //    in flight: it writes the vault, re-reads (its own platform read
         //    is no longer held), and lands the compact row.
-        await tester.tap(
-          find.text(trans('notifications.push_prompt.not_now')),
-        );
+        await tester.tap(find.text(trans('notifications.push_prompt.not_now')));
         await tester.pumpAndSettle();
 
         expect(
@@ -667,9 +665,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // 1. The decline starts and its vault write is held open.
-        await tester.tap(
-          find.text(trans('notifications.push_prompt.not_now')),
-        );
+        await tester.tap(find.text(trans('notifications.push_prompt.not_now')));
         await tester.pump();
 
         // 2. A permission event re-reads while that write is in flight; the
@@ -835,9 +831,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.tap(
-          find.text(trans('notifications.push_prompt.not_now')),
-        );
+        await tester.tap(find.text(trans('notifications.push_prompt.not_now')));
         await tester.pumpAndSettle();
 
         // The throwing put() must not escape as an unhandled async error.
@@ -945,9 +939,7 @@ void main() {
       expect(find.byType(PushPrompt), findsNothing);
     });
 
-    testWidgets('true (the default) still renders the prompt', (
-      tester,
-    ) async {
+    testWidgets('true (the default) still renders the prompt', (tester) async {
       Config.set(NotificationManager.softPromptEnabledKey, true);
       usePushDriver(_RecordingPushDriver());
 

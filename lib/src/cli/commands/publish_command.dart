@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 
 /// CLI command to publish Magic Notifications stub files to the project.
 ///
@@ -16,10 +16,10 @@ import '../notifications_artisan_provider.dart';
 /// ## Usage
 ///
 /// ```bash
-/// dart run <app>:artisan notifications:publish
-/// dart run <app>:artisan notifications:publish --force
+/// dart run magic:dowel notifications:publish
+/// dart run magic:dowel notifications:publish --force
 /// ```
-class PublishCommand extends ArtisanCommand {
+class PublishCommand extends DowelCommand {
   @override
   String get signature =>
       'notifications:publish {--force : Overwrite existing published files.}';
@@ -45,9 +45,10 @@ class PublishCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     final force = ctx.input.option('force') as bool? ?? false;
     final configPath = '$projectRoot/lib/config/notifications.dart';
@@ -89,7 +90,7 @@ class PublishCommand extends ArtisanCommand {
       "  1. Update 'YOUR_ONESIGNAL_APP_ID' with your actual OneSignal App ID",
     );
     ctx.output.info(
-      '  2. Run: ${ConsoleStyle.cyan}dart run <app>:artisan notifications:install'
+      '  2. Run: ${ConsoleStyle.cyan}dart run magic:dowel notifications:install'
       '${ConsoleStyle.reset}',
     );
     ctx.output.info('     to inject providers and platform setup');
@@ -117,9 +118,9 @@ class PublishCommand extends ArtisanCommand {
             if (rootUri.startsWith('file://')) {
               parsedPath = Uri.parse(rootUri).toFilePath();
             } else if (rootUri.startsWith('../')) {
-              parsedPath = File(
-                packageConfigPath,
-              ).parent.uri.resolve(rootUri).toFilePath();
+              parsedPath = File(packageConfigPath).parent.uri
+                  .resolve(rootUri)
+                  .toFilePath();
             } else {
               parsedPath = rootUri;
             }

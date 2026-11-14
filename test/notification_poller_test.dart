@@ -68,15 +68,17 @@ void main() {
       expect(mockManager.fetchCallCount, greaterThan(countBeforeResume));
     });
 
-    test('refresh() fetches immediately without affecting polling state',
-        () async {
-      final countBefore = mockManager.fetchCallCount;
+    test(
+      'refresh() fetches immediately without affecting polling state',
+      () async {
+        final countBefore = mockManager.fetchCallCount;
 
-      await poller.refresh();
+        await poller.refresh();
 
-      expect(mockManager.fetchCallCount, countBefore + 1);
-      expect(poller.isActive, isFalse); // Not started yet
-    });
+        expect(mockManager.fetchCallCount, countBefore + 1);
+        expect(poller.isActive, isFalse); // Not started yet
+      },
+    );
 
     test('refresh() works when poller is active', () async {
       poller.start();

@@ -118,7 +118,8 @@ JSObject _getOneSignal() {
   final oneSignal = globalContext['OneSignal'] as JSObject?;
   if (oneSignal == null) {
     throw Exception(
-        'OneSignal SDK not available. Make sure the script is loaded.');
+      'OneSignal SDK not available. Make sure the script is loaded.',
+    );
   }
   return oneSignal;
 }
@@ -527,7 +528,7 @@ void addNotificationClickListener(
 /// call `preventDisplay` synchronously; nothing later has any effect.
 void addNotificationForegroundListener(
   void Function(Map<String, dynamic> event, void Function() preventDisplay)
-      callback,
+  callback,
 ) {
   try {
     final oneSignal = globalContext['OneSignal'] as JSObject?;
