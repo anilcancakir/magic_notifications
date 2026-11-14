@@ -9,7 +9,7 @@ library;
 // Hide the dowel-builtin DoctorCommand so the notifications-specific
 // DoctorCommand (commands/doctor_command.dart) is the only one visible from
 // this barrel.
-export 'package:dowel/dowel.dart' hide DoctorCommand;
+export 'package:dowel/dowel.dart';
 
 export 'commands/channels_command.dart';
 export 'commands/configure_command.dart';

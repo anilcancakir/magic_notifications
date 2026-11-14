@@ -285,7 +285,7 @@ class InstallCommand extends DowelInstallCommand {
     final result = await _runInstall(ctx, manifest, plan);
 
     // 5. Echo the post-install message on Success.
-    if (result is Success && manifest.postInstall.message != null) {
+    if (result is InstallSuccess && manifest.postInstall.message != null) {
       ctx.output.info(manifest.postInstall.message!);
     }
 
@@ -589,7 +589,7 @@ class InstallCommand extends DowelInstallCommand {
     //    longer declares. This runs after the commit, not as a staged op, so it
     //    reads the config that actually landed and never fires on a dry run or
     //    on a transaction that rolled back.
-    if (result is Success &&
+    if (result is InstallSuccess &&
         stagedConfig != null &&
         configExists &&
         mainWiredBefore) {
@@ -604,7 +604,7 @@ class InstallCommand extends DowelInstallCommand {
     // 9. The APNs entitlements, both files and both build settings. Guarded on
     //    Success, so a `--dry-run` (which reports DryRun) and a rolled-back
     //    transaction each leave the project untouched.
-    if (result is Success &&
+    if (result is InstallSuccess &&
         plan.hasIos &&
         PlatformHelper.hasPlatform(projectRoot, 'ios')) {
       _writeApsEntitlements(ctx);
@@ -922,18 +922,18 @@ class InstallCommand extends DowelInstallCommand {
   /// matching summary line.
   int _renderResult(DowelContext ctx, TransactionResult result) {
     switch (result) {
-      case Success():
+      case InstallSuccess():
         ctx.output.success('Installation complete!');
         return 0;
-      case DryRun(opCount: final n):
+      case InstallDryRun(opCount: final n):
         ctx.output.info('Dry-run: $n op(s) staged; no files were written.');
         return 0;
-      case Conflict(conflicts: final list):
+      case InstallConflict(conflicts: final list):
         ctx.output.error(
           'Conflict on ${list.length} file(s). Re-run with --force to overwrite.',
         );
         return 1;
-      case Error(error: final msg, rolledBack: final ok):
+      case InstallError(error: final msg, rolledBack: final ok):
         ctx.output.error('Install failed: $msg (rolledBack: $ok)');
         return 1;
     }

@@ -2,7 +2,7 @@ import 'dart:io';
 
 // Import dowel without DoctorCommand to avoid collision with the
 // notifications-specific DoctorCommand below.
-import 'package:dowel/dowel.dart' hide DoctorCommand;
+import 'package:dowel/dowel.dart';
 import 'package:magic_notifications/src/cli/commands/doctor_command.dart';
 import 'package:test/test.dart';
 
