@@ -209,7 +209,7 @@ The poller fetches immediately on `start()` and on `resume()` after a pause, the
 <a name="realtime"></a>
 ## Realtime Delivery
 
-Polling is the fallback, not the only path. When the app has a broadcast driver (see [magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels), which provides `Echo`), the manager can take notification state off the socket instead:
+Polling is the fallback, not the only path. When the app has a broadcast driver (see [magic_socket](https://anilcancakir.com/magic/docs/socket/basics/channels), which provides `Echo`), the manager can take notification state off the socket instead:
 
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
@@ -424,4 +424,4 @@ Read `converged` and `error` together:
 - [Drivers](../basics/drivers.md): what the manager resolves and listens to.
 - [Configuration](../getting-started/configuration.md): the polling and push keys.
 - [Shipping push in a release build](../basics/shipping-push.md): `Notify.pushState`, which reports device reachability to a backend.
-- [Realtime connection in magic_socket](https://anilcancakir.com/magic_socket/docs/guides/connection): the socket behind `Notify.startRealtime`.
+- [Realtime connection in magic_socket](https://anilcancakir.com/magic/docs/socket/guides/connection): the socket behind `Notify.startRealtime`.

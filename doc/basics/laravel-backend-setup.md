@@ -516,7 +516,7 @@ The client reports on change (sign-in, permission, subscription swap), never on 
 <a name="broadcast"></a>
 ## Socket Delivery (Broadcast)
 
-The client can take notification state off a socket instead of polling for it (`Notify.startRealtime`, which subscribes through [magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels)). That needs three things on this side: the `broadcast` channel on the notification, a payload the client's decoder can read, and channel authorisation.
+The client can take notification state off a socket instead of polling for it (`Notify.startRealtime`, which subscribes through [magic_socket](https://anilcancakir.com/magic/docs/socket/basics/channels)). That needs three things on this side: the `broadcast` channel on the notification, a payload the client's decoder can read, and channel authorisation.
 
 ### 1. Add the channel and shape the frame
 
@@ -749,4 +749,4 @@ test('lists user notifications', function () {
 - [Notification Manager](../architecture/notification-manager.md): how the client uses these endpoints.
 - [Installation](../getting-started/installation.md) and [Channels](./channels.md): the Flutter side.
 - [Laravel Notifications](https://laravel.com/docs/notifications) and the [OneSignal Laravel channel](https://github.com/laravel-notification-channels/onesignal): the packages this page builds on.
-- [magic_socket channels](https://anilcancakir.com/magic_socket/docs/basics/channels): the client-side socket layer.
+- [magic_socket channels](https://anilcancakir.com/magic/docs/socket/basics/channels): the client-side socket layer.

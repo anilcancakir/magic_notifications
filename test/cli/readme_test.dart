@@ -33,7 +33,7 @@ void main() {
       final readme = File('README.md').readAsStringSync();
       expect(
         readme,
-        contains('anilcancakir.com/magic_notifications/docs/basics/cli'),
+        contains('anilcancakir.com/magic/docs/notifications/basics/cli'),
       );
     });
   });

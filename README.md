@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://anilcancakir.com/magic_notifications">Documentation</a> ·
+  <a href="https://anilcancakir.com/magic/docs/notifications">Documentation</a> ·
   <a href="https://pub.dev/packages/magic_notifications">pub.dev</a> ·
   <a href="https://github.com/anilcancakir/magic_notifications/issues">Issues</a>
 </p>
@@ -54,7 +54,7 @@ dart run magic:dowel notifications:install \
   --platforms android,ios,web
 ```
 
-The APNs key upload, the iOS App Group and the Notification Service Extension stay manual; [Installation](https://anilcancakir.com/magic_notifications/docs/getting-started/installation) lists them.
+The APNs key upload, the iOS App Group and the Notification Service Extension stay manual; [Installation](https://anilcancakir.com/magic/docs/notifications/getting-started/installation) lists them.
 
 ## Inbox
 
@@ -174,10 +174,10 @@ Future<void> onSignOut() async {
 | `Notify.requestPushPermission()` | Raises the OS dialog; `true` when granted. Shows nothing on a device that already answered. |
 | `Notify.manager.pushDriver.reachability()` | `PushReachability.unavailable`, `blocked`, `off` or `on`, without raising a dialog. |
 | `Notify.manager.pushPromptAdvice(declinedAt:)` | Whether your own reminder may show now, and what its button can do (`PushPromptAction`). |
-| `PushPrompt`, `PushPromptHost(declinedVaultKey:)`, `PushOffNotice(onOpenPreferences:)` | The shipped reminder row and the quiet shell marker; see [Push Prompt Component](https://anilcancakir.com/magic_notifications/docs/basics/preferences#push-prompt). |
+| `PushPrompt`, `PushPromptHost(declinedVaultKey:)`, `PushOffNotice(onOpenPreferences:)` | The shipped reminder row and the quiet shell marker; see [Push Prompt Component](https://anilcancakir.com/magic/docs/notifications/basics/preferences#push-prompt). |
 | `Notify.manager.onPushReceived`, `onPushClicked` | Foreground pushes and taps, filtered to the signed-in identity; taps from a cold start are held until a listener attaches. |
-| `Notify.manager.onPushIdentityReconciled` | The outcome of every identity pass; see [Push Identity Reconcile Outcomes](https://anilcancakir.com/magic_notifications/docs/architecture/notification-manager#identity-reconciled). |
-| `Notify.pushState` | Posts the device's own reachability to your backend and withdraws it on sign-out; see [Telling your backend whether the device can be paged](https://anilcancakir.com/magic_notifications/docs/basics/shipping-push#telling-your-backend-whether-the-device-can-be-paged). Reports nothing until your app calls `Notify.pushState.watch()` (the provider never does) and both `report_path` and `release_path` are set. |
+| `Notify.manager.onPushIdentityReconciled` | The outcome of every identity pass; see [Push Identity Reconcile Outcomes](https://anilcancakir.com/magic/docs/notifications/architecture/notification-manager#identity-reconciled). |
+| `Notify.pushState` | Posts the device's own reachability to your backend and withdraws it on sign-out; see [Telling your backend whether the device can be paged](https://anilcancakir.com/magic/docs/notifications/basics/shipping-push#telling-your-backend-whether-the-device-can-be-paged). Reports nothing until your app calls `Notify.pushState.watch()` (the provider never does) and both `report_path` and `release_path` are set. |
 | `Notify.describePushUserUsing(resolver)` | Describes the signed-in person to OneSignal; nothing is sent until `share_user_attributes` is `true`. |
 | `Notify.extend(name, factory)` | Registers a `PushDriver` of your own, selected by `notifications.push.driver`. |
 
@@ -185,7 +185,7 @@ Failure modes:
 
 | Situation | What happens |
 |-----------|--------------|
-| A tapped push should open a screen | Nothing routes for you: the package hands over the payload. Register a `magic_deeplink` handler or route from `onPushClicked` ([Opening a screen from a tap](https://anilcancakir.com/magic_notifications/docs/basics/drivers#opening-a-screen-from-a-tap)). |
+| A tapped push should open a screen | Nothing routes for you: the package hands over the payload. Register a `magic_deeplink` handler or route from `onPushClicked` ([Opening a screen from a tap](https://anilcancakir.com/magic/docs/notifications/basics/drivers#opening-a-screen-from-a-tap)). |
 | The destination was sent as OneSignal's Launch URL (`setUrl`) | It never reaches `event.data`; put it in `setData`. |
 | `notifications.push.app_id` is blank | The driver is never initialised, `isInitialized` stays `false` and reachability reads `unavailable`. |
 | The driver fails to initialise | The app still boots; the failure is on `NotificationServiceProvider.pushInitializationError`. |
@@ -229,11 +229,11 @@ void boot() {
 }
 ```
 
-`Notify.view` is a `NotificationViewRegistry` holding `notifications.list` (`NotificationsListView`) and `notifications.preferences` (`NotificationPreferencesView`); register over a key to wrap or replace it, and `Notify.view.slot` supplies a type icon. `NotificationDropdown` is the bell with an unread badge. The package ships no translation catalogue: a host adds the `notifications.*` keys the screens and `PushPrompt` use to every locale, and a missing key renders as itself ([Preferences](https://anilcancakir.com/magic_notifications/docs/basics/preferences)). The preferences screen needs `GET` and `PUT /notification-preferences` on the backend.
+`Notify.view` is a `NotificationViewRegistry` holding `notifications.list` (`NotificationsListView`) and `notifications.preferences` (`NotificationPreferencesView`); register over a key to wrap or replace it, and `Notify.view.slot` supplies a type icon. `NotificationDropdown` is the bell with an unread badge. The package ships no translation catalogue: a host adds the `notifications.*` keys the screens and `PushPrompt` use to every locale, and a missing key renders as itself ([Preferences](https://anilcancakir.com/magic/docs/notifications/basics/preferences)). The preferences screen needs `GET` and `PUT /notification-preferences` on the backend.
 
 ## CLI Tools
 
-`dart run magic:dowel notifications:<command>`, after `plugin:install`. The [CLI reference](https://anilcancakir.com/magic_notifications/docs/basics/cli) lists every flag.
+`dart run magic:dowel notifications:<command>`, after `plugin:install`. The [CLI reference](https://anilcancakir.com/magic/docs/notifications/basics/cli) lists every flag.
 
 | Command | Purpose |
 |---------|---------|
@@ -274,7 +274,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 
 ## Links
 
-- [Documentation](https://anilcancakir.com/magic_notifications/docs/getting-started/installation): installation, configuration, channels, drivers, preferences, shipping push, the CLI and the Laravel backend contract
+- [Documentation](https://anilcancakir.com/magic/docs/notifications/getting-started/installation): installation, configuration, channels, drivers, preferences, shipping push, the CLI and the Laravel backend contract
 - [API reference](https://pub.dev/documentation/magic_notifications/latest/)
 - [llms.txt](llms.txt) and the [agent skill](skills/magic-notifications/SKILL.md) for AI coding agents: `npx skills add anilcancakir/magic_notifications`
 - [Changelog](CHANGELOG.md)

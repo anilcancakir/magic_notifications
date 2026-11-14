@@ -182,7 +182,7 @@ class AppServiceProvider extends ServiceProvider {
 
 `RouteDeeplinkHandler` navigates to the path the link names through `MagicRoute.to`, so the paths you list are your own in-app routes. Handlers form a first-match chain in registration order; write your own `DeeplinkHandler` when a tap has to do something other than navigate.
 
-See [magic_deeplink handlers](https://anilcancakir.com/magic_deeplink/docs/basics/handlers) and its [installation guide](https://anilcancakir.com/magic_deeplink/docs/getting-started/installation) for the handler chain and the platform association files (`apple-app-site-association`, `assetlinks.json`) a Universal or App Link needs before any of this is reached.
+See [magic_deeplink handlers](https://anilcancakir.com/magic/docs/deeplink/basics/handlers) and its [installation guide](https://anilcancakir.com/magic/docs/deeplink/getting-started/installation) for the handler chain and the platform association files (`apple-app-site-association`, `assetlinks.json`) a Universal or App Link needs before any of this is reached.
 
 <a name="onesignal-web"></a>
 ## OneSignalWebDriver (Web)
@@ -353,4 +353,4 @@ The provider then resolves your driver by that name, registers `PushChannel` on 
 - [Notification Manager](../architecture/notification-manager.md): driver resolution and identity reconcile.
 - [Service Provider](../architecture/service-provider.md): where the driver is initialised.
 - [Configuration](../getting-started/configuration.md): the `notifications.push` keys the drivers read.
-- [Handlers in magic_deeplink](https://anilcancakir.com/magic_deeplink/docs/basics/handlers): routing a tapped push.
+- [Handlers in magic_deeplink](https://anilcancakir.com/magic/docs/deeplink/basics/handlers): routing a tapped push.

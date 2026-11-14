@@ -264,4 +264,4 @@ bool hasPushChannel() {
 - [Preferences](./preferences.md): the per-type and per-channel opt-outs `PushChannel` honours.
 - [Notification Manager](../architecture/notification-manager.md): dispatch, polling and realtime.
 - [Laravel Backend Setup](./laravel-backend-setup.md): the backend that creates the rows and sends the pushes.
-- [Realtime channels with magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels): the socket layer `Notify.startRealtime` subscribes through.
+- [Realtime channels with magic_socket](https://anilcancakir.com/magic/docs/socket/basics/channels): the socket layer `Notify.startRealtime` subscribes through.
