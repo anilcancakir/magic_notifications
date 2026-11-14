@@ -132,10 +132,12 @@ abstract class PushDriver {
   /// was shown at all", and, where [canOpenPlatformSettings] is true, "the
   /// SDK's settings fallback was shown and the user has not acted yet".
   /// Widening the return type would change this contract for every driver, so
-  /// it stays a bool and the distinction is drawn by ASKING FIRST: a caller
+  /// it stays a bool and the distinction is drawn by asking first: a caller
   /// that needs it reads [canRaisePermissionRequest] before requesting. True
-  /// there means a `false` afterwards was a real decline; false there means
-  /// this call can only route the user somewhere, or do nothing at all.
+  /// there means a `false` afterwards is a non-grant (the user declined, or
+  /// dismissed the prompt without choosing, which leaves the permission
+  /// unchanged); false there means this call can only route the user
+  /// somewhere, or do nothing at all.
   Future<bool> requestPermission();
 
   /// Whether raising the permission request would put a dialog in front of the

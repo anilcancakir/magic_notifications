@@ -356,7 +356,7 @@ The package ships no translation catalogue. Every string the inbox screen, the p
 | `notifications.list_subtitle` | Inbox header subtitle | Everything we sent you |
 | `notifications.mark_all_read` | Inbox header action and dropdown heading link, while something is unread | Mark all as read |
 | `notifications.empty` | Inbox and dropdown with no rows | Nothing here yet |
-| `notifications.load_failed` | Inbox and dropdown when the read failed | Could not load notifications |
+| `notifications.load_failed` | The inbox when its read failed; the dropdown only when its `notificationStream` emits an error (with `Notify.notifications()` a failed `fetchNotifications()` is logged and the bell keeps its held list) | Could not load notifications |
 | `notifications.delete` | Screen-reader label of an inbox row's delete control | Delete notification |
 | `notifications.delete_failed` | The error `Magic.error` shows when an inbox delete fails | Could not delete the notification |
 | `notifications.view_all` | Dropdown footer, only with `onViewAll` | View all |
@@ -387,6 +387,8 @@ The package ships no translation catalogue. Every string the inbox screen, the p
 | `notifications.push_prompt.not_now` | `PushPrompt` decline button | Not now |
 | `notifications.push_prompt.shell_notice` | `PushOffNotice` label | Push is off |
 | `notifications.push_prompt.shell_notice_a11y` | `PushOffNotice` screen-reader label | Push notifications are off |
+
+The keys cover the package's own labels only. The dropdown and the inbox draw each notification's `title` and `body` exactly as the backend sent them, without `trans()`, so localising that content is the backend's or the host's job.
 
 The same widgets also read these keys outside the `notifications.*` namespace. An app whose other screens already define them shares them; any other app adds them too.
 

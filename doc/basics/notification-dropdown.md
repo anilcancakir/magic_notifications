@@ -33,7 +33,7 @@ Widget notificationBell() {
 }
 ```
 
-The widget holds no state of its own and calls no backend: it renders whatever `notificationStream` emits and hands every action to a callback. `Notify.notifications()` emits the manager's held list at once and every later change, so the bell fills once something reads the inbox (`Notify.fetchNotifications()`, `Notify.startPolling()` or `Notify.startRealtime()`), and `Notify.markAsRead` changes the held list before the request, so the badge drops on the tap.
+The widget holds no state of its own and calls no backend: it renders whatever `notificationStream` emits and hands every action to a callback. `Notify.notifications()` emits the manager's held list at once and every later change, so the bell fills once something reads the inbox (`Notify.fetchNotifications()`, `Notify.startPolling()` or `Notify.startRealtime(channel: ...)`; realtime answers `false` and reads nothing without a channel or a broadcast driver, so keep polling then), and `Notify.markAsRead` changes the held list before the request, so the badge drops on the tap.
 
 <a name="parameters"></a>
 ## Constructor Parameters
@@ -120,7 +120,7 @@ void registerTypeIcons() {
 
 | Mistake | Fix |
 | :--- | :--- |
-| A bell that stays empty | The stream only carries what something read. Call `Notify.fetchNotifications()`, or start polling or realtime from the authenticated layout. |
+| A bell that stays empty | The stream only carries what something read. Call `Notify.fetchNotifications()`, or start polling or realtime from the authenticated layout. `Notify.startRealtime()` needs a `channel:` and answers `false` without one, so check the result and keep polling. |
 | Overriding `panelClassName` with a colour only | The override replaces the default, width and `dark:` pair included. Restate `w-80` and the dark tone. |
 | Expecting a tap on a read row to skip `onMarkAsRead` | It runs on every tap. `Notify.markAsRead` on a read row posts the request again; guard it in the callback if that matters. |
 | No mark-all link or footer | Both appear only when their callback is set, and the mark-all link only while something is unread. |
