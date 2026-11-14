@@ -45,7 +45,7 @@ tool/check-docs.py                  # Offline docs gate, run by docs-link-check.
 
 ## Post-Change Checklist
 
-After ANY source code change, sync **before committing**. A change is not done while one of these is stale:
+After any source code change, sync **before committing**. A change is not done while one of these is stale:
 
 1. **`CHANGELOG.md`**: Add entry under `[Unreleased]` section
 2. **`README.md`, `llms.txt` and the `doc/` pages**: Update if features, API, or usage changes
@@ -72,7 +72,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 | Declaring the push identity inside this package | `magic_starter` owns it; an app without the starter calls `Notify.initializePush` and `logoutPush` itself |
 | Importing Flutter or the runtime barrel into `lib/cli.dart` | The dowel dispatcher is a pure Dart process |
 | Bumping `pubspec.yaml` without `magicNotificationsVersion` | `lib/src/cli/notifications_dowel_provider.dart` prints it in every command banner; the install test fails on a mismatch |
-| Relative paths in `pubspec_overrides.yaml` | Use ABSOLUTE ones; the file is never committed |
+| Relative paths in `pubspec_overrides.yaml` | Use absolute ones; the file is never committed |
 
 ## Release
 
