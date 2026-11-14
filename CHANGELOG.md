@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Added
+- **`llms.txt`, an index of the package for an LLM agent.** It links each `doc/` page with a one-line description. (`llms.txt`)
+- **The `magic-notifications` agent skill.** `npx skills add anilcancakir/magic_notifications` installs it into an agent's skills directory. (`skills/magic-notifications/`)
+- **A runnable `example/` app.** It boots the provider and shows the registered channels, what the push driver reports, one send through a channel of the app's own and one realtime attempt, with no backend or OneSignal account. (`example/`)
+
+### Changed
+- **The package metadata names the new home, and the description says what the code offers.** `homepage`, `repository` and `issue_tracker` point at `anilcancakir`, the `documentation` key is gone, and the description no longer claims a mail channel, which this package never had: it lists the backend-driven inbox, OneSignal push and realtime delivery. (`pubspec.yaml`)
+- **The README and the `doc/` pages are rewritten.** They make no mail channel claim, and every command is written `dart run magic:dowel notifications:<command>`. (`README.md`, `doc/`)
+- **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)
+
 ## [1.0.0] - 2026-11-14
 
 ### Changed

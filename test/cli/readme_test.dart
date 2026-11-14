@@ -33,7 +33,7 @@ void main() {
       final readme = File('README.md').readAsStringSync();
       expect(
         readme,
-        contains('magic.fluttersdk.com/packages/notifications/basics/cli'),
+        contains('anilcancakir.com/magic_notifications/docs/basics/cli'),
       );
     });
   });

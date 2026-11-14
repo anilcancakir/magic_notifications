@@ -1,44 +1,43 @@
 # Laravel Backend Setup
 
-## Table of Contents
+The backend contract Magic Notifications reads from, and a worked Laravel implementation of it: the notifications API, preference matrix, OneSignal push, device reachability and socket delivery.
 
-- <a name="toc-overview"></a>[Overview](#overview)
-- <a name="toc-prerequisites"></a>[Prerequisites](#prerequisites)
-- <a name="toc-database-setup"></a>[Database Setup](#database-setup)
-- <a name="toc-models"></a>[Models](#models)
-- <a name="toc-notification-class"></a>[Notification Class](#notification-class)
-- <a name="toc-api-controllers"></a>[API Controllers](#api-controllers)
-- <a name="toc-api-routes"></a>[API Routes](#api-routes)
-- <a name="toc-onesignal-push"></a>[OneSignal Push Integration](#onesignal-push)
-- <a name="toc-broadcast"></a>[Socket Delivery (Broadcast)](#broadcast)
-- <a name="toc-sending"></a>[Sending Notifications](#sending)
-- <a name="toc-api-contract"></a>[API Contract Reference](#api-contract)
-- <a name="toc-testing"></a>[Testing](#testing)
+- [Overview](#overview)
+- [Prerequisites](#prerequisites)
+- [Database Setup](#database-setup)
+- [Models](#models)
+- [Notification Class](#notification-class)
+- [API Controllers](#api-controllers)
+- [API Routes](#api-routes)
+- [OneSignal Push Integration](#onesignal-push)
+- [Socket Delivery (Broadcast)](#broadcast)
+- [Sending Notifications](#sending)
+- [API Contract Reference](#api-contract)
+- [Testing](#testing)
+- [Gotchas](#gotchas)
+- [Related Documentation](#related-documentation)
 
----
+<a name="overview"></a>
+## Overview
 
-## <a name="overview"></a>Overview
-
-Magic Notifications works with any backend that provides REST API endpoints. This guide shows how to implement the notification backend using **Laravel's built-in notification system** — the recommended approach for Laravel-based projects.
+Magic Notifications works with any backend that serves the REST endpoints listed under [API Contract Reference](#api-contract). This guide builds that backend on **Laravel's built-in notification system**, which is the natural fit. The `magic-starter-laravel` package implements the contract except for two points: its `unread-count` answers `{"data": {"count": n}}` where the client reads a top-level `count` (so `Notify.unreadCount()` returns `0` against it), and its list endpoint reads the page size from `per_page` where the client sends `perPage` (so the list always uses its default of 15). A backend written to this page is not affected. Use this page when you hand-roll the backend or want to see what that package does.
 
 > [!NOTE]
-> This guide covers the Laravel backend side. For Flutter client setup, see [Installation](../getting-started/installation.md) and [Configuration](../getting-started/configuration.md).
+> This guide covers the Laravel side. For the Flutter client, see [Installation](../getting-started/installation.md) and [Configuration](../getting-started/configuration.md). Laravel's own `php artisan` commands appear below because they are Laravel's.
 
----
+<a name="prerequisites"></a>
+## Prerequisites
 
-## <a name="prerequisites"></a>Prerequisites
+- A Laravel application with notifications available, and Sanctum (or another token guard) protecting the API routes. The samples use `auth:sanctum`.
+- For push: a OneSignal app and its REST API key.
+- For socket delivery: Laravel broadcasting with a Reverb-compatible driver.
 
-- Laravel 10.x or higher
-- PHP 8.1+
-- Composer
-
----
-
-## <a name="database-setup"></a>Database Setup
+<a name="database-setup"></a>
+## Database Setup
 
 ### Notifications Table
 
-Laravel provides a built-in artisan command:
+Laravel provides a built-in command:
 
 ```bash
 php artisan make:notifications-table
@@ -48,20 +47,22 @@ php artisan migrate
 This creates the standard `notifications` table:
 
 | Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| type | string | Notification class name |
-| notifiable_type | string | Model type (e.g., `App\Models\User`) |
-| notifiable_id | bigint | Model ID |
-| data | json | Notification payload |
-| read_at | timestamp | When marked as read (`null` = unread) |
-| created_at | timestamp | Creation time |
-| updated_at | timestamp | Last update time |
+| :--- | :--- | :--- |
+| `id` | uuid | Primary key |
+| `type` | string | Notification class name |
+| `notifiable_type` | string | Model type (for example `App\Models\User`) |
+| `notifiable_id` | bigint | Model id |
+| `data` | json | Notification payload |
+| `read_at` | timestamp | When marked as read (`null` means unread) |
+| `created_at` | timestamp | Creation time |
+| `updated_at` | timestamp | Last update time |
 
-### Notification Preferences Table
+### Notification Settings Table
+
+The preferences screen stores one override per person, notification type and channel. A missing row means "enabled".
 
 ```bash
-php artisan make:migration create_notification_preferences_table
+php artisan make:migration create_notification_settings_table
 ```
 
 ```php
@@ -69,22 +70,21 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('notification_preferences', function (Blueprint $table) {
+        Schema::create('notification_settings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->boolean('push_enabled')->default(true);
-            $table->boolean('email_enabled')->default(true);
-            $table->boolean('in_app_enabled')->default(true);
-            $table->json('type_preferences')->nullable();
+            $table->string('type');
+            $table->string('channel');
+            $table->boolean('is_enabled')->default(true);
             $table->timestamps();
 
-            $table->unique('user_id');
+            $table->unique(['user_id', 'type', 'channel']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('notification_preferences');
+        Schema::dropIfExists('notification_settings');
     }
 };
 ```
@@ -93,17 +93,17 @@ return new class extends Migration
 php artisan migrate
 ```
 
----
-
-## <a name="models"></a>Models
+<a name="models"></a>
+## Models
 
 ### User Model
 
-Ensure your User model uses the `Notifiable` trait:
+The `User` model uses Laravel's `Notifiable` trait and answers whether a person allows a type on a channel:
 
 ```php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -111,52 +111,51 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    public function notificationPreference()
+    public function notificationSettings(): HasMany
     {
-        return $this->hasOne(NotificationPreference::class);
+        return $this->hasMany(NotificationSetting::class);
+    }
+
+    public function allows(string $type, string $channel): bool
+    {
+        $setting = $this->notificationSettings()
+            ->where('type', $type)
+            ->where('channel', $channel)
+            ->first();
+
+        return $setting?->is_enabled ?? true;
     }
 }
 ```
 
-### NotificationPreference Model
+### NotificationSetting Model
 
 ```bash
-php artisan make:model NotificationPreference
+php artisan make:model NotificationSetting
 ```
 
 ```php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class NotificationPreference extends Model
+class NotificationSetting extends Model
 {
     protected $fillable = [
         'user_id',
-        'push_enabled',
-        'email_enabled',
-        'in_app_enabled',
-        'type_preferences',
+        'type',
+        'channel',
+        'is_enabled',
     ];
 
     protected $casts = [
-        'push_enabled' => 'boolean',
-        'email_enabled' => 'boolean',
-        'in_app_enabled' => 'boolean',
-        'type_preferences' => 'array',
+        'is_enabled' => 'boolean',
     ];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 }
 ```
 
----
-
-## <a name="notification-class"></a>Notification Class
+<a name="notification-class"></a>
+## Notification Class
 
 ```bash
 php artisan make:notification MonitorDownNotification
@@ -168,7 +167,6 @@ namespace App\Notifications;
 use App\Models\Monitor;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
 
 class MonitorDownNotification extends Notification
 {
@@ -180,18 +178,7 @@ class MonitorDownNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        $channels = [];
-        $prefs = $notifiable->notificationPreference;
-
-        if (!$prefs || $prefs->in_app_enabled) {
-            $channels[] = 'database';
-        }
-
-        if (!$prefs || $prefs->email_enabled) {
-            $channels[] = 'mail';
-        }
-
-        return $channels;
+        return $notifiable->allows('monitor_down', 'database') ? ['database'] : [];
     }
 
     public function toArray(object $notifiable): array
@@ -208,22 +195,13 @@ class MonitorDownNotification extends Notification
     {
         return 'monitor_down';
     }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Monitor Alert: ' . $this->monitor->name)
-            ->greeting('Hello!')
-            ->line("Your monitor '{$this->monitor->name}' is currently down.")
-            ->action('View Monitor', url("/monitors/{$this->monitor->id}"))
-            ->line('We will notify you when it recovers.');
-    }
 }
 ```
 
----
+The client reads `data.title` and `data.body` as required strings and `data.action_url` as optional, so `toArray()` has to carry the first two on every notification. A row without them cannot be decoded, and the fetch that returns it fails.
 
-## <a name="api-controllers"></a>API Controllers
+<a name="api-controllers"></a>
+## API Controllers
 
 ### NotificationController
 
@@ -235,16 +213,17 @@ php artisan make:controller Api/V1/NotificationController
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        // The client sends `page` and `perPage`.
         $notifications = $request->user()
             ->notifications()
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->integer('perPage', 15));
 
         return response()->json([
             'data' => $notifications->map(fn ($n) => [
@@ -265,18 +244,15 @@ class NotificationController extends Controller
 
     public function unreadCount(Request $request): JsonResponse
     {
-        $count = $request->user()->unreadNotifications()->count();
-
-        return response()->json(['count' => $count]);
+        // `count` sits at the top level: the client reads it from there.
+        return response()->json([
+            'count' => $request->user()->unreadNotifications()->count(),
+        ]);
     }
 
     public function markAsRead(Request $request, string $id): JsonResponse
     {
-        $notification = $request->user()
-            ->notifications()
-            ->findOrFail($id);
-
-        $notification->markAsRead();
+        $request->user()->notifications()->findOrFail($id)->markAsRead();
 
         return response()->json(['message' => 'Notification marked as read']);
     }
@@ -290,10 +266,7 @@ class NotificationController extends Controller
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $request->user()
-            ->notifications()
-            ->findOrFail($id)
-            ->delete();
+        $request->user()->notifications()->findOrFail($id)->delete();
 
         return response()->json(['message' => 'Notification deleted']);
     }
@@ -301,6 +274,21 @@ class NotificationController extends Controller
 ```
 
 ### NotificationPreferenceController
+
+The preferences screen reads a type by channel matrix and writes one cell or a batch. The set of types and channels is yours; this sketch keeps it in a config file:
+
+```php
+// config/notification-types.php
+return [
+    'monitor_down' => [
+        'label' => 'Monitor down',
+        'channels' => [
+            'database' => ['locked' => true],
+            'push' => ['locked' => false],
+        ],
+    ],
+];
+```
 
 ```bash
 php artisan make:controller Api/V1/NotificationPreferenceController
@@ -310,58 +298,77 @@ php artisan make:controller Api/V1/NotificationPreferenceController
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\NotificationPreference;
-use Illuminate\Http\Request;
+use App\Models\NotificationSetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class NotificationPreferenceController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $prefs = $request->user()->notificationPreference
-            ?? NotificationPreference::create(['user_id' => $request->user()->id]);
-
-        return response()->json([
-            'data' => [
-                'push_enabled' => $prefs->push_enabled,
-                'email_enabled' => $prefs->email_enabled,
-                'in_app_enabled' => $prefs->in_app_enabled,
-                'type_preferences' => $prefs->type_preferences,
-            ],
-        ]);
+        return $this->matrix($request);
     }
 
     public function update(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'push_enabled' => 'sometimes|boolean',
-            'email_enabled' => 'sometimes|boolean',
-            'in_app_enabled' => 'sometimes|boolean',
-            'type_preferences' => 'sometimes|array',
+        $items = $request->has('preferences')
+            ? $request->input('preferences')
+            : [$request->only(['type', 'channel', 'is_enabled'])];
+
+        validator(['items' => $items], [
+            'items.*.type' => 'required|string',
+            'items.*.channel' => 'required|string',
+            'items.*.is_enabled' => 'required|boolean',
+        ])->validate();
+
+        // One transaction, so a batch cannot half-succeed.
+        DB::transaction(function () use ($request, $items) {
+            foreach ($items as $item) {
+                $channel = config("notification-types.{$item['type']}.channels.{$item['channel']}");
+
+                if ($channel === null || ($channel['locked'] ?? false)) {
+                    throw ValidationException::withMessages(['channel' => 'This preference cannot be changed.']);
+                }
+
+                NotificationSetting::updateOrCreate(
+                    [
+                        'user_id' => $request->user()->id,
+                        'type' => $item['type'],
+                        'channel' => $item['channel'],
+                    ],
+                    ['is_enabled' => (bool) $item['is_enabled']],
+                );
+            }
+        });
+
+        return $this->matrix($request);
+    }
+
+    private function matrix(Request $request): JsonResponse
+    {
+        $settings = $request->user()->notificationSettings()->get()
+            ->keyBy(fn ($setting) => "{$setting->type}.{$setting->channel}");
+
+        $matrix = collect(config('notification-types'))->map(fn (array $type, string $key) => [
+            'label' => $type['label'],
+            'channels' => collect($type['channels'])->map(fn (array $channel, string $name) => [
+                'enabled' => $settings->get("{$key}.{$name}")?->is_enabled ?? true,
+                'locked' => $channel['locked'] ?? false,
+            ]),
         ]);
 
-        $prefs = $request->user()->notificationPreference
-            ?? new NotificationPreference(['user_id' => $request->user()->id]);
-
-        $prefs->fill($validated);
-        $prefs->save();
-
         return response()->json([
-            'message' => 'Preferences updated',
-            'data' => [
-                'push_enabled' => $prefs->push_enabled,
-                'email_enabled' => $prefs->email_enabled,
-                'in_app_enabled' => $prefs->in_app_enabled,
-                'type_preferences' => $prefs->type_preferences,
-            ],
+            'data' => $matrix,
+            'meta' => ['push_provisioned' => filled(config('onesignal.app_id'))],
         ]);
     }
 }
 ```
 
----
-
-## <a name="api-routes"></a>API Routes
+<a name="api-routes"></a>
+## API Routes
 
 In `routes/api/v1.php`:
 
@@ -382,11 +389,10 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 ```
 
----
+<a name="onesignal-push"></a>
+## OneSignal Push Integration
 
-## <a name="onesignal-push"></a>OneSignal Push Integration
-
-For push notifications via OneSignal, install the Laravel notification channel:
+For push through OneSignal, install the Laravel notification channel:
 
 ```bash
 composer require laravel-notification-channels/onesignal
@@ -405,9 +411,9 @@ ONESIGNAL_REST_API_KEY=your-onesignal-rest-api-key
 ```
 
 > [!NOTE]
-> Get the REST API Key from OneSignal Dashboard → Settings → Keys & IDs. Use the "REST API Key" (starts with `os_v2_app_...`), not the "User Auth Key".
+> Get the REST API Key from the OneSignal Dashboard, Settings, Keys & IDs. Use the "REST API Key" (it starts with `os_v2_app_...`), not the "User Auth Key".
 
-### Update Notification Class
+### Update the Notification Class
 
 Add the OneSignal channel to your notification:
 
@@ -417,10 +423,13 @@ use NotificationChannels\OneSignal\OneSignalMessage;
 
 public function via(object $notifiable): array
 {
-    $channels = ['database'];
-    $prefs = $notifiable->notificationPreference;
+    $channels = [];
 
-    if (!$prefs || $prefs->push_enabled) {
+    if ($notifiable->allows('monitor_down', 'database')) {
+        $channels[] = 'database';
+    }
+
+    if ($notifiable->allows('monitor_down', 'push')) {
         $channels[] = OneSignalChannel::class;
     }
 
@@ -433,53 +442,36 @@ public function toOneSignal(object $notifiable): OneSignalMessage
         ->setSubject('Monitor Down')
         ->setBody("Your monitor '{$this->monitor->name}' is not responding.")
         // The destination your app routes from. setData writes
-        // additionalData, which is what arrives as `event.data` on a click,
+        // additionalData, which is what arrives as `event.data` on a tap,
         // and `url` is the first key magic_deeplink's handler looks for.
         // Without this line a tapped push carries no destination at all.
         ->setData('url', "/monitors/{$this->monitor->id}")
-        ->setData('monitor_id', $this->monitor->id);
+        ->setData('monitor_id', $this->monitor->id)
+        // Who the push is for. The client drops a push whose `subject` names
+        // another identity than the one the device is subscribed as.
+        ->setData('subject', 'user_' . $notifiable->id);
 }
 ```
 
 > [!IMPORTANT]
-> **`setUrl` is not the mobile answer, and adding it alongside is not free.**
-> It sets OneSignal's Launch URL, which the SDK acts on when the notification
-> is clicked **on every platform**, not only on the web. Android resolves it
-> (a verified App Link opens the app, anything else opens the browser), and on
-> iOS the SDK calls `openURL`, so Safari opens first and bounces back through
-> the Universal Link handshake. Send both without further action and an iOS
-> user gets that browser flash on top of the route your click listener already
-> performed.
+> **`setUrl` is not the mobile answer, and adding it alongside is not free.** It sets OneSignal's Launch URL, which the SDK acts on when the notification is clicked **on every platform**, not only on the web. Android resolves it (a verified App Link opens the app, anything else opens the browser), and on iOS the SDK calls `openURL`, so Safari opens first and bounces back through the Universal Link handshake. Send both without further action and an iOS user gets that browser flash on top of the route your click listener already performed.
 >
-> OneSignal's own guidance is the same: *"For mobile push, prefer Additional
-> Data + a click listener. You get full control over navigation, no browser
-> flash on iOS, and you can pass extra fields (like `order_id`) that aren't
-> part of the URL."*
-> ([Deep linking](https://documentation.onesignal.com/docs/en/deep-linking))
+> OneSignal's own guidance is the same: *"For mobile push, prefer Additional Data + a click listener. You get full control over navigation, no browser flash on iOS, and you can pass extra fields (like `order_id`) that aren't part of the URL."* ([Deep linking](https://documentation.onesignal.com/docs/en/deep-linking))
 >
-> So `setData` alone is the shape above. Add `setUrl(...)` when the same
-> notification also serves web push, where the service worker needs a launch
-> url, and then set `OneSignal_suppress_launch_urls` to `YES` in the iOS
-> `Info.plist`: that stops the SDK calling `openURL` and makes your click
-> listener responsible for every deep link, which it already is.
+> So `setData` alone is the shape above. Add `setUrl(...)` when the same notification also serves web push, where the service worker needs a launch url, and then set `OneSignal_suppress_launch_urls` to `YES` in the iOS `Info.plist`: that stops the SDK calling `openURL` and makes your click listener responsible for every deep link, which it already is.
 >
-> `setData` takes a relative path here because it is routed in-app, and either
-> form works: `OneSignalDeeplinkHandler` parses the value with `Uri.tryParse`,
-> which does not require a scheme, and `RouteDeeplinkHandler` matches on
-> `uri.path` alone, so `/monitors/123` and `https://app.example.com/monitors/123`
-> both reach the same route. A Launch URL, if you send one, does have to be
-> absolute.
+> `setData` takes a relative path here because it is routed in-app, and either form works: `OneSignalDeeplinkHandler` parses the value with `Uri.tryParse`, which does not require a scheme, and `RouteDeeplinkHandler` matches on `uri.path` alone, so `/monitors/123` and `https://app.example.com/monitors/123` both reach the same route. A Launch URL, if you send one, does have to be absolute.
 
 ### Route User to OneSignal
 
-Add to your User model:
+Add to your `User` model:
 
 ```php
 /**
- * Route notifications for OneSignal channel.
+ * Route notifications for the OneSignal channel.
  *
- * IMPORTANT: The external_user_id must match what the Flutter app sets
- * when calling Notify.initializePush('user_' + user.id).
+ * IMPORTANT: the external id must match what the Flutter app declares when it
+ * calls Notify.initializePush('user_${user.id}').
  */
 public function routeNotificationForOneSignal(): array
 {
@@ -488,55 +480,43 @@ public function routeNotificationForOneSignal(): array
 ```
 
 > [!TIP]
-> The `user_` prefix is required to avoid OneSignal's blocked external_id values. Both Flutter and Laravel must use the same format: `user_{id}`.
+> Use a prefix such as `user_` rather than a bare numeric id: OneSignal blocks some external id values. Both sides must agree on the format. When you change the prefix, set `notifications.push_state.external_id_prefix` on the client to match.
 
 ### Device Reachability (Optional)
 
-OneSignal accepts a push for a subscription that cannot be woken, so only the
-device knows whether a page will arrive. `Notify.pushState` reports that to
-your backend and withdraws it on sign-out. It stays off until the client names
-both endpoints (there is no default path):
+OneSignal accepts a push for a subscription that cannot be woken, so only the device knows whether a page will arrive. `Notify.pushState` reports that to your backend and withdraws it on sign-out. It stays off until the client names both endpoints (there is no default path):
 
 ```dart
-'push_state': {
-  'report_path': '/devices/push-state',
-  'release_path': '/devices/push-state/release',
-},
+// In `notificationConfig`, under the `notifications` key.
+const Map<String, dynamic> notifications = {
+  'push_state': {
+    'report_path': '/devices/push-state',
+    'release_path': '/devices/push-state/release',
+  },
+};
 ```
 
-Both routes sit behind `auth:sanctum`. The user is always the session's; no
-body field names a person beyond the device's own alias.
+Both routes sit behind `auth:sanctum`. The user is always the session's; no body field names a person beyond the device's own alias.
 
 **`POST {report_path}`** carries `PushDeliverySnapshot.toMap()` unchanged:
 
 | Key | Rule |
-|---|---|
-| `external_id` | present, nullable string; must equal the caller's own alias (`user_{id}`) when set |
-| `subscription_id` | present, nullable string |
-| `reachability` | one of `on`, `off`, `blocked`, `unavailable` (the `PushReachability` names) |
+| :--- | :--- |
+| `external_id` | Present, nullable string; must equal the caller's own alias (`user_{id}`) when set |
+| `subscription_id` | Present, nullable string |
+| `reachability` | One of `on`, `off`, `blocked`, `unavailable` (the `PushReachability` names) |
 | `captured_at` | ISO-8601 UTC, the device's own clock |
 
-Store it per `(user, subscription_id)` with `updateOrCreate`, stamp your own
-`reported_at`, and answer `204`. A null key is a fact ("this device holds no
-subscription id"), so validate with `present`, not `sometimes`.
+Store it per `(user, subscription_id)` with `updateOrCreate`, stamp your own `reported_at`, and answer `204`. A null key is a fact ("this device holds no subscription id"), so validate with `present`, not `sometimes`.
 
-**`POST {release_path}`** carries `{"subscription_id": "..."}` only. Delete that
-one row for the session's user and answer `204`. The client calls it before
-`Auth.logout()` drops the token, and only for the device being signed out of:
-the person's other devices keep paging them.
+**`POST {release_path}`** carries `{"subscription_id": "..."}` only. Delete that one row for the session's user and answer `204`. The client calls it before `Auth.logout()` drops the token, and only for the device being signed out of: the person's other devices keep paging them.
 
-The client reports on change (sign-in, permission, subscription swap), never on
-a timer, and re-posts only after a refusal. A refused release is logged and the
-sign-out proceeds, so size your freshness horizon for a stale row.
+The client reports on change (sign-in, permission, subscription swap), never on a timer, and re-posts only after a refusal. A refused release is logged and the sign-out proceeds, so size your freshness horizon for a stale row.
 
----
+<a name="broadcast"></a>
+## Socket Delivery (Broadcast)
 
-## <a name="broadcast"></a>Socket Delivery (Broadcast)
-
-The client can take notification state off a socket instead of polling for it
-(`Notify.startRealtime`). That needs three things on this side: the `broadcast`
-channel on the notification, a payload the client's decoder can read, and channel
-authorisation.
+The client can take notification state off a socket instead of polling for it (`Notify.startRealtime`, which subscribes through [magic_socket](https://anilcancakir.com/magic_socket/docs/basics/channels)). That needs three things on this side: the `broadcast` channel on the notification, a payload the client's decoder can read, and channel authorisation.
 
 ### 1. Add the channel and shape the frame
 
@@ -556,9 +536,9 @@ class MonitorDownNotification extends Notification
      * The wire event name.
      *
      * Laravel's default is the fully-qualified
-     * `Illuminate\Notifications\Events\BroadcastNotificationCreated`. Magic's
-     * Reverb channel matches a listener by EXACT string, so the client would have
-     * to hardcode a framework internal; this short name is the contract instead.
+     * `Illuminate\Notifications\Events\BroadcastNotificationCreated`. The
+     * client matches a listener by EXACT string, so it would have to hardcode a
+     * framework internal; this short name is the contract instead.
      */
     public function broadcastAs(): string
     {
@@ -568,12 +548,12 @@ class MonitorDownNotification extends Notification
     /**
      * The payload, in the SAME shape `GET /notifications` returns a row.
      *
-     * This matters more than it looks. Laravel's default broadcast payload
-     * FLATTENS the notification data to the top level and adds `id` and `type`,
-     * while `DatabaseNotification.fromMap` on the client reads `data.title`,
-     * `data.body` and `data.action_url` from a NESTED `data` key, so the default
-     * decodes to nothing useful. Building the frame from `toArray()` keeps one
-     * serializer behind both the API and the socket, so the two cannot drift.
+     * Laravel's default broadcast payload FLATTENS the notification data to the
+     * top level and adds `id` and `type`, while `DatabaseNotification.fromMap`
+     * on the client reads `data.title`, `data.body` and `data.action_url` from
+     * a NESTED `data` key, so the default decodes to nothing useful. Building
+     * the frame from `toArray()` keeps one serialiser behind both the API and
+     * the socket, so the two cannot drift.
      */
     public function toBroadcast(object $notifiable): BroadcastMessage
     {
@@ -590,9 +570,7 @@ class MonitorDownNotification extends Notification
 
 ### 2. Authorise the channel
 
-The default channel for a `Notifiable` is its class name with dots plus its key,
-so `App\Models\User` id `42` publishes on `App.Models.User.42`. Authorise it in
-`routes/channels.php`, scoped to the one user:
+The default channel for a `Notifiable` is its class name with dots plus its key, so `App\Models\User` id `42` publishes on `App.Models.User.42`. Authorise it in `routes/channels.php`, scoped to the one user:
 
 ```php
 use App\Models\User;
@@ -604,34 +582,29 @@ Broadcast::channel('App.Models.User.{userId}', function (User $user, string $use
 }, ['guards' => ['sanctum']]);
 ```
 
-The `guards` option matters for an API client: the channel-auth request arrives
-with a bearer token, not a session cookie, so the default `web` guard would deny
-every subscription.
+The `guards` option matters for an API client: the channel-auth request arrives with a bearer token, not a session cookie, so the default `web` guard would deny every subscription.
 
-Override `receivesBroadcastNotificationsOn()` on the notifiable if you want a
-different name; the client is told the channel by its caller, so any name works as
-long as both sides agree.
+Override `receivesBroadcastNotificationsOn()` on the notifiable if you want a different name; the client is told the channel by its caller, so any name works as long as both sides agree.
 
 ### 3. Point the client at it
 
 ```dart
-await Notify.startRealtime(channel: 'App.Models.User.${user.id}');
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<void> listenForUser(Model user) async {
+  await Notify.startRealtime(channel: 'App.Models.User.${user.id}');
+}
 ```
 
-Nothing else changes. `Notify.startPolling()` stays wired to auth state and
-becomes a no-op while the socket is live, so a deployment with
-`BROADCAST_CONNECTION=null` keeps polling and needs no client change at all.
+Nothing else changes. `Notify.startPolling()` stays wired to auth state and becomes a no-op while the socket is live, so a deployment with `BROADCAST_CONNECTION=null` keeps polling and needs no client change at all.
 
-> **The row is still the record.** Keep `database` in `via()`. The socket delivers
-> to whoever is connected; a client that was closed when the notification fired
-> learns about it from the API on its next start, which is the fetch
-> `startRealtime()` does once.
+> **The row is still the record.** Keep `database` in `via()`. The socket delivers to whoever is connected; a client that was closed when the notification fired learns about it from the API on its next start, which is the fetch `startRealtime()` does once.
 
----
+<a name="sending"></a>
+## Sending Notifications
 
-## <a name="sending"></a>Sending Notifications
-
-### From Controller
+### From a Controller
 
 ```php
 use App\Notifications\MonitorDownNotification;
@@ -644,7 +617,7 @@ public function checkMonitor(Monitor $monitor)
 }
 ```
 
-### From Job/Queue
+### From a Job or Queue
 
 ```php
 use Illuminate\Support\Facades\Notification;
@@ -656,21 +629,23 @@ $user->notify(new MonitorDownNotification($monitor));
 Notification::send($users, new MonitorDownNotification($monitor));
 ```
 
----
+<a name="api-contract"></a>
+## API Contract Reference
 
-## <a name="api-contract"></a>API Contract Reference
-
-These are the endpoints the Flutter plugin expects from your backend:
+The endpoints the Flutter plugin calls on your backend, all relative to the HTTP base URL and authenticated:
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/notifications` | GET | List user notifications (paginated) |
-| `/notifications/unread-count` | GET | Get unread notification count |
-| `/notifications/{id}/read` | POST | Mark single notification as read |
-| `/notifications/read-all` | POST | Mark all notifications as read |
-| `/notifications/{id}` | DELETE | Delete a notification |
-| `/notification-preferences` | GET | Get user notification preferences |
-| `/notification-preferences` | PUT | Update user preferences |
+| :--- | :--- | :--- |
+| `/notifications` | `GET` | List notifications, paginated; query `page` and `perPage` |
+| `/notifications/unread-count` | `GET` | Unread count |
+| `/notifications/{id}/read` | `POST` | Mark one notification as read |
+| `/notifications/read-all` | `POST` | Mark all as read |
+| `/notifications/{id}` | `DELETE` | Delete a notification |
+| `/notification-preferences` | `GET` | The type by channel preference matrix |
+| `/notification-preferences` | `PUT` | Change one cell or a batch |
+| `/notifications/push-test` | `POST` | Optional: push a test notification to the caller's own devices (used by `PushChannel`) |
+| `{push_state.report_path}` | `POST` | Optional: device reachability report |
+| `{push_state.release_path}` | `POST` | Optional: release the device's report on sign-out |
 
 ### Response Formats
 
@@ -708,31 +683,18 @@ These are the endpoints the Flutter plugin expects from your backend:
 }
 ```
 
-**GET /notification-preferences**:
+**GET /notification-preferences** and **PUT /notification-preferences** are specified under [Preferences](./preferences.md#api): a matrix of types, each with a `label` and per-channel `enabled` and `locked` flags, plus `meta.push_provisioned`.
 
-```json
-{
-  "data": {
-    "push_enabled": true,
-    "email_enabled": false,
-    "in_app_enabled": true,
-    "type_preferences": {
-      "monitor_down": { "push": true, "email": true, "in_app": true },
-      "monitor_up": { "push": false, "email": false, "in_app": true }
-    }
-  }
-}
-```
+**POST /notifications/push-test** takes `title` (string), `body` (string) and optional `data` (array), and no recipient: the backend derives the target from the session. Answer `501` while the surface is switched off (the client half is `notifications.push.self_test_enabled`; set both or neither), and `2xx` on success. The client treats any other status as a failure and throws.
 
----
-
-## <a name="testing"></a>Testing
+<a name="testing"></a>
+## Testing
 
 ### Test Database Notification
 
 ```php
-use App\Models\User;
 use App\Models\Monitor;
+use App\Models\User;
 use App\Notifications\MonitorDownNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -753,7 +715,8 @@ test('sends monitor down notification', function () {
 ```php
 test('lists user notifications', function () {
     $user = User::factory()->create();
-    $user->notify(new \App\Notifications\MonitorDownNotification($monitor));
+    $monitor = Monitor::factory()->create(['user_id' => $user->id]);
+    $user->notify(new MonitorDownNotification($monitor));
 
     $response = $this->actingAs($user)
         ->getJson('/api/v1/notifications');
@@ -766,11 +729,24 @@ test('lists user notifications', function () {
 });
 ```
 
----
+<a name="gotchas"></a>
+## Gotchas
 
-**Related**
+| Mistake | Fix |
+| :--- | :--- |
+| Wrapping the unread count as `{"data": {"count": 5}}` | The client reads `count` from the top level and shows `0` otherwise. Return `{"count": 5}`. |
+| Reading the page size from `per_page` | The client sends `perPage` (and `page`). Read `perPage`, or the list always uses your default. |
+| Answering `GET /notification-preferences` with flat `push_enabled` toggles | The screen expects the type by channel matrix with `enabled` and `locked` per cell. The flat shape belongs to `NotificationPreference`, which the package never fetches. |
+| A `toArray()` without `title` or `body` | `DatabaseNotification.fromMap` casts both to `String`, so such a row fails to decode and the fetch that returns it fails. |
+| Using Laravel's default broadcast payload | It is flat and carries the event under a long class name. Add `broadcastAs()` and a `toBroadcast()` that nests `data`, as shown. |
+| Sending the screen's destination with `setUrl` | That is OneSignal's Launch URL and never reaches `event.data`. Put the route in `setData('url', ...)`. |
 
-- [Laravel Notifications Documentation](https://laravel.com/docs/notifications)
-- [OneSignal Laravel Channel](https://github.com/laravel-notification-channels/onesignal)
-- [Installation](https://magic.fluttersdk.com/packages/notifications/getting-started/installation)
-- [Channels](https://magic.fluttersdk.com/packages/notifications/basics/channels)
+<a name="related-documentation"></a>
+## Related Documentation
+
+- [Preferences](./preferences.md): the matrix and the models behind it.
+- [Shipping push in a release build](./shipping-push.md): what to verify before a release, including `Notify.pushState`.
+- [Notification Manager](../architecture/notification-manager.md): how the client uses these endpoints.
+- [Installation](../getting-started/installation.md) and [Channels](./channels.md): the Flutter side.
+- [Laravel Notifications](https://laravel.com/docs/notifications) and the [OneSignal Laravel channel](https://github.com/laravel-notification-channels/onesignal): the packages this page builds on.
+- [magic_socket channels](https://anilcancakir.com/magic_socket/docs/basics/channels): the client-side socket layer.

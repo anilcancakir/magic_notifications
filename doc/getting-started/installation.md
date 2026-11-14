@@ -1,42 +1,42 @@
 # Installation
 
-## Table of Contents
+Add Magic Notifications to a Magic app, register its provider, and wire the platform files a push needs to reach a device.
 
-- <a name="toc-overview"></a>[Overview](#overview)
-- <a name="toc-pubdev"></a>[pub.dev Dependency Setup](#pubdev)
-- <a name="toc-cli-wizard"></a>[CLI Installation Wizard](#cli-wizard)
-- <a name="toc-service-provider"></a>[Service Provider Registration](#service-provider)
-- <a name="toc-main-dart"></a>[Config Factory in main.dart](#main-dart)
-- <a name="toc-platform-setup"></a>[Platform Setup Summary](#platform-setup)
-- <a name="toc-next-steps"></a>[Next Steps](#next-steps)
+- [Quick Start](#overview)
+- [Dependency Setup](#pubdev)
+- [CLI Installation Wizard](#cli-wizard)
+- [Service Provider Registration](#service-provider)
+- [Config Factory in main.dart](#main-dart)
+- [Platform Setup Summary](#platform-setup)
+- [Related Documentation](#related-documentation)
 
----
-
-## <a name="overview"></a>Overview
-
-Magic Notifications is a multi-channel notification plugin for Flutter apps built on the Magic Framework. It ships with a built-in CLI that automates the entire setup process — dependency declaration, config file creation, platform-specific files, and provider injection.
-
-> [!NOTE]
-> The CLI wizard is the recommended installation path. Manual setup requires you to replicate every step the CLI performs; use it only when your CI/CD pipeline demands fully scripted control.
-
----
-
-## <a name="pubdev"></a>pub.dev Dependency Setup
-
-Add the package to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  magic_notifications: ^1.0.0
-```
-
-Then fetch dependencies:
+<a name="overview"></a>
+## Quick Start
 
 ```bash
-flutter pub get
+flutter pub add magic_notifications
+dart run magic:dowel plugin:install magic_notifications
+dart run magic:dowel notifications:install
+dart run magic:dowel notifications:doctor
 ```
 
-For local development within a monorepo (e.g., `plugins/magic_notifications`):
+| Step | What it does |
+| :--- | :--- |
+| `plugin:install` | Injects `NotificationServiceProvider` into `lib/config/app.dart` and registers the package's commands with dowel |
+| `notifications:install` | Writes `lib/config/notifications.dart` and the platform files, then wires the config into `lib/main.dart` |
+| `notifications:doctor` | Reports what is still missing |
+
+> [!NOTE]
+> The wizard is the recommended path. A manual setup has to repeat every step it performs; use it only when a pipeline needs fully scripted control.
+
+<a name="pubdev"></a>
+## Dependency Setup
+
+```bash
+flutter pub add magic_notifications
+```
+
+The package builds on `magic`, `magic_socket` (realtime delivery), `dowel` (the CLI), `onesignal_flutter` and `wind_kit`; `pub` resolves all of them. For local development inside a monorepo, point the dependency at the checkout:
 
 ```yaml
 dependencies:
@@ -44,97 +44,104 @@ dependencies:
     path: ./plugins/magic_notifications
 ```
 
----
+<a name="cli-wizard"></a>
+## CLI Installation Wizard
 
-## <a name="cli-wizard"></a>CLI Installation Wizard
-
-Run the interactive wizard from your Flutter project root:
+Run the wizard from the Flutter project root, after `plugin:install`:
 
 ```bash
-dart run magic_notifications install
+dart run magic:dowel notifications:install
 ```
 
-The wizard guides you through four steps:
+It asks for:
 
-1. **OneSignal App ID** — prompts for your UUID-format App ID (get it from the [OneSignal Dashboard](https://onesignal.com/))
-2. **Platform selection** — detects existing platform directories; confirm each one
-3. **Web configuration** (web only) — optional Safari Web ID, optional notify button
-4. **Soft prompt** — whether to show a custom dialog before the OS permission prompt
+1. **OneSignal App ID**: a UUID, from the [OneSignal Dashboard](https://onesignal.com/). The wizard asks again until the format is valid.
+2. **Platforms**: it detects the platform directories the project has and asks to confirm each one.
+3. **Web options** (only when web is selected): an optional legacy Safari Web ID and the OneSignal notify button.
+4. **Soft prompt**: whether `soft_prompt.enabled` is written as `true`.
 
-### Non-Interactive Mode (CI/CD)
+### Non-Interactive Mode
 
 ```bash
-dart run magic_notifications install \
+dart run magic:dowel notifications:install \
   --non-interactive \
   --app-id 12345678-1234-1234-1234-123456789012 \
   --platforms android,ios,web
 ```
 
 ```bash
-# With web extras
-dart run magic_notifications install \
+# Web extras
+dart run magic:dowel notifications:install \
   --non-interactive \
-  --app-id YOUR_APP_ID \
+  --app-id 12345678-1234-1234-1234-123456789012 \
   --platforms web \
   --safari-web-id web.onesignal.auto.xxx \
   --notify-button
 ```
 
 ```bash
-# Disable soft prompt and overwrite any existing config
-dart run magic_notifications install \
+# Disable the soft prompt and overwrite an existing config
+dart run magic:dowel notifications:install \
   --non-interactive \
-  --app-id YOUR_APP_ID \
+  --app-id 12345678-1234-1234-1234-123456789012 \
   --no-soft-prompt \
   --force
 ```
 
+`--app-id` is required in non-interactive mode and an invalid UUID stops the command before anything is written. See the [CLI reference](../basics/cli.md#install) for every flag.
+
 ### What the CLI Produces
 
 | Artifact | Path |
-|----------|------|
-| Notification config | `lib/config/notifications.dart` |
-| Android permission | `android/app/src/main/AndroidManifest.xml` |
+| :--- | :--- |
+| Notification config | `lib/config/notifications.dart` (skipped with a warning when it exists, unless `--force`) |
+| Android permission | `android/app/src/main/AndroidManifest.xml` (`POST_NOTIFICATIONS`) |
 | iOS background mode | `ios/Runner/Info.plist` (`UIBackgroundModes` gains `remote-notification`) |
-| iOS entitlement | `ios/Runner/Runner.entitlements` (`aps-environment`; created if absent) |
-| iOS build setting | `ios/Runner.xcodeproj/project.pbxproj` (`CODE_SIGN_ENTITLEMENTS` points at the entitlements file) |
+| iOS entitlements | `ios/Runner/Runner.entitlements` (`aps-environment` `development`) and `ios/Runner/RunnerRelease.entitlements` (`production`), both created if absent |
+| iOS build setting | `ios/Runner.xcodeproj/project.pbxproj` (`CODE_SIGN_ENTITLEMENTS` per configuration) |
 | Web service worker | `web/OneSignalSDKWorker.js` |
-| Web SDK script | `web/index.html` (injected) |
-| Provider injection | `lib/config/app.dart` (injected) |
-| Config factory | `lib/main.dart` (injected) |
+| Web SDK script | `web/index.html` (injected once) |
+| Provider injection | `lib/config/app.dart` |
+| Config factory | `lib/main.dart` (import plus a `configFactories` entry) |
 
 > [!TIP]
-> Run `dart run magic_notifications doctor` immediately after installation to verify every required artifact is in place.
+> Run `dart run magic:dowel notifications:doctor` straight after the install to see every artifact it checks.
 
----
+<a name="service-provider"></a>
+## Service Provider Registration
 
-## <a name="service-provider"></a>Service Provider Registration
-
-If you ran the CLI, `lib/config/app.dart` is already updated. For manual setup, add the import and provider entry:
+`plugin:install` has already edited `lib/config/app.dart`. For a manual setup, add the import and the provider entry:
 
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-final providers = [
-  // ... other providers
-  (app) => NotificationServiceProvider(app),
-];
+Map<String, dynamic> get appConfig => {
+  'app': {
+    'providers': [
+      // ... other providers
+      (app) => NotificationServiceProvider(app),
+    ],
+  },
+};
 ```
 
-The `NotificationServiceProvider` runs two phases during framework boot:
+`NotificationServiceProvider` runs two phases during framework boot:
 
-- `register()` — binds `NotificationManager` as a singleton under the `'notifications'` key
-- `boot()` — reads config, initializes the OneSignal push driver, starts no polling on its own
+- `register()` binds `NotificationManager` as a singleton under the `'notifications'` key.
+- `boot()` registers the database channel, loads the persisted push intent, resolves the push driver named by `notifications.push.driver`, registers the push channel and initialises the driver when an App ID is set, then reconciles the device's push identity once. It starts no polling.
 
-See [Service Provider Architecture](../architecture/service-provider.md) for the full boot sequence.
+See [Service Provider](../architecture/service-provider.md) for the full boot sequence.
 
----
+<a name="main-dart"></a>
+## Config Factory in main.dart
 
-## <a name="main-dart"></a>Config Factory in main.dart
-
-The notification config must be passed to `Magic.init` as a config factory:
+The notification config reaches `Magic.init` as a config factory:
 
 ```dart
+import 'package:flutter/widgets.dart';
+import 'package:magic/magic.dart';
+
+import 'config/app.dart'; // The host's own config: declares `appConfig`.
 import 'config/notifications.dart';
 
 void main() async {
@@ -143,130 +150,77 @@ void main() async {
   await Magic.init(
     configFactories: [
       () => appConfig,
-      () => notificationConfig,  // add this
+      () => notificationConfig, // added by notifications:install
     ],
   );
 
-  runApp(MyApp());
+  runApp(const MyApp()); // `MyApp` is the host's own root widget.
 }
 ```
 
-The `notificationConfig` getter is defined in `lib/config/notifications.dart` (created by the CLI or `publish` command). Its shape:
+The `notificationConfig` getter lives in `lib/config/notifications.dart`, written by `notifications:install` or `notifications:publish`. Its core shape:
 
 ```dart
 Map<String, dynamic> get notificationConfig => {
   'notifications': {
     'push': {
       'driver': 'onesignal',
-      'app_id': const String.fromEnvironment('ONESIGNAL_APP_ID'),
+      'app_id': '12345678-1234-1234-1234-123456789012',
+      'service_worker_path': 'OneSignalSDKWorker.js',
+      'service_worker_scope': '/onesignal/',
       'notify_button_enabled': false,
     },
     'database': {
       'enabled': true,
       'polling_interval': 30,
     },
-    'mail': {
-      'enabled': false,
-    },
     'soft_prompt': {
       'enabled': true,
-      'title': 'Stay Updated',
-      'message': 'Get notified about important events.',
     },
   },
 };
 ```
 
-Add the App ID to your `.env`:
+The generated file carries more keys than this and comments on each; [Configuration](./configuration.md) documents all of them. To keep the App ID out of source control, read it with `env('ONESIGNAL_APP_ID')` instead of a literal, as described there.
 
-```
-ONESIGNAL_APP_ID=your-onesignal-app-id-here
-```
-
----
-
-## <a name="platform-setup"></a>Platform Setup Summary
+<a name="platform-setup"></a>
+## Platform Setup Summary
 
 ### iOS
 
-The CLI writes the three project-file markers a push needs directly, without
-opening Xcode: `UIBackgroundModes` gains `remote-notification` in
-`ios/Runner/Info.plist`, `aps-environment` is declared in
-`ios/Runner/Runner.entitlements` (created if the project never had one), and
-`CODE_SIGN_ENTITLEMENTS` in `ios/Runner.xcodeproj/project.pbxproj` is pointed
-at that entitlements file (without which Xcode never reads it, and signing
-silently ignores the entitlement).
+The CLI writes the project-file markers a push needs, without opening Xcode: `UIBackgroundModes` gains `remote-notification` in `Info.plist`, `aps-environment` is declared in both entitlements files (`development` for Debug and Profile, `production` for Release), and `CODE_SIGN_ENTITLEMENTS` is pointed at the right file per build configuration. Xcode never reads an entitlements file that no build setting names, which is why the doctor checks the setting and not just the file.
 
-What is still manual, because it needs an Apple/OneSignal account rather than
-a project-file edit:
+What stays manual, because it needs an Apple or OneSignal account rather than a project-file edit:
 
-1. Run `cd ios && pod install --repo-update && cd ..`
-2. Create an APNs key in [Apple Developer Portal](https://developer.apple.com/account/resources/authkeys/list) (.p8 file + Key ID + Team ID). One key covers Sandbox and Production, it is team-wide, and it downloads exactly once.
-3. Upload the .p8 key to OneSignal Dashboard → Settings → Platforms → Apple iOS (APNs), with the Key ID, your Team ID and your bundle identifier.
+1. Run `cd ios && pod install --repo-update && cd ..`.
+2. Create an APNs key in the [Apple Developer Portal](https://developer.apple.com/account/resources/authkeys/list) (a `.p8` file, its Key ID and your Team ID). One key covers Sandbox and Production, it is team-wide, and it downloads exactly once.
+3. Upload the `.p8` key to the OneSignal Dashboard (Settings, Platforms, Apple iOS (APNs)) with the Key ID, your Team ID and your bundle identifier.
 
-> [!IMPORTANT]
-> The entitlement this installer writes says `development`, which is what a
-> development provisioning profile carries and what a distribution one
-> refuses. Before you archive anything, read
-> [Shipping push in a release build](../basics/shipping-push.md): that and
-> three other differences are silent, and the first evidence of each is a
-> notification nobody receives.
+The installer declines to repoint a project that already names a different entitlements file, one whose configurations are none of Debug, Profile or Release, and one whose project file it cannot rewrite. Each case prints what to do by hand; [Shipping push in a release build](../basics/shipping-push.md#release-apns-environment) covers them.
 
-#### The Notification Service Extension, and why nothing here can create it
+#### The Notification Service Extension
 
-Push works without the next two steps, which is the reason to read them: a
-build with no extension delivers notifications normally and quietly reports no
-confirmed deliveries, no rich media and no badge counts. The absence looks like
-the product working. `notifications:doctor` warns when either half is missing.
+Push works without the next two steps, which is why they need saying: a build with no extension delivers notifications normally and quietly reports no confirmed deliveries, no rich media and no badge counts. `notifications:doctor` warns when either half is missing. Neither can be automated from a pub package, because both add or change an Xcode target:
 
-Neither can be automated from a pub package, because both add or change an
-Xcode target:
+4. **App Group.** In Xcode, add the App Groups capability to the **Runner** target with a container named `group.<your.bundle.id>.onesignal`.
+5. **Notification Service Extension.** File, New, Target, Notification Service Extension, named `OneSignalNotificationServiceExtension`. Add the **same** App Group to that new target and follow OneSignal's current [Flutter SDK setup](https://documentation.onesignal.com/docs/flutter-sdk-setup) for the extension's source and deployment target.
 
-4. **App Group.** In Xcode, add the App Groups capability to the **Runner**
-   target with a container named `group.<your.bundle.id>.onesignal`.
-5. **Notification Service Extension.** File → New → Target →
-   Notification Service Extension, named `OneSignalNotificationServiceExtension`,
-   then add the **same** App Group to that new target and follow OneSignal's
-   current [Flutter SDK setup](https://documentation.onesignal.com/docs/flutter-sdk-setup)
-   for the extension's source and its deployment target.
-
-The two halves fail independently. An extension with no shared App Group gives
-rich media and still no confirmed delivery, because the container is how the
-extension hands what it saw back to the app.
-
-> [!NOTE]
-> Push notifications do not work on iOS Simulator. A physical device is required for testing.
+The two halves fail independently. An extension with no shared App Group still gives rich media but no confirmed delivery, because the container is how the extension hands what it saw back to the app.
 
 > [!WARNING]
-> Test the cold-start path with a **profile or release** build. iOS refuses to
-> launch a debug Flutter build outside the Flutter tooling, and OneSignal
-> documents that on iOS in Debug a force-closed app opened from a notification
-> does not register the click listener at all. A cold tap that appears to do
-> nothing in Debug is usually this, not your wiring.
+> Test the cold-start path with a **profile or release** build. iOS refuses to launch a debug Flutter build outside the Flutter tooling, and OneSignal documents that on iOS in Debug a force-closed app opened from a notification does not register the click listener at all. A cold tap that appears to do nothing in Debug is usually this, not your wiring.
 
 ### Android
 
-**`android/app/build.gradle`** — set minimum SDK:
-
-```gradle
-android {
-    defaultConfig {
-        minSdkVersion 21
-    }
-}
-```
-
-**`android/app/src/main/AndroidManifest.xml`** — add permissions (the CLI injects `POST_NOTIFICATIONS` automatically):
+The CLI injects `POST_NOTIFICATIONS` into `android/app/src/main/AndroidManifest.xml`:
 
 ```xml
-<uses-permission android:name="android.permission.INTERNET"/>
-<uses-permission android:name="android.permission.VIBRATE"/>
 <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 ```
 
 ### Web
 
-The CLI creates the service worker and injects the SDK script. Manually:
+The CLI writes the service worker and injects the SDK script. Done by hand:
 
 **`web/OneSignalSDKWorker.js`**:
 
@@ -274,36 +228,29 @@ The CLI creates the service worker and injects the SDK script. Manually:
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 ```
 
-> [!NOTE]
-> Use `OneSignalSDK.sw.js` for the service worker file and `OneSignalSDK.page.js` for the `<script>` tag in `index.html`. They are different build targets.
+**`web/index.html`**, inside `<head>`:
 
-**`web/manifest.json`** — add GCM sender ID:
-
-```json
-{
-  "gcm_sender_id": "482941778795",
-  "gcm_sender_id_comment": "Do not change. Required for OneSignal Web Push."
-}
+```html
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+</script>
 ```
+
+> [!NOTE]
+> The worker file uses `OneSignalSDK.sw.js` and the page uses `OneSignalSDK.page.js`: they are different build targets. Do not call `OneSignal.init()` in `index.html`; the Dart driver initialises the SDK from `lib/config/notifications.dart`.
 
 > [!IMPORTANT]
 > **iOS Safari only receives web push after the site is added to the Home Screen.** Per [OneSignal's documentation](https://documentation.onesignal.com/docs/en/web-push-for-ios), this "will work on iOS devices only after users add your site to their home screen and open it from there. This is Apple's design requirement." There is no workaround for a plain Safari tab; the app has to tell the person to add the site to their Home Screen first.
 
-For the full platform guides, see [README.md](../../README.md).
+<a name="related-documentation"></a>
+## Related Documentation
 
----
-
-## <a name="next-steps"></a>Next Steps
-
-1. Run `dart run magic_notifications doctor` to confirm setup health
-2. Read [Configuration](./configuration.md) for all config key details
-3. Add polling and push login to your auth flow — see [README.md](../../README.md)
-4. Explore [Channels](../basics/channels.md) and [Drivers](../basics/drivers.md)
-
----
-
-**Related**
-
-- [Configuration](https://magic.fluttersdk.com/packages/notifications/getting-started/configuration)
-- [Channels](https://magic.fluttersdk.com/packages/notifications/basics/channels)
-- [CLI Reference](https://magic.fluttersdk.com/packages/notifications/basics/cli)
+- [Configuration](./configuration.md): every `notifications.*` key.
+- [CLI Reference](../basics/cli.md): the full command and flag list.
+- [Shipping push in a release build](../basics/shipping-push.md): the differences a development build hides.
+- [Service Provider](../architecture/service-provider.md): what `boot()` does.
+- [Channels](../basics/channels.md) and [Drivers](../basics/drivers.md): sending and the push SDK layer.
+- [Laravel Backend Setup](../basics/laravel-backend-setup.md): the API this package talks to.
+- [Magic installation](https://anilcancakir.com/magic/docs/getting-started/installation): the framework this plugin extends.
+- [Realtime delivery with magic_socket](https://anilcancakir.com/magic_socket/docs/getting-started/installation): the socket layer behind `Notify.startRealtime`.

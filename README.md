@@ -1,463 +1,286 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/fluttersdk/magic/master/.github/magic-logo.svg" width="120" alt="Magic Logo" />
+  <img src="https://raw.githubusercontent.com/anilcancakir/magic_notifications/master/.github/magic-logo.svg" width="120" alt="Magic Logo" />
 </p>
 
 <h1 align="center">Magic Notifications</h1>
 
 <p align="center">
-  <strong>Multi-channel notifications for the Magic Framework.</strong><br/>
-  Database, Push & Mail — one unified API.
+  <strong>Show a backend-driven inbox and send push in a Magic app.</strong><br/>
+  The <code>Notify</code> facade reads your Laravel backend's notifications, ships the inbox and preferences screens, wires OneSignal push on iOS, Android and web, and takes new rows over <code>magic_socket</code> with polling as the fallback. There is no mail channel.
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/magic_notifications"><img src="https://img.shields.io/pub/v/magic_notifications.svg" alt="pub.dev version" /></a>
-  <a href="https://github.com/fluttersdk/magic_notifications/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/fluttersdk/magic_notifications/ci.yml?branch=master&label=CI" alt="CI Status" /></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
-  <a href="https://pub.dev/packages/magic_notifications/score"><img src="https://img.shields.io/pub/points/magic_notifications" alt="pub points" /></a>
-  <a href="https://github.com/fluttersdk/magic_notifications/stargazers"><img src="https://img.shields.io/github/stars/fluttersdk/magic_notifications?style=flat" alt="GitHub Stars" /></a>
+  <a href="https://pub.dev/packages/magic_notifications"><img src="https://img.shields.io/pub/v/magic_notifications.svg" alt="pub package"></a>
+  <a href="https://github.com/anilcancakir/magic_notifications/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anilcancakir/magic_notifications/ci.yml?branch=master&label=CI" alt="CI"></a>
+  <a href="https://codecov.io/gh/anilcancakir/magic_notifications"><img src="https://codecov.io/gh/anilcancakir/magic_notifications/graph/badge.svg" alt="codecov"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://pub.dev/packages/magic_notifications/score"><img src="https://img.shields.io/pub/points/magic_notifications" alt="pub points"></a>
 </p>
 
 <p align="center">
-  <a href="https://magic.fluttersdk.com/notifications">Website</a> ·
-  <a href="https://magic.fluttersdk.com/packages/notifications/getting-started/installation">Docs</a> ·
+  <a href="https://anilcancakir.com/magic_notifications">Documentation</a> ·
   <a href="https://pub.dev/packages/magic_notifications">pub.dev</a> ·
-  <a href="https://github.com/fluttersdk/magic_notifications/issues">Issues</a> ·
-  <a href="https://github.com/fluttersdk/magic_notifications/discussions">Discussions</a>
+  <a href="https://github.com/anilcancakir/magic_notifications/issues">Issues</a>
 </p>
 
----
+## At a glance
 
-## Why Magic Notifications?
+| Fact | Value |
+|---|---|
+| Package | [`magic_notifications`](https://pub.dev/packages/magic_notifications) |
+| Install | `flutter pub add magic_notifications`, then `dart run magic:dowel plugin:install magic_notifications` and `dart run magic:dowel notifications:install` |
+| Import | `package:magic_notifications/magic_notifications.dart` |
+| Entry points | `Notify` (facade), `NotificationServiceProvider` (wiring), `NotificationManager`, `Notification` and `Notifiable`, `DatabaseChannel` and `PushChannel`, `PushDriver` and `OneSignalDriver`, `NotificationsListView`, `NotificationPreferencesView`, `NotificationDropdown`, `PushPrompt`; `notifications:*` (CLI) |
+| Platforms | The inbox runs wherever Flutter does. Push runs on iOS and Android (OneSignal SDK) and on web (OneSignal Web SDK); elsewhere `PushDriver.isSupported` is `false` and reachability reads `unavailable`. |
+| Requires | Dart >=3.13, Flutter >=3.47, `magic` ^1.0.0, a backend that serves the notification endpoints |
+| Dependencies | `magic`, `magic_socket`, `dowel`, `onesignal_flutter`, `wind_kit`, `material_ui`, `app_settings`, `meta` |
+| License | MIT |
 
-Managing notifications in Flutter means juggling multiple channels — database polling, platform-specific push setup for iOS/Android/Web, email delivery, and user preference logic scattered across your codebase. Every project reinvents the same boilerplate.
-
-**Magic Notifications** gives you a single, unified API for every channel. One config file drives everything. One CLI command sets up your project. Channels and drivers are swappable — switch from OneSignal to another push provider without touching application code.
-
-> **Config-driven notifications.** Define your channels, drivers, and preferences once. Magic Notifications handles the rest.
-
----
-
-## Features
-
-| | Feature | Description |
-|---|---------|-------------|
-| :bell: | **Multi-channel** | Database, Push, and Mail channels through one API |
-| :iphone: | **OneSignal Push** | iOS, Android, and Web push via `onesignal_flutter` |
-| :arrows_counterclockwise: | **Real-time Polling** | Background polling with pause/resume/stop lifecycle |
-| :satellite: | **Socket Delivery** | Take notification state from a broadcast channel instead, with polling as the fallback |
-| :dart: | **User Preferences** | Global and per-type channel preference management |
-| :hammer_and_wrench: | **CLI Tools** | Interactive install, configure, doctor, test, and more |
-| :gear: | **Config-Driven** | All settings in one Dart config file via `ConfigRepository` |
-| :mag: | **Reachability Read** | Four-state answer (`unavailable`/`blocked`/`off`/`on`) so the app can decide what to show *before* asking the OS |
-| :globe_with_meridians: | **Web Support** | Full web push via conditional JS interop, subject to iOS Safari's Home Screen requirement (see below) |
-
-> [!NOTE]
-> A tapped push does not open a screen on its own. This package publishes the
-> click; routing from it is `magic_deeplink`'s job, and the last step there is
-> a handler your app registers. See
-> [Opening a screen from a tap](doc/basics/drivers.md#opening-a-screen-from-a-tap).
-
----
-
-## Quick Start
-
-### 1. Add the dependency
-
-```yaml
-dependencies:
-  magic_notifications: ^1.0.0
-```
-
-### 2. Install configuration
+## Install
 
 ```bash
+flutter pub add magic_notifications
+dart run magic:dowel plugin:install magic_notifications
 dart run magic:dowel notifications:install
+dart run magic:dowel notifications:doctor
 ```
 
-This generates `lib/config/notifications.dart`, injects `NotificationServiceProvider` into `lib/config/app.dart`, wires the `notificationConfig` factory into `lib/main.dart`, and configures platform-specific setup for your selected platforms.
+`plugin:install` registers `NotificationServiceProvider` in `lib/config/app.dart` and the package's commands with dowel; the package has no executable of its own. `notifications:install` asks for the OneSignal App ID, writes `lib/config/notifications.dart` and the platform files push needs, and wires the config into `lib/main.dart`. `notifications:doctor` reports what is still missing. In a pipeline:
 
-### 3. Boot the provider
+```bash
+dart run magic:dowel notifications:install \
+  --non-interactive \
+  --app-id 12345678-1234-1234-1234-123456789012 \
+  --platforms android,ios,web
+```
 
-The `NotificationServiceProvider` is automatically registered during install. On app boot, it:
+The APNs key upload, the iOS App Group and the Notification Service Extension stay manual; [Installation](https://anilcancakir.com/magic_notifications/docs/getting-started/installation) lists them.
 
-- Creates the configured channels (database, push, mail)
-- Initializes the push driver with your config
-- Sets up background polling for database notifications
-- Registers notification preferences
+## Inbox
 
-That's it — notifications now work across all configured channels.
-
----
-
-## Configuration
-
-After running the install command, edit `lib/config/notifications.dart`:
+Notifications are rows your backend creates; the client reads them. Listen to the stream, fetch, and change read state.
 
 ```dart
-Map<String, dynamic> get notificationConfig => {
-  'notifications': {
-    'push': {
-      'driver': 'onesignal',
-      'app_id': const String.fromEnvironment('ONESIGNAL_APP_ID'),
-      'notify_button_enabled': false,
-    },
-    'database': {
-      'enabled': true,
-      'polling_interval': 30, // seconds
-    },
-    'mail': {
-      'enabled': false,
-    },
-    'soft_prompt': {
-      'enabled': true,
-      'title': 'Stay Updated',
-      'message': 'Get notified about important events.',
-    },
-  },
-};
+import 'package:flutter/foundation.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+final ValueNotifier<int> unread = ValueNotifier<int>(0);
+
+Future<void> main() async {
+  Notify.notifications().listen((List<DatabaseNotification> rows) {
+    unread.value = rows.where((DatabaseNotification n) => !n.isRead).length;
+  });
+
+  await Notify.fetchNotifications();
+  await Notify.markAsRead('550e8400-e29b-41d4-a716-446655440000');
+}
 ```
 
-Add to `.env`:
+| Member | Returns | Meaning |
+|--------|---------|---------|
+| `Notify.notifications()` | `Stream<List<DatabaseNotification>>` | The cached list at once, then every later change. |
+| `Notify.fetchNotifications()` | `Future<void>` | Reads `GET /notifications` into the stream. A failure is logged and the held list stays. |
+| `Notify.fetchPaginatedNotifications(page:, perPage:)` | `Future<PaginatedNotifications>` | One page with its meta. Throws `NotificationException` (`NOTIFICATIONS_FETCH_FAILED`, `NOTIFICATIONS_DECODE_FAILED`) instead of answering an empty page. |
+| `Notify.unreadCount()` | `Future<int>` | Reads `GET /notifications/unread-count`; `0` on a failure. |
+| `Notify.markAsRead(id)`, `Notify.markAllAsRead()` | `Future<void>` | Change the held list first, then post to the backend. |
+| `Notify.deleteNotification(id)` | `Future<void>` | Removes the row first, restores it when the request throws, and rethrows. |
 
-```
-ONESIGNAL_APP_ID=your-onesignal-app-id-here
-```
+Failure modes:
 
-All values are read at runtime via `ConfigRepository` — no hardcoded strings scattered across your codebase.
+| Situation | What happens |
+|-----------|--------------|
+| A row whose `data` has no string `title` or `body` | The decode throws: `fetchNotifications` logs it and keeps the previous list; `fetchPaginatedNotifications` throws `NOTIFICATIONS_DECODE_FAILED`. |
+| `unread-count` answers `{"data": {"count": 5}}` | The client reads `count` from the top level and returns `0`. Answer `{"count": 5}`. `magic-starter-laravel` answers the wrapped shape; a backend written to the contract is not affected. |
+| The backend ignores `perPage` | The client sends `page` and `perPage`; a backend that reads `per_page` always uses its own default. `magic-starter-laravel` reads `per_page`; a backend written to the contract is not affected. |
+| `markAsRead` or `markAllAsRead` and the request throws | The list is refetched to the server's state and nothing is rethrown. An HTTP error status does not throw in Magic's `Http`, so it is not rolled back. |
+| The signed-in person changes | The held list is cleared, so the next person never sees the previous person's rows. |
 
----
+## Channels
 
-## Usage
-
-### Initialize Push After Login
+A `Notification` names its channels in `via()`; `Notify.send` dispatches to each registered channel in turn.
 
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-Future<void> onLoginSuccess(User user) async {
-  await Notify.requestPushPermission();
-  await Notify.initializePush('user_${user.id}');
+class MonitorDownNotification extends Notification {
+  @override
+  List<String> via(Notifiable notifiable) => ['database', 'push'];
 
-  // Prefer the socket; startPolling() is the fallback and no-ops when the
-  // socket is live, so both calls are safe in either order.
-  await Notify.startRealtime(channel: 'App.Models.User.${user.id}');
+  @override
+  Map<String, dynamic>? toDatabase(Notifiable notifiable) => {
+    'title': 'Monitor down',
+    'body': 'api.example.com is not responding',
+  };
+
+  @override
+  PushMessage? toPush(Notifiable notifiable) => PushMessage()
+      .heading('Monitor down')
+      .content('api.example.com is not responding');
+}
+
+Future<void> alert(Notifiable user) => Notify.send(user, MonitorDownNotification());
+```
+
+| Channel | Behaviour |
+|---------|-----------|
+| `database` | Always registered and available. `send` does nothing: the backend creates the row and the client reads it. |
+| `push` | Registered when a push driver resolves, and **self-addressed**: it posts to `POST /notifications/push-test` and the backend derives the recipient from the session, so it can only page the signed-in user. It is off until `notifications.push.self_test_enabled` is `true`. Push to other people is sent by your backend. |
+| your own | Extend `NotificationChannel` (`name`, `isAvailable`, `send`) and register it with `Notify.manager.registerChannel`. |
+
+Failure modes:
+
+| Situation | What happens |
+|-----------|--------------|
+| `via()` names a channel nobody registered, `'mail'` included | The manager logs `Unknown notification channel` and skips it. |
+| A channel is unavailable | It is skipped without a log; the others still deliver. |
+| A channel throws | Every available channel is still tried, later failures are logged, and the first error is rethrown after the last. |
+| `PushChannel` is given a `Notifiable` that is not the signed-in user | Throws `NotificationException` with code `PUSH_RECIPIENT_NOT_AUTHENTICATED_USER`. |
+| A non-2xx answer from `push-test` | Throws `NotificationException` with code `HTTP_<status>`. |
+| `Notification` is ambiguous after importing Flutter | Import widgets with `hide Notification`. |
+
+## Push
+
+The package does **not** declare who the device belongs to: your app does, after sign-in, and takes it back on sign-out. (`magic_starter` already does both; an app without it writes them.)
+
+```dart
+import 'package:magic/magic.dart';
+import 'package:magic_notifications/magic_notifications.dart';
+
+// Once, from a provider's boot() after auth is registered. Nothing else calls
+// `watch()`, so device reachability is never reported until this runs.
+void armPushState() {
+  Notify.pushState.watch();
+}
+
+Future<void> onSignIn(String userId) async {
+  await Notify.initializePush('user_$userId');
+  await Notify.startRealtime(channel: 'App.Models.User.$userId');
   Notify.startPolling();
 }
-```
 
-> **External ID Format**: Always use a prefix like `user_` before the user ID. `Notify.initializePush()` forwards the string you give it unchanged; nothing inside the package adds a prefix. The backend addresses a device as `user_<uuid>`, so a bare numeric or bare UUID subscribes to an external id nothing sends to, and the push silently reaches nobody. OneSignal also blocks bare numeric external_id values outright.
-
-### Display Notifications in UI
-
-```dart
-NotificationDropdown(
-  notificationStream: Notify.notifications(),
-  onMarkAsRead: (id) => Notify.markAsRead(id),
-  onMarkAllAsRead: () => Notify.markAllAsRead(),
-  onNotificationTap: (n) => MagicRoute.to(n.actionUrl ?? '/'),
-  onViewAll: () => MagicRoute.to('/notifications'),
-)
-```
-
-### Check Push Reachability Before Asking
-
-`PushDriver.reachability()` answers whether push can actually reach the device
-right now, without triggering the OS permission dialog:
-
-```dart
-final reachability = await NotificationManager().pushDriver.reachability();
-
-switch (reachability) {
-  case PushReachability.unavailable:
-    // No platform driver here at all (e.g. web driver on a platform it
-    // does not support). Do not offer push.
-    break;
-  case PushReachability.blocked:
-    // The user denied the OS prompt. iOS and most browsers never let the
-    // app raise that dialog again: tell the person where the OS setting
-    // lives (Settings > Notifications, or the browser's site permissions)
-    // instead of calling requestPermission() again, which will silently
-    // no-op.
-    break;
-  case PushReachability.off:
-    // Never asked, or asked and not opted in. Safe to call
-    // Notify.requestPushPermission().
-    break;
-  case PushReachability.on:
-    // Permitted, opted in, and holding a subscription id.
-    break;
-}
-```
-
-> [!IMPORTANT]
-> **iOS Safari web push only works after the site is added to the Home Screen.**
-> Per [OneSignal's own documentation](https://documentation.onesignal.com/docs/en/web-push-for-ios),
-> web push on iOS Safari "will work on iOS devices only after users add your
-> site to their home screen and open it from there. This is Apple's design
-> requirement." Shipping web push to iPhone/iPad Safari users without that
-> step means the permission prompt and the reachability read both look normal
-> while the push reaches nobody. There is no workaround; the app has to tell
-> the person to add the site to their Home Screen first.
-
-### Push Permission Soft Prompt
-
-`PushPrompt`, `PushPromptHost`, and `PushOffNotice` ask for push before the
-platform's own one-shot prompt is spent, and mark a device push cannot reach
-on screens outside the settings page:
-
-```dart
-PushPromptHost(declinedVaultKey: 'my_app.push_prompt_declined')
-
-PushOffNotice(onOpenPreferences: () => MagicRoute.to('/settings/notifications'))
-```
-
-`PushPromptHost` owns the decline timestamp under the vault key you give it;
-the package owns the policy of when to ask again. See the
-[Push Prompt Component](doc/basics/preferences.md#push-prompt) section for the
-four presentations and the translation keys a host has to add.
-
-`NotificationManager.onPushIdentityReconciled` streams the outcome of every
-identity reconcile pass (login, logout, or a driver attaching later): see
-[Push Identity Reconcile Outcomes](doc/architecture/notification-manager.md#identity-reconciled).
-
-### Tell Your Backend Whether the Device Can Be Paged
-
-OneSignal accepts a push for a subscription that is denied, opted out or gone,
-and reports nothing back. `Notify.pushState` posts the device's own
-reachability to your backend whenever it changes, and withdraws it on
-sign-out. It stays off until both endpoints are configured (there is no
-default path):
-
-```dart
-// config: 'push_state': {
-//   'report_path': '/devices/push-state',
-//   'release_path': '/devices/push-state/release',
-// },
-
-// In a provider's boot(), once auth is registered.
-Notify.pushState.watch();
-```
-
-The release has to run before `Auth.logout()` drops the token (see below). The
-server half is in
-[Laravel Backend Setup](doc/basics/laravel-backend-setup.md#onesignal-push);
-[Shipping Push](doc/basics/shipping-push.md#telling-your-backend-whether-the-device-can-be-paged)
-covers when a report is sent.
-
-### Clean Up on Logout
-
-```dart
-Future<void> onLogout() async {
+Future<void> onSignOut() async {
   Notify.stopRealtime();
   Notify.stopPolling();
   if (Notify.pushState.isConfigured) await Notify.pushState.release();
   await Notify.logoutPush();
+  await Auth.logout();
 }
 ```
 
-### Receive Notifications Over a Socket
+`initializePush` forwards the string unchanged, and your backend addresses the device by the same string, so both sides must agree on the prefix (`user_` by default). A mismatch is accepted by OneSignal and delivered to nobody.
 
-`Notify.startRealtime()` subscribes to the notifiable's private broadcast channel
-and applies each `notification.created` frame directly to the stream, so a new
-notification appears when the server publishes it instead of up to one polling
-interval later. It returns `false` and changes nothing when the app has no
-broadcast driver configured, which is what keeps `startPolling()` meaningful on a
-deployment without a socket.
+| Member | Meaning |
+|--------|---------|
+| `Notify.requestPushPermission()` | Raises the OS dialog; `true` when granted. Shows nothing on a device that already answered. |
+| `Notify.manager.pushDriver.reachability()` | `PushReachability.unavailable`, `blocked`, `off` or `on`, without raising a dialog. |
+| `Notify.manager.pushPromptAdvice(declinedAt:)` | Whether your own reminder may show now, and what its button can do (`PushPromptAction`). |
+| `PushPrompt`, `PushPromptHost(declinedVaultKey:)`, `PushOffNotice(onOpenPreferences:)` | The shipped reminder row and the quiet shell marker; see [Push Prompt Component](https://anilcancakir.com/magic_notifications/docs/basics/preferences#push-prompt). |
+| `Notify.manager.onPushReceived`, `onPushClicked` | Foreground pushes and taps, filtered to the signed-in identity; taps from a cold start are held until a listener attaches. |
+| `Notify.manager.onPushIdentityReconciled` | The outcome of every identity pass; see [Push Identity Reconcile Outcomes](https://anilcancakir.com/magic_notifications/docs/architecture/notification-manager#identity-reconciled). |
+| `Notify.pushState` | Posts the device's own reachability to your backend and withdraws it on sign-out; see [Telling your backend whether the device can be paged](https://anilcancakir.com/magic_notifications/docs/basics/shipping-push#telling-your-backend-whether-the-device-can-be-paged). Reports nothing until your app calls `Notify.pushState.watch()` (the provider never does) and both `report_path` and `release_path` are set. |
+| `Notify.describePushUserUsing(resolver)` | Describes the signed-in person to OneSignal; nothing is sent until `share_user_attributes` is `true`. |
+| `Notify.extend(name, factory)` | Registers a `PushDriver` of your own, selected by `notifications.push.driver`. |
+
+Failure modes:
+
+| Situation | What happens |
+|-----------|--------------|
+| A tapped push should open a screen | Nothing routes for you: the package hands over the payload. Register a `magic_deeplink` handler or route from `onPushClicked` ([Opening a screen from a tap](https://anilcancakir.com/magic_notifications/docs/basics/drivers#opening-a-screen-from-a-tap)). |
+| The destination was sent as OneSignal's Launch URL (`setUrl`) | It never reaches `event.data`; put it in `setData`. |
+| `notifications.push.app_id` is blank | The driver is never initialised, `isInitialized` stays `false` and reachability reads `unavailable`. |
+| The driver fails to initialise | The app still boots; the failure is on `NotificationServiceProvider.pushInitializationError`. |
+| A driver name nothing was registered under | Logged at error level, push stays off. |
+| `requestPushPermission` on a denied device | Shows nothing. Read `reachability()` first and point at the OS setting when it is `blocked`. |
+| `Notify.pushState.release()` after `Auth.logout()` | The token is gone and the request is a 401. Release first. |
+| Web push on iOS Safari in a plain tab | Reaches nobody until the site is added to the Home Screen. |
+
+## Realtime and polling
+
+`Notify.startRealtime` subscribes to the notifiable's private broadcast channel and applies each `notification.created` frame to the stream. `Notify.startPolling` reads `GET /notifications` every 30 seconds by default (`notifications.database.polling_interval`, clamped to 5 to 600) and is a no-op while the socket is live.
 
 ```dart
-final bool live = await Notify.startRealtime(
-  channel: 'App.Models.User.${user.id}',
-);
+import 'package:magic_notifications/magic_notifications.dart';
+
+Future<void> arm(String userId) async {
+  await Notify.startRealtime(channel: 'App.Models.User.$userId');
+
+  // The fallback: a no-op while the socket is live, so no branch is needed.
+  Notify.startPolling();
+}
 ```
 
-Behaviour worth knowing:
+| Situation | What happens |
+|-----------|--------------|
+| `broadcasting.default` is unset, empty or `'null'`, or the channel is empty | `startRealtime` returns `false` and changes nothing. |
+| The socket cannot connect yet | It subscribes anyway and returns `true`; polling stands in until the channel is subscribed. |
+| The socket drops | Polling resumes; on a resubscribe the poller stops and the list is refetched once, since Reverb has no replay. |
+| A frame arrives twice | It replaces the held row by id. |
+| `NotificationServiceProvider.boot()` | Starts no polling. Start it from an authenticated layout. |
 
-- The existing list is fetched ONCE on start. A socket only carries what happens
-  next, so the rows that already exist still have to be read.
-- A dropped connection falls back to polling; a reconnect drops the fallback and
-  refetches once, because Reverb has no replay.
-- A redelivered id replaces the held row rather than appending a duplicate.
+## Screens
 
-The server half (the `broadcast` channel on the notification, the event name, and
-the payload shape) is in
-[doc/basics/laravel-backend-setup.md](doc/basics/laravel-backend-setup.md).
+```dart
+import 'package:magic_notifications/magic_notifications.dart';
 
----
+void boot() {
+  Notify.view.register('notifications.preferences', () {
+    return const NotificationPreferencesView(backRoute: '/settings');
+  });
+}
+```
+
+`Notify.view` is a `NotificationViewRegistry` holding `notifications.list` (`NotificationsListView`) and `notifications.preferences` (`NotificationPreferencesView`); register over a key to wrap or replace it, and `Notify.view.slot` supplies a type icon. `NotificationDropdown` is the bell with an unread badge. The package ships no translation catalogue: a host adds the `notifications.*` keys the screens and `PushPrompt` use to every locale, and a missing key renders as itself ([Preferences](https://anilcancakir.com/magic_notifications/docs/basics/preferences)). The preferences screen needs `GET` and `PUT /notification-preferences` on the backend.
 
 ## CLI Tools
 
-All commands run through dowel: `dart run magic:dowel notifications:[command]`
+`dart run magic:dowel notifications:<command>`, after `plugin:install`. The [CLI reference](https://anilcancakir.com/magic_notifications/docs/basics/cli) lists every flag.
 
-| Command | Description |
-|---------|-------------|
-| `notifications:install` | Interactive wizard to set up notifications |
-| `notifications:configure` | Update notification configuration |
-| `notifications:doctor` | Check installation and configuration health |
-| `notifications:test` | Send test notifications to verify setup |
-| `notifications:channels` | List all channels and their status |
-| `notifications:publish` | Copy config stub to your project |
-| `notifications:uninstall` | Remove plugin integration |
+| Command | Purpose |
+|---------|---------|
+| `install` | Wizard: config, platform files, provider and config factory. Flags: `--non-interactive`, `--app-id`, `--platforms`, `--no-soft-prompt`, `--safari-web-id`, `--notify-button`, `--force`, `--dry-run`. |
+| `configure` | Show or change single values: `--show`, `--app-id`, `--polling-interval`, `--soft-prompt`. |
+| `doctor` | Health check of the install, the config and the iOS entitlements; exits `1` when a requirement is missing. |
+| `test` | Prints a notification preview; makes no request. |
+| `channels` | Prints the channel settings from the config file. |
+| `publish` | Copies the config stub without a wizard. |
+| `uninstall` | Removes what `install` wired into Dart files; platform files stay. |
 
-The `notifications:doctor` and `notifications:channels` commands are also available as read-only MCP tools for AI agents.
+`doctor` and `channels` are also read-only MCP tools. `configure`, `channels` and `doctor` read the config file's text, so an App ID read with `env('...')` cannot be changed by `configure --app-id`: change the `.env` value.
 
-See the [CLI Reference](https://magic.fluttersdk.com/packages/notifications/basics/cli) for all flags and options.
+## For AI coding agents
 
----
+Rules for an agent writing code against this package. Each one is a mistake that ships silently.
 
-## Customizing the Notification Views
+| Do | Because |
+|----|---------|
+| Import only `package:magic_notifications/magic_notifications.dart` | Everything under `src/` is private; `cli.dart` carries the dowel provider only. |
+| Register `NotificationServiceProvider` (`plugin:install` does) | It binds the manager, registers `DatabaseChannel`, resolves the push driver and runs the first identity reconcile. |
+| Run commands as `dart run magic:dowel notifications:<command>` after `plugin:install` | The package has no executable. |
+| Call `Notify.initializePush('<prefix><id>')` after sign-in and `Notify.logoutPush()` on sign-out | The package declares no push identity; `magic_starter` does it for its apps. |
+| Use one external id prefix on the app and the backend | The id is forwarded unchanged; a mismatch delivers to nobody. |
+| Never list `'mail'` in `via()` | There is no mail channel; the manager logs and skips it. |
+| Expect `DatabaseChannel.send` to do nothing | The backend creates inbox rows. |
+| Send push to other people from the backend | `PushChannel` is self-addressed and off by default. |
+| Put a push destination in OneSignal `setData`, not `setUrl` | Only `additionalData` reaches `onPushClicked`. |
+| Register a `magic_deeplink` handler to open a screen from a tap | Nothing routes a tapped push on its own. |
+| Release push state before `Auth.logout()` | The release needs the token. |
+| Answer `{"count": n}` from `unread-count` and read `perPage` on `GET /notifications` | The client reads `count` at the top level and sends `perPage`. |
+| Add the `notifications.*` translation keys to every locale | A missing key renders as itself. |
+| Call `Notify.forgetDrivers()` in a test's `setUp` | The manager is a process-wide singleton. |
 
-`Notify.view` is a `NotificationViewRegistry` holding the two screens the
-package ships (`notifications.list`, `notifications.preferences`). A host app
-touches it in two ways:
+## Dependencies
 
-- **Re-register a view** to wrap it in the host's own page container. The
-  package deliberately cannot resolve that container itself (it does not know
-  which shell, if any, the host app renders screens inside), so re-registering
-  is the seam:
+`magic` for the container, `Config`, `Http`, `Vault` (the persisted push intent) and the service provider base class; `magic_socket` for `Echo`, which carries the realtime path; `onesignal_flutter` for mobile push and JS interop for the OneSignal Web SDK; `wind_kit` and `material_ui` for the shipped screens and icons; `app_settings` to open the app's notification settings; `dowel` to run the `notifications:*` commands, whose provider is also the whole of `package:magic_notifications/cli.dart` for a plain Dart dispatcher.
 
-  ```dart
-  Notify.view.register(
-    'notifications.preferences',
-    () => AppPageContainer(
-      // Your container already carries the app's edge margins, so turn this
-      // screen's own off. Left at the default the two pad the same edge and
-      // this page sits twice as far from the display as its neighbours: on a
-      // phone, 32 logical pixels against everything else's 16.
-      child: const NotificationPreferencesView(contentClassName: ''),
-    ),
-  );
-  ```
+## Links
 
-  `contentClassName` defaults to `'p-4 lg:p-6'`, which is right for a screen
-  mounted with nothing around it. It is a className rather than a flag so a host
-  with its own answer can give it, and it is applied on the content column
-  INSIDE the scroll view: the page surface stays full bleed behind the scroll,
-  which is why padding from outside the screen is not the same thing.
-
-  `headerBuilder` hands the page header to the host. Both screens take a
-  `NotificationsPageHeaderBuilder`, called with a `NotificationsPageHeader`
-  (translated `title` and `subtitle`, the wired `actions`, and `backLabel` with
-  `backRoute` for the preferences back control), and then draw none of those
-  themselves. The inbox's `actions` hold the mark-all-as-read button only while
-  something is unread. Left null, each screen draws its own header:
-
-  ```dart
-  NotificationsListView(
-    headerBuilder: (context, header) => AppPageHeader(
-      title: header.title,
-      subtitle: header.subtitle,
-      actions: header.actions,
-    ),
-  )
-  ```
-
-- **Register a type icon** so the shipped list and dropdown widgets can draw
-  the right leading icon for one of the host's own notification types, without
-  this package carrying a vocabulary that belongs to one product:
-
-  ```dart
-  Notify.view.slot(
-    NotificationViewRegistry.typeIconSlotView,
-    'order_shipped',
-    (context) => WIcon(Icons.local_shipping, className: 'text-lg text-green-500'),
-  );
-  ```
-
-The package's own defaults are registered the first time `Notify.view` is
-read, so any registration you make afterwards replaces them; `Notify.view.clear()` drops every registration, package defaults included.
-
-### For a package built on top of this one
-
-Seeding on first read has a consequence worth stating, because it caught a
-downstream package out: **`has(key)` is true before anybody has chosen
-anything.** A package that installs its own default for one of these screens
-therefore cannot gate on `has`, or it skips every time and its own version never
-reaches the app.
-
-`hasOverride(key)` is the question with an answer. It is true only when somebody
-CHOSE a screen for that key, and false while the key still holds the default
-this package seeded:
-
-```dart
-// Install ours unless the app has picked its own.
-if (!Notify.view.hasOverride('notifications.list')) {
-  Notify.view.register('notifications.list', () => wrapped(const MyListView()));
-}
-```
-
-`register` promotes a key out of the default set, so a host registration wins
-whichever side of your own it lands on. `registerDefault` is what marks a key as
-a default, and it is `@internal`: calling it from outside this package inverts
-the guarantee, because your screen would then read as a default and the next
-package to check `hasOverride` would overwrite it.
-
-`Notify.forgetView()` drops the registry so the next read seeds a fresh one. It
-is the test-isolation seam, and it is not the same as `clear()`: clearing leaves
-the registry EMPTY, which is not the state an app boots with, so a suite that
-clears cannot see a decision that turns on the defaults being present.
-
----
-
-## Architecture
-
-```
-App launch → NotificationServiceProvider.boot()
-  → reads config via ConfigRepository
-  → creates channels (database, push, mail)
-  → initializes OneSignalDriver
-  → Notify facade delegates to NotificationManager
-  → DatabaseChannel: stream + polling lifecycle
-  → PushChannel: permission → initializePush → OneSignal
-```
-
-**Key patterns:**
-
-| Pattern | Implementation |
-|---------|---------------|
-| Singleton Manager | `NotificationManager` — central orchestrator |
-| Strategy (Driver) | `OneSignalDriver` implements push driver contract |
-| Facade | `Notify` — static API over `NotificationManager` |
-| Service Provider | Two-phase bootstrap: `register()` (sync) → `boot()` (async) |
-| IoC Container | All bindings via `app.singleton()` / `app.make()` |
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Installation](https://magic.fluttersdk.com/packages/notifications/getting-started/installation) | Adding the package and running the installer |
-| [Configuration](https://magic.fluttersdk.com/packages/notifications/getting-started/configuration) | Config file reference and options |
-| [Shipping push in a release build](https://magic.fluttersdk.com/packages/notifications/basics/shipping-push) | The four things that differ from a development build, all of them silent |
-| [Channels](https://magic.fluttersdk.com/packages/notifications/basics/channels) | Database, Push, and Mail channel details |
-| [Drivers](https://magic.fluttersdk.com/packages/notifications/basics/drivers) | Push driver contract and OneSignal implementation |
-| [Preferences](https://magic.fluttersdk.com/packages/notifications/basics/preferences) | User notification preference management |
-| [CLI Tools](https://magic.fluttersdk.com/packages/notifications/basics/cli) | All CLI commands and flags |
-| [Laravel Backend](https://magic.fluttersdk.com/packages/notifications/basics/laravel-backend-setup) | Laravel backend implementation guide |
-| [Notification Manager](https://magic.fluttersdk.com/packages/notifications/architecture/notification-manager) | Manager singleton and dispatch flow |
-| [Service Provider](https://magic.fluttersdk.com/packages/notifications/architecture/service-provider) | Bootstrap lifecycle and IoC bindings |
-
----
-
-## Contributing
-
-Contributions are welcome! Please see the [issues page](https://github.com/fluttersdk/magic_notifications/issues) for open tasks or to report bugs.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests following the [TDD flow](#) — red, green, refactor
-4. Ensure all checks pass: `flutter test`, `dart analyze`, `dart format .`
-5. Submit a pull request
-
----
+- [Documentation](https://anilcancakir.com/magic_notifications/docs/getting-started/installation): installation, configuration, channels, drivers, preferences, shipping push, the CLI and the Laravel backend contract
+- [API reference](https://pub.dev/documentation/magic_notifications/latest/)
+- [llms.txt](llms.txt) and the [agent skill](skills/magic-notifications/SKILL.md) for AI coding agents: `npx skills add anilcancakir/magic_notifications`
+- [Changelog](CHANGELOG.md)
+- [Report an issue](https://github.com/anilcancakir/magic_notifications/issues)
+- [Security policy](SECURITY.md)
 
 ## License
 
-Magic Notifications is open-sourced software licensed under the [MIT License](LICENSE).
-
----
-
-<p align="center">
-  Built with care by <a href="https://github.com/fluttersdk">FlutterSDK</a><br/>
-  <sub>If Magic Notifications helps your project, consider giving it a <a href="https://github.com/fluttersdk/magic_notifications">star on GitHub</a>.</sub>
-</p>
+MIT, see [LICENSE](LICENSE). Built by [Anılcan Çakır](https://anilcancakir.com).

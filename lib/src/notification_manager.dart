@@ -46,7 +46,6 @@ class NotificationManager {
       StreamController<List<DatabaseNotification>>.broadcast();
 
   /// Current list of notifications (cached)
-  // ignore: prefer_final_fields
   List<DatabaseNotification> _notifications = [];
 
   /// Push notification driver set explicitly through [setPushDriver].

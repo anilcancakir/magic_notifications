@@ -269,7 +269,7 @@ class Notify {
   ///
   /// ```dart
   /// Notify.describePushUserUsing((String externalId) => PushUserAttributes(
-  ///       email: Auth.user()?.email,
+  ///       email: Auth.user<User>()?.email, // `User` is the host app's model.
   ///       tags: <String, String>{'first_name': ..., 'last_name': ...},
   ///     ));
   /// ```

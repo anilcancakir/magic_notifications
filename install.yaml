@@ -38,7 +38,7 @@ post_install:
     1. Run `flutter pub get`.
     2. Configure your OneSignal dashboard.
     3. Verify the install:  dart run magic:dowel notifications:doctor
-    4. Manage channels:     dart run magic:dowel notifications:channels --list
+    4. List channels:       dart run magic:dowel notifications:channels
 
     Note: provider + main.dart wiring are written synchronously by the install
     helpers and are NOT rolled back on a later failure. If install reports an

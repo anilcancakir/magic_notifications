@@ -1,309 +1,281 @@
 # CLI Reference
 
-## Table of Contents
+Every `notifications:*` command Magic Notifications adds to dowel, with its flags, defaults and what it changes in the project.
 
-- <a name="toc-overview"></a>[Overview](#overview)
-- <a name="toc-install"></a>[install](#install)
-- <a name="toc-configure"></a>[configure](#configure)
-- <a name="toc-doctor"></a>[doctor](#doctor)
-- <a name="toc-test"></a>[test](#test)
-- <a name="toc-channels"></a>[channels](#channels)
-- <a name="toc-uninstall"></a>[uninstall](#uninstall)
-- <a name="toc-publish"></a>[publish](#publish)
+- [Overview](#overview)
+- [install](#install)
+- [configure](#configure)
+- [doctor](#doctor)
+- [test](#test)
+- [channels](#channels)
+- [uninstall](#uninstall)
+- [publish](#publish)
+- [Gotchas](#gotchas)
+- [Related Documentation](#related-documentation)
 
----
+<a name="overview"></a>
+## Overview
 
-## <a name="overview"></a>Overview
-
-All Magic Notifications CLI commands are run via a single entry point:
+The package has no executable of its own. Its commands run through the host app's dowel binary, and they exist once `plugin:install` has registered the package:
 
 ```bash
-dart run magic_notifications <command> [options]
+dart run magic:dowel plugin:install magic_notifications
+dart run magic:dowel notifications:<command> [options]
 ```
 
-The CLI is implemented with `magic_cli` and automatically detects your Flutter project root from `pubspec.yaml`. Every command that reads or writes project files operates on the detected root, so commands should be run from the project directory or any subdirectory.
+| Command | Purpose |
+| :--- | :--- |
+| `notifications:install` | Wizard that writes the config, the platform files and the wiring |
+| `notifications:configure` | Show or change single values in the config file |
+| `notifications:doctor` | Health check of the install and the config |
+| `notifications:test` | Preview a test notification payload |
+| `notifications:channels` | Print the channel settings from the config file |
+| `notifications:uninstall` | Remove what `install` wired into Dart files |
+| `notifications:publish` | Copy the config stub without any wizard |
 
----
+Every command finds the project root by walking up from the current directory to the nearest `pubspec.yaml`, so it can run from any subdirectory. `doctor` and `channels` are also exposed as read-only MCP tools (`notifications_doctor`, `notifications_channels`); the commands that change files are not.
 
-## <a name="install"></a>install
+<a name="install"></a>
+## install
 
-Interactive wizard that sets up the full integration: config file, platform files, provider injection, and config factory injection.
+Sets up the integration: config file, platform files, provider injection and config factory injection.
 
 ```bash
-dart run magic_notifications install
+dart run magic:dowel notifications:install
 ```
 
 ### Flags and Options
 
-| Flag / Option | Short | Type | Default | Description |
-|---------------|-------|------|---------|-------------|
-| `--non-interactive` | | flag | `false` | Skip all prompts; all required values must be supplied via flags |
-| `--app-id` | | option | — | OneSignal App ID (UUID format, required in non-interactive mode) |
-| `--platforms` | | option | `android,ios,web` | Comma-separated list of target platforms |
-| `--soft-prompt` / `--no-soft-prompt` | | flag | `true` | Enable or disable the soft prompt dialog |
-| `--safari-web-id` | | option | — | Safari Web Push ID (web only, optional) |
-| `--notify-button` | | flag | `false` | Enable the floating OneSignal notify button on web |
-| `--force` | `-f` | flag | `false` | Overwrite existing `lib/config/notifications.dart` |
+| Flag / Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--non-interactive` | flag | `false` | Skip all prompts; every required value comes from flags |
+| `--app-id` | option | none | OneSignal App ID (UUID); required in non-interactive mode |
+| `--platforms` | option | `android,ios,web` | Comma-separated target platforms (non-interactive mode) |
+| `--no-soft-prompt` | flag | `false` | Write `soft_prompt.enabled` as `false` (it is `true` otherwise) |
+| `--safari-web-id` | option | none | Legacy Safari Web ID; modern Safari uses VAPID and needs none |
+| `--notify-button` | flag | `false` | Enable the OneSignal notify button on web |
+| `--force` | flag | `false` | Overwrite an existing `lib/config/notifications.dart` |
+| `--dry-run` | flag | `false` | Print the staged operations without writing; the iOS entitlement work is not listed |
+| `--no-bootstrap` | flag | `false` | Shared install flag; this package declares no bootstrap command |
 
 ### Examples
 
 ```bash
-# Interactive mode — guided wizard
-dart run magic_notifications install
+# Interactive wizard
+dart run magic:dowel notifications:install
 
-# CI/CD — minimal non-interactive
-dart run magic_notifications install \
+# CI: minimal
+dart run magic:dowel notifications:install \
   --non-interactive \
   --app-id 12345678-1234-1234-1234-123456789012
 
-# CI/CD — full non-interactive with web extras
-dart run magic_notifications install \
+# CI: web extras, overwriting an existing config
+dart run magic:dowel notifications:install \
   --non-interactive \
   --app-id 12345678-1234-1234-1234-123456789012 \
   --platforms android,ios,web \
   --safari-web-id web.onesignal.auto.xxx \
   --notify-button \
   --force
-
-# Disable soft prompt
-dart run magic_notifications install --no-soft-prompt
 ```
 
 ### What Install Produces
 
-1. Creates `lib/config/notifications.dart` with your App ID and preferences
-2. Adds `magic_notifications` to `pubspec.yaml`
-3. Android: adds `POST_NOTIFICATIONS` permission to `AndroidManifest.xml`
-4. iOS: adds `remote-notification` to `UIBackgroundModes` in `ios/Runner/Info.plist`, declares `aps-environment` in `ios/Runner/Runner.entitlements` (creating the file when the project has never had one), and points `CODE_SIGN_ENTITLEMENTS` at it in `ios/Runner.xcodeproj/project.pbxproj`
-5. Web: writes `web/OneSignalSDKWorker.js`, injects SDK `<script>` into `web/index.html`
-6. Injects `NotificationServiceProvider` into `lib/config/app.dart`
-7. Injects `() => notificationConfig` into `lib/main.dart`
+1. `lib/config/notifications.dart` with your App ID and choices. An existing file is kept with a warning unless `--force` is passed.
+2. Android: `POST_NOTIFICATIONS` in `AndroidManifest.xml`.
+3. iOS: `remote-notification` in `UIBackgroundModes` of `ios/Runner/Info.plist`; `aps-environment` in `ios/Runner/Runner.entitlements` (`development`) and `ios/Runner/RunnerRelease.entitlements` (`production`); `CODE_SIGN_ENTITLEMENTS` pointed at the right file per build configuration in `project.pbxproj`.
+4. Web: `web/OneSignalSDKWorker.js`, and the SDK `<script>` in `web/index.html`, injected once.
+5. `NotificationServiceProvider` in `lib/config/app.dart`.
+6. The config import and a `() => notificationConfig,` entry in `lib/main.dart`'s `configFactories`. When no config getter can be read from the file, `main.dart` is left alone and the command prints what to add.
+
+The provider injection and the platform edits are written as the install runs and are not rolled back if a later step fails; the config file and the web worker are written transactionally. After a `--force` run that replaces an existing config, `main.dart` is re-pointed at the regenerated getter.
 
 > [!NOTE]
-> The APNs key upload to the OneSignal Dashboard and the Apple Developer Portal steps still cannot be automated; the CLI only wires the project-file side.
+> The APNs key upload and the Apple Developer Portal steps cannot be automated; the CLI wires only the project-file side. See [Installation](../getting-started/installation.md#platform-setup).
 
----
+<a name="configure"></a>
+## configure
 
-## <a name="configure"></a>configure
-
-Read or update individual settings in `lib/config/notifications.dart` without re-running the full install wizard.
+Reads or updates single settings in `lib/config/notifications.dart` without re-running the wizard.
 
 ```bash
-dart run magic_notifications configure [options]
+dart run magic:dowel notifications:configure [options]
 ```
 
 ### Flags and Options
 
-| Flag / Option | Short | Type | Default | Description |
-|---------------|-------|------|---------|-------------|
-| `--show` | | flag | `false` | Print current configuration values and exit |
-| `--app-id` | | option | — | Replace the OneSignal App ID |
-| `--polling-interval` | | option | — | Set polling interval in seconds (valid range: 5–600) |
-| `--soft-prompt` | | flag | — | Enable soft prompt |
-| `--no-soft-prompt` | | flag | — | Disable soft prompt |
+| Flag / Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--show` | flag | `false` | Print the current values and exit |
+| `--app-id` | option | none | Replace the OneSignal App ID |
+| `--polling-interval` | option | none | Polling interval in seconds; valid range 5 to 600 |
+| `--soft-prompt` | flag | none | Set `soft_prompt.enabled` to `true` |
+| `--no-soft-prompt` | flag | none | Set `soft_prompt.enabled` to `false` |
 
 ### Examples
 
 ```bash
-# Show current config
-dart run magic_notifications configure --show
-
-# Update the App ID
-dart run magic_notifications configure --app-id 12345678-1234-1234-1234-123456789012
-
-# Change polling to 60 seconds
-dart run magic_notifications configure --polling-interval 60
-
-# Disable soft prompt
-dart run magic_notifications configure --no-soft-prompt
+dart run magic:dowel notifications:configure --show
+dart run magic:dowel notifications:configure --app-id 12345678-1234-1234-1234-123456789012
+dart run magic:dowel notifications:configure --polling-interval 60
+dart run magic:dowel notifications:configure --no-soft-prompt
 ```
 
 > [!NOTE]
-> `configure` requires `lib/config/notifications.dart` to already exist. Run `install` or `publish` first if the file is absent.
+> The config file must already exist; run `install` or `publish` first. A polling interval that is not a number, or is outside 5 to 600, exits with code `1`.
 
----
+<a name="doctor"></a>
+## doctor
 
-## <a name="doctor"></a>doctor
-
-Comprehensive health check that validates plugin installation, configuration, and platform setup. Exits with code `0` when all checks pass, `1` if any check fails.
-
-```bash
-dart run magic_notifications doctor
-```
-
-### Flags and Options
-
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--verbose` | `-v` | flag | `false` | Show file paths, required keys, and per-platform issue details |
-
-### Examples
+Health check of the plugin install, the config and the platform setup. It exits `0` when no requirement is missing and `1` when one is. A warning alone still exits `0`, but the summary never claims everything passed.
 
 ```bash
-# Basic health check
-dart run magic_notifications doctor
-
-# Verbose — shows paths and details
-dart run magic_notifications doctor --verbose
+dart run magic:dowel notifications:doctor [--verbose]
 ```
+
+| Flag | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--verbose` | flag | `false` | Show file paths, required keys and per-platform issue details |
 
 ### Checks Performed
 
-| Check | Pass Condition |
-|-------|---------------|
-| Plugin installed | `magic_notifications` present in `pubspec.yaml` dependencies |
-| Config file exists | `lib/config/notifications.dart` present |
-| App ID format | UUID format `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`, non-empty, non-placeholder |
-| Polling interval | Integer in range 5–600 |
-| `soft_prompt` section | Present in config file |
-| Android | `POST_NOTIFICATIONS` in `AndroidManifest.xml` |
-| iOS | Three real reads: `UIBackgroundModes` in `Info.plist` lists `remote-notification`, `aps-environment` is declared in `Runner.entitlements`, and `CODE_SIGN_ENTITLEMENTS` is set in `project.pbxproj` so Xcode actually reads that entitlements file |
-| Web | `web/OneSignalSDKWorker.js` present |
+| Check | Pass condition |
+| :--- | :--- |
+| Plugin installed | `magic_notifications` is under `dependencies` in `pubspec.yaml` |
+| Config file | `lib/config/notifications.dart` exists |
+| App ID | A literal is a UUID (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`), non-empty and not a placeholder; a value read with `env(...)` counts as configured |
+| Polling interval | A literal `polling_interval` is within 5 to 600 |
+| `soft_prompt` | The section is present in the config |
+| Android | `POST_NOTIFICATIONS` is in `AndroidManifest.xml` |
+| iOS | `UIBackgroundModes` in `Info.plist` lists `remote-notification`, `aps-environment` is declared in `Runner.entitlements`, and `CODE_SIGN_ENTITLEMENTS` is set in `project.pbxproj` so Xcode reads the file |
+| Web | `web/OneSignalSDKWorker.js` exists |
 
----
+### Warnings (exit code stays `0`)
 
-## <a name="test"></a>test
+| Warning | Meaning |
+| :--- | :--- |
+| App ID read from the environment | The config reads the App ID with `env(...)` and `.env` is missing or carries no value for that key, so push would initialise with an empty App ID |
+| APNs environment | A build configuration signs against an entitlements file whose `aps-environment` its provisioning profile cannot use (Release needs `production`, Debug and Profile `development`), or a configuration name it cannot judge |
+| Notification Service Extension | No extension target exists in the Xcode project, or one exists without the shared App Group in `Runner.entitlements` |
 
-Send test notifications to verify setup without modifying production data.
+<a name="test"></a>
+## test
+
+Previews a test notification and simulates sending it. It makes no network request and creates nothing in a backend.
 
 ```bash
-dart run magic_notifications test [options]
+dart run magic:dowel notifications:test [options]
 ```
 
 ### Flags and Options
 
-| Flag / Option | Short | Type | Default | Description |
-|---------------|-------|------|---------|-------------|
-| `--dry-run` | | flag | `false` | Preview notification payload without sending; exits with code `0` |
-| `--title` | `-t` | option | `'Test Notification'` | Notification title |
-| `--body` | `-b` | option | `'This is a test notification from the CLI'` | Notification body |
-| `--channel` | `-c` | option | `'database'` | Target channel: `database`, `push`, or `mail` |
-| `--api-url` | | option | — | Backend API base URL (required for push channel to send) |
+| Flag / Option | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--dry-run` | flag | `false` | Print the preview and stop |
+| `--title` | option | `Test Notification` | Notification title |
+| `--body` | option | `This is a test notification from the CLI` | Notification body |
+| `--channel` | option | `database` | Channel label to preview: `database` or `push` (the command also accepts `mail`, but the package has no mail channel) |
+| `--api-url` | option | none | Backend URL echoed in the output; for `push`, omitting it prints a warning and skips the simulated send |
 
 ### Examples
 
 ```bash
-# Preview the notification payload (no send)
-dart run magic_notifications test --dry-run
+# Preview only
+dart run magic:dowel notifications:test --dry-run
 
-# Send a custom database notification
-dart run magic_notifications test \
-  --title "Hello" \
-  --body "World" \
-  --channel database
+# Preview with a custom message on the database channel
+dart run magic:dowel notifications:test --title "Hello" --body "World" --channel database
 
-# Send push notification via backend
-dart run magic_notifications test \
-  --channel push \
-  --api-url http://localhost:8000
-
-# Test all channels
-dart run magic_notifications test --channel database
-dart run magic_notifications test --channel push
-dart run magic_notifications test --channel mail
+# Preview the push path against a backend URL
+dart run magic:dowel notifications:test --channel push --api-url http://localhost:8000
 ```
 
 > [!TIP]
-> Start with `--dry-run` to inspect the payload structure before sending to a real backend.
+> To check that push really reaches a phone, use the device and the backend, not this command: [Shipping push in a release build](./shipping-push.md) covers what a release build changes.
 
----
+<a name="channels"></a>
+## channels
 
-## <a name="channels"></a>channels
-
-Display all notification channels and their current configuration status from `lib/config/notifications.dart`.
-
-```bash
-dart run magic_notifications channels
-```
-
-This command has no flags. It prints:
-
-- **push**: driver name, masked App ID (`first8chars...`), notify button status
-- **database**: enabled status, polling interval in seconds
-- **mail**: enabled status
-
-> [!NOTE]
-> `channels` requires `lib/config/notifications.dart` to exist. Run `install` first.
-
----
-
-## <a name="uninstall"></a>uninstall
-
-Remove Magic Notifications integration from the project. Reverses the changes made by `install`.
+Prints the channel settings found in `lib/config/notifications.dart`.
 
 ```bash
-dart run magic_notifications uninstall
+dart run magic:dowel notifications:channels
 ```
 
-### Flags and Options
+The command has no flags. It prints:
 
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--force` | `-f` | flag | `false` | Skip the confirmation prompt |
+- **push**: driver name, the App ID masked to its first eight characters, and the notify button state.
+- **database**: enabled state and polling interval in seconds.
+- **mail**: the enabled state of a `mail` key if the config has one. The package has no mail channel, so the line has no effect.
 
-### Examples
+The values are read from the file's text, not from a running app, so an App ID read with `env(...)` prints as `NOT SET`. The config file must exist.
+
+<a name="uninstall"></a>
+## uninstall
+
+Removes what `install` wired into Dart files.
 
 ```bash
-# Interactive — shows removal summary and asks for confirmation
-dart run magic_notifications uninstall
-
-# Skip confirmation
-dart run magic_notifications uninstall --force
+dart run magic:dowel notifications:uninstall [--force]
 ```
+
+| Flag | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--force` | flag | `false` | Skip the confirmation prompt |
 
 ### What Uninstall Removes
 
 | Artifact | Action |
-|----------|--------|
+| :--- | :--- |
 | `lib/config/notifications.dart` | Deleted |
 | `magic_notifications` in `pubspec.yaml` | Dependency entry removed |
-| `NotificationServiceProvider` in `lib/config/app.dart` | Import + provider line removed |
-| `notificationConfig` in `lib/main.dart` | Import + factory line removed |
+| `NotificationServiceProvider` in `lib/config/app.dart` | Import and provider line removed |
+| Config import and `() => <getter>,` in `lib/main.dart` | Removed, using the getter name read from the config before it is deleted; when that name cannot be read, `main.dart` is left untouched and the command says what to remove by hand |
 
 > [!NOTE]
-> Platform files are **not** reverted automatically. You must manually remove:
-> - `android.permission.POST_NOTIFICATIONS` from `AndroidManifest.xml`
-> - OneSignal `<script>` tags from `web/index.html`
-> - `web/OneSignalSDKWorker.js`
+> Platform files are **not** reverted. Remove by hand:
+> - `POST_NOTIFICATIONS` from `AndroidManifest.xml`
+> - the OneSignal `<script>` tags in `web/index.html` and `web/OneSignalSDKWorker.js`
+> - `aps-environment` from the entitlements files, `RunnerRelease.entitlements` and its `CODE_SIGN_ENTITLEMENTS` setting when nothing else needs them
 
----
+<a name="publish"></a>
+## publish
 
-## <a name="publish"></a>publish
-
-Laravel `vendor:publish` equivalent — copies the default config stub to `lib/config/notifications.dart` without running any wizard or platform setup.
-
-```bash
-dart run magic_notifications publish
-```
-
-### Flags and Options
-
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--force` | `-f` | flag | `false` | Overwrite an existing `lib/config/notifications.dart` |
-
-### Examples
+Copies the config stub to `lib/config/notifications.dart` without a wizard or platform setup. The Laravel `vendor:publish` equivalent.
 
 ```bash
-# Publish config stub (skips if file already exists)
-dart run magic_notifications publish
-
-# Overwrite existing config
-dart run magic_notifications publish --force
+dart run magic:dowel notifications:publish [--force]
 ```
 
-The published file contains `YOUR_ONESIGNAL_APP_ID` as a placeholder. After publishing:
+| Flag | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `--force` | flag | `false` | Overwrite an existing `lib/config/notifications.dart` |
 
-1. Replace `YOUR_ONESIGNAL_APP_ID` with your actual OneSignal App ID (or use `String.fromEnvironment`)
-2. Run `dart run magic_notifications install` to inject providers and set up platforms
+Without `--force`, an existing file is kept and the command exits `0` with a warning. The published file carries `YOUR_ONESIGNAL_APP_ID` as the App ID. After publishing:
+
+1. Replace `YOUR_ONESIGNAL_APP_ID` with your App ID, or read it with `env('ONESIGNAL_APP_ID')`.
+2. Run `dart run magic:dowel notifications:install` to inject the provider and set up the platforms.
 
 > [!TIP]
-> Use `publish` when you want full control over config contents before running `install`. Use `install` directly when you want everything done end-to-end.
+> Use `publish` when you want to edit the config before `install` runs; use `install` alone for the end-to-end setup.
 
----
+<a name="gotchas"></a>
+## Gotchas
 
-**Related**
+| Mistake | Fix |
+| :--- | :--- |
+| Running `dart run magic_notifications install` | The package has no executable. Use `dart run magic:dowel notifications:install`, after `dart run magic:dowel plugin:install magic_notifications`. |
+| Expecting `notifications:test` to deliver something | It only prints a preview and simulates the send. Test delivery with a real device and your backend. |
+| `notifications:configure --app-id` on a config that reads the App ID with `env('...')` | `configure`, `channels` and `doctor` edit and read the file's text, and `configure` only rewrites a quoted literal. Change the `.env` value instead. |
+| Omitting `--app-id` with `--non-interactive` | The command exits `1`; the flag is required there, and a value that is not a UUID also exits `1` before anything is written. |
+| Re-running `install` to change the config | An existing config is kept with a warning. Pass `--force` to regenerate it, or use `configure` for single values. |
+| Expecting `uninstall` to clean the platform folders | It touches only the config, `pubspec.yaml`, `app.dart` and `main.dart`. The platform files are listed for manual removal. |
 
-- [Installation](https://magic.fluttersdk.com/packages/notifications/getting-started/installation)
-- [Configuration](https://magic.fluttersdk.com/packages/notifications/getting-started/configuration)
-- [Channels](https://magic.fluttersdk.com/packages/notifications/basics/channels)
+<a name="related-documentation"></a>
+## Related Documentation
+
+- [Installation](../getting-started/installation.md): the install flow end to end.
+- [Configuration](../getting-started/configuration.md): the keys these commands edit.
+- [Shipping push in a release build](./shipping-push.md): what `doctor` warns about on iOS.
+- [Channels](./channels.md): the channels the runtime registers.
+- [Magic CLI](https://anilcancakir.com/magic/docs/packages/magic-cli): the dowel commands that ship with Magic.
