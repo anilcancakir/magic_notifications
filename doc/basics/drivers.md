@@ -172,11 +172,7 @@ See [magic_deeplink handlers](https://anilcancakir.com/magic_deeplink/docs/basic
 | `permissionState()` | Reads the browser's own `Notification.permission` |
 | `oneSignalId` | The OneSignal internal user id, or `null` before initialisation |
 
-```dart
-final webDriver = Notify.manager.pushDriver as OneSignalWebDriver;
-
-print(webDriver.oneSignalId); // OneSignal internal user id
-```
+`OneSignalWebDriver` is not exported from the package barrel, so reach the web driver through the `PushDriver` contract (`Notify.manager.pushDriver`); `oneSignalId` is a member of the concrete class only.
 
 The page must load the SDK script, and must not call `OneSignal.init()` itself: the driver initialises from config. The installer adds the right `<script>` tag; see [Installation](../getting-started/installation.md#platform-setup).
 

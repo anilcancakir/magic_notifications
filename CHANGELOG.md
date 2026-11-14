@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)
+
 ## [1.0.0] - 2026-11-14
 
 ### Changed

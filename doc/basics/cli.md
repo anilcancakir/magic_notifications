@@ -174,7 +174,7 @@ dart run magic:dowel notifications:test [options]
 | `--dry-run` | flag | `false` | Print the preview and stop |
 | `--title` | option | `Test Notification` | Notification title |
 | `--body` | option | `This is a test notification from the CLI` | Notification body |
-| `--channel` | option | `database` | Channel label to preview: `database` or `push` |
+| `--channel` | option | `database` | Channel label to preview: `database` or `push` (the command also accepts `mail`, but the package has no mail channel) |
 | `--api-url` | option | none | Backend URL echoed in the output; for `push`, omitting it prints a warning and skips the simulated send |
 
 ### Examples
@@ -206,6 +206,7 @@ The command has no flags. It prints:
 
 - **push**: driver name, the App ID masked to its first eight characters, and the notify button state.
 - **database**: enabled state and polling interval in seconds.
+- **mail**: the enabled state of a `mail` key if the config has one. The package has no mail channel, so the line has no effect.
 
 The values are read from the file's text, not from a running app, so an App ID read with `env(...)` prints as `NOT SET`. The config file must exist.
 
