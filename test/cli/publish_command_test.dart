@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_notifications/src/cli/commands/publish_command.dart';
 import 'package:test/test.dart';
 
@@ -16,20 +16,14 @@ class _TestPublishCommand extends PublishCommand {
 
   @override
   List<String> getStubSearchPaths() => [
-        '${Directory.current.path}/assets/stubs',
-      ];
+    '${Directory.current.path}/assets/stubs',
+  ];
 }
 
-/// Builds an [ArtisanContext] for [cmd] with the given flag overrides.
-ArtisanContext _ctx(
-  _TestPublishCommand cmd, {
-  bool force = false,
-}) =>
-    ArtisanContext.bare(
-      MapInput(
-        {'force': force},
-        signature: cmd.parsedSignature,
-      ),
+/// Builds an [DowelContext] for [cmd] with the given flag overrides.
+DowelContext _ctx(_TestPublishCommand cmd, {bool force = false}) =>
+    DowelContext.bare(
+      MapInput({'force': force}, signature: cmd.parsedSignature),
       BufferedOutput(),
     );
 
@@ -65,9 +59,7 @@ dependencies:
       expect(command.description, isNotEmpty);
     });
 
-    test(
-        'publishes notification_config.stub to lib/config/notifications.dart on empty project',
-        () async {
+    test('publishes notification_config.stub to lib/config/notifications.dart on empty project', () async {
       await command.handle(_ctx(command));
 
       final configPath = '${tempDir.path}/lib/config/notifications.dart';
@@ -83,35 +75,41 @@ dependencies:
       expect(content, contains('notificationConfig'));
     });
 
-    test('published file uses YOUR_ONESIGNAL_APP_ID as default placeholder',
-        () async {
-      await command.handle(_ctx(command));
+    test(
+      'published file uses YOUR_ONESIGNAL_APP_ID as default placeholder',
+      () async {
+        await command.handle(_ctx(command));
 
-      final configPath = '${tempDir.path}/lib/config/notifications.dart';
-      final content = File(configPath).readAsStringSync();
+        final configPath = '${tempDir.path}/lib/config/notifications.dart';
+        final content = File(configPath).readAsStringSync();
 
-      expect(content, contains('YOUR_ONESIGNAL_APP_ID'));
-    });
+        expect(content, contains('YOUR_ONESIGNAL_APP_ID'));
+      },
+    );
 
-    test('published file has notify_button_enabled set to false by default',
-        () async {
-      await command.handle(_ctx(command));
+    test(
+      'published file has notify_button_enabled set to false by default',
+      () async {
+        await command.handle(_ctx(command));
 
-      final configPath = '${tempDir.path}/lib/config/notifications.dart';
-      final content = File(configPath).readAsStringSync();
+        final configPath = '${tempDir.path}/lib/config/notifications.dart';
+        final content = File(configPath).readAsStringSync();
 
-      expect(content, contains('false'));
-    });
+        expect(content, contains('false'));
+      },
+    );
 
-    test('published file has soft_prompt enabled set to true by default',
-        () async {
-      await command.handle(_ctx(command));
+    test(
+      'published file has soft_prompt enabled set to true by default',
+      () async {
+        await command.handle(_ctx(command));
 
-      final configPath = '${tempDir.path}/lib/config/notifications.dart';
-      final content = File(configPath).readAsStringSync();
+        final configPath = '${tempDir.path}/lib/config/notifications.dart';
+        final content = File(configPath).readAsStringSync();
 
-      expect(content, contains('true'));
-    });
+        expect(content, contains('true'));
+      },
+    );
 
     test('creates lib/config directory if it does not exist', () async {
       await command.handle(_ctx(command));
@@ -130,7 +128,9 @@ dependencies:
 
       // File must remain unchanged
       expect(
-          File(configPath).readAsStringSync(), equals('// sentinel-content'));
+        File(configPath).readAsStringSync(),
+        equals('// sentinel-content'),
+      );
     });
 
     test('with --force, overwrites existing file', () async {

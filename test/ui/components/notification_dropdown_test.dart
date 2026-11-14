@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -130,9 +130,7 @@ void main() {
     expect(find.text('2'), findsNothing);
   });
 
-  testWidgets('renders the empty state in the popover content', (
-    tester,
-  ) async {
+  testWidgets('renders the empty state in the popover content', (tester) async {
     await tester.pumpWidget(
       wrap(NotificationDropdown(notificationStream: streamController.stream)),
     );
@@ -349,10 +347,7 @@ void main() {
       wrap(NotificationDropdown(notificationStream: streamController.stream)),
     );
 
-    streamController.add([
-      makeNotification(),
-      makeNotification(isRead: true),
-    ]);
+    streamController.add([makeNotification(), makeNotification(isRead: true)]);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -648,9 +643,7 @@ void main() {
 
       for (final family in families) {
         expect(
-          tokens.where(
-            (token) => token.startsWith('$family-'),
-          ),
+          tokens.where((token) => token.startsWith('$family-')),
           isNotEmpty,
           reason: 'expected a light-mode $family- token',
         );

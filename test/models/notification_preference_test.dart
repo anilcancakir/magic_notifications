@@ -29,16 +29,23 @@ void main() {
         emailEnabled: false,
         inAppEnabled: true,
         typePreferences: {
-          'monitor_down':
-              ChannelPreference(push: true, email: true, inApp: true),
+          'monitor_down': ChannelPreference(
+            push: true,
+            email: true,
+            inApp: true,
+          ),
         },
       );
 
       expect(pref.isEnabled('monitor_down', 'push'), isTrue);
       expect(
-          pref.isEnabled('monitor_down', 'mail'), isFalse); // Global disabled
-      expect(pref.isEnabled('unknown_type', 'push'),
-          isTrue); // No type pref = default
+        pref.isEnabled('monitor_down', 'mail'),
+        isFalse,
+      ); // Global disabled
+      expect(
+        pref.isEnabled('unknown_type', 'push'),
+        isTrue,
+      ); // No type pref = default
     });
 
     test('isEnabled() returns false if both type and global are disabled', () {
@@ -46,8 +53,11 @@ void main() {
         pushEnabled: true,
         emailEnabled: true,
         typePreferences: {
-          'monitor_down':
-              ChannelPreference(push: false, email: false, inApp: true),
+          'monitor_down': ChannelPreference(
+            push: false,
+            email: false,
+            inApp: true,
+          ),
         },
       );
 
@@ -61,8 +71,11 @@ void main() {
         emailEnabled: true,
         inAppEnabled: true,
         typePreferences: {
-          'monitor_down':
-              ChannelPreference(push: false, email: true, inApp: true),
+          'monitor_down': ChannelPreference(
+            push: false,
+            email: true,
+            inApp: true,
+          ),
         },
       );
       final map = pref.toMap();
@@ -104,11 +117,7 @@ void main() {
 
   group('ChannelPreference', () {
     test('fromMap() parses correctly', () {
-      final map = {
-        'push': true,
-        'email': false,
-        'in_app': true,
-      };
+      final map = {'push': true, 'email': false, 'in_app': true};
 
       final pref = ChannelPreference.fromMap(map);
 

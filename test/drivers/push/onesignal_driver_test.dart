@@ -164,26 +164,30 @@ void main() {
     // effect is passed in rather than reached for, because `preventDefault()`
     // is a platform-channel call no VM test can make.
     group('foreground display', () {
-      test('suppresses the OS notification when the subject is not ours',
-          () async {
-        final driver = OneSignalDriver();
-        driver.subjectGuard = (data) => data['subject'] == 'user_1';
+      test(
+        'suppresses the OS notification when the subject is not ours',
+        () async {
+          final driver = OneSignalDriver();
+          driver.subjectGuard = (data) => data['subject'] == 'user_1';
 
-        final received = <PushNotificationEvent>[];
-        final subscription = driver.onNotificationReceived.listen(received.add);
+          final received = <PushNotificationEvent>[];
+          final subscription = driver.onNotificationReceived.listen(
+            received.add,
+          );
 
-        var prevented = false;
-        driver.handleForegroundWillDisplay(
-          <String, dynamic>{'subject': 'user_2', 'title': 'API is down'},
-          () => prevented = true,
-        );
-        await Future<void>.delayed(Duration.zero);
+          var prevented = false;
+          driver.handleForegroundWillDisplay(<String, dynamic>{
+            'subject': 'user_2',
+            'title': 'API is down',
+          }, () => prevented = true);
+          await Future<void>.delayed(Duration.zero);
 
-        expect(prevented, isTrue, reason: 'the OS must not draw it');
-        expect(received, isEmpty, reason: 'and nothing may be republished');
+          expect(prevented, isTrue, reason: 'the OS must not draw it');
+          expect(received, isEmpty, reason: 'and nothing may be republished');
 
-        await subscription.cancel();
-      });
+          await subscription.cancel();
+        },
+      );
 
       test('draws and republishes a push addressed to this device', () async {
         final driver = OneSignalDriver();
@@ -193,10 +197,10 @@ void main() {
         final subscription = driver.onNotificationReceived.listen(received.add);
 
         var prevented = false;
-        driver.handleForegroundWillDisplay(
-          <String, dynamic>{'subject': 'user_1', 'title': 'API is down'},
-          () => prevented = true,
-        );
+        driver.handleForegroundWillDisplay(<String, dynamic>{
+          'subject': 'user_1',
+          'title': 'API is down',
+        }, () => prevented = true);
         await Future<void>.delayed(Duration.zero);
 
         expect(prevented, isFalse);
@@ -214,10 +218,9 @@ void main() {
         final subscription = driver.onNotificationReceived.listen(received.add);
 
         var prevented = false;
-        driver.handleForegroundWillDisplay(
-          <String, dynamic>{'subject': 'user_2'},
-          () => prevented = true,
-        );
+        driver.handleForegroundWillDisplay(<String, dynamic>{
+          'subject': 'user_2',
+        }, () => prevented = true);
         await Future<void>.delayed(Duration.zero);
 
         expect(prevented, isFalse);
@@ -247,7 +250,9 @@ void main() {
       await manager.want('user_1');
 
       expect(
-          driver.mayDisplay(<String, dynamic>{'subject': 'user_2'}), isFalse);
+        driver.mayDisplay(<String, dynamic>{'subject': 'user_2'}),
+        isFalse,
+      );
       expect(driver.mayDisplay(<String, dynamic>{'subject': 'user_1'}), isTrue);
       expect(driver.mayDisplay(<String, dynamic>{}), isTrue);
     });

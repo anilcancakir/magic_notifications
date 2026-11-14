@@ -19,10 +19,7 @@ void main() {
       final notifiable = TestNotifiable('1');
 
       // Should complete without error
-      await expectLater(
-        channel.send(notifiable, notification),
-        completes,
-      );
+      await expectLater(channel.send(notifiable, notification), completes);
     });
   });
 }

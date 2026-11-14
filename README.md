@@ -27,10 +27,6 @@
 
 ---
 
-> **Alpha** — `magic_notifications` is under active development. APIs may change between minor versions until `1.0.0`.
-
----
-
 ## Why Magic Notifications?
 
 Managing notifications in Flutter means juggling multiple channels — database polling, platform-specific push setup for iOS/Android/Web, email delivery, and user preference logic scattered across your codebase. Every project reinvents the same boilerplate.
@@ -69,13 +65,13 @@ Managing notifications in Flutter means juggling multiple channels — database 
 
 ```yaml
 dependencies:
-  magic_notifications: ^0.3.12
+  magic_notifications: ^1.0.0
 ```
 
 ### 2. Install configuration
 
 ```bash
-dart run <app>:artisan notifications:install
+dart run magic:dowel notifications:install
 ```
 
 This generates `lib/config/notifications.dart`, injects `NotificationServiceProvider` into `lib/config/app.dart`, wires the `notificationConfig` factory into `lib/main.dart`, and configures platform-specific setup for your selected platforms.
@@ -290,7 +286,7 @@ the payload shape) is in
 
 ## CLI Tools
 
-All commands use the host app's artisan binary: `dart run <app>:artisan notifications:[command]`
+All commands run through dowel: `dart run magic:dowel notifications:[command]`
 
 | Command | Description |
 |---------|-------------|

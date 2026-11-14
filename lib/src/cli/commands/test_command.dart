@@ -1,11 +1,12 @@
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 
 /// Test command for sending test notifications via any available channel.
-class TestCommand extends ArtisanCommand {
+class TestCommand extends DowelCommand {
   @override
-  String get signature => 'notifications:test '
+  String get signature =>
+      'notifications:test '
       '{--dry-run : Preview notification without sending} '
       '{--title=Test Notification : Notification title} '
       '{--body=This is a test notification from the CLI : Notification body} '
@@ -26,9 +27,10 @@ class TestCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     // 1. Validate channel selection.
     final channel = ctx.input.option('channel') as String;
@@ -169,7 +171,7 @@ class TestCommand extends ArtisanCommand {
 
   /// Simulate storing a database notification via the backend API.
   Future<void> _sendDatabaseNotification(
-    ArtisanContext ctx,
+    DowelContext ctx,
     Map<String, dynamic> notification,
     String? apiUrl,
   ) async {
@@ -187,7 +189,7 @@ class TestCommand extends ArtisanCommand {
 
   /// Simulate triggering a push notification via OneSignal.
   Future<void> _sendPushNotification(
-    ArtisanContext ctx,
+    DowelContext ctx,
     Map<String, dynamic> notification,
     String? apiUrl,
   ) async {
@@ -207,7 +209,7 @@ class TestCommand extends ArtisanCommand {
 
   /// Simulate sending a mail notification.
   Future<void> _sendMailNotification(
-    ArtisanContext ctx,
+    DowelContext ctx,
     Map<String, dynamic> notification,
     String? apiUrl,
   ) async {

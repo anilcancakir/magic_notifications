@@ -1,20 +1,21 @@
 /// CLI barrel for Magic Notifications.
 ///
-/// Exposes ONLY the artisan-CLI surface ([MagicNotificationsArtisanProvider]).
+/// Exposes ONLY the dowel-CLI surface ([MagicNotificationsDowelProvider]).
 /// Does NOT export the Magic Notifications runtime (no Flutter, dart:ui, or
 /// package:magic runtime imports), so this barrel is safe for consumption from
-/// pure-Dart artisan dispatchers.
+/// pure-Dart dowel dispatchers.
 ///
-/// Consumers register the provider in their `bin/artisan.dart`:
+/// `plugin:install` registers the provider in the consumer's
+/// `bin/dispatcher.dart`; wiring it by hand looks like:
 ///
 /// ```dart
-/// import 'package:fluttersdk_artisan/artisan.dart';
-/// import 'package:magic_notifications/cli.dart' show MagicNotificationsArtisanProvider;
+/// import 'package:dowel/dowel.dart';
+/// import 'package:magic_notifications/cli.dart' show MagicNotificationsDowelProvider;
 ///
 /// Future<void> main(List<String> args) async {
-///   final registry = ArtisanRegistry()
-///     ..registerProvider(MagicNotificationsArtisanProvider());
-///   exit(await ArtisanApplication(registry: registry).dispatch(args));
+///   final registry = DowelRegistry()
+///     ..registerProvider(MagicNotificationsDowelProvider());
+///   exit(await DowelApplication(registry: registry).dispatch(args));
 /// }
 /// ```
 ///
@@ -23,4 +24,4 @@
 /// and the full notification surface.
 library;
 
-export 'src/cli/notifications_artisan_provider.dart';
+export 'src/cli/notifications_dowel_provider.dart';

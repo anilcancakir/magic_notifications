@@ -26,13 +26,15 @@ void main() {
       expect(driver.isSupported, isA<bool>());
     });
 
-    test('permissionState returns notDetermined before initialization',
-        () async {
-      expect(
-        await driver.permissionState(),
-        equals(PushPermissionState.notDetermined),
-      );
-    });
+    test(
+      'permissionState returns notDetermined before initialization',
+      () async {
+        expect(
+          await driver.permissionState(),
+          equals(PushPermissionState.notDetermined),
+        );
+      },
+    );
 
     test('isOptedIn returns false before initialization', () {
       expect(driver.isOptedIn, isFalse);
@@ -40,12 +42,16 @@ void main() {
 
     test('onNotificationReceived returns a stream', () {
       expect(
-          driver.onNotificationReceived, isA<Stream<PushNotificationEvent>>());
+        driver.onNotificationReceived,
+        isA<Stream<PushNotificationEvent>>(),
+      );
     });
 
     test('onNotificationClicked returns a stream', () {
       expect(
-          driver.onNotificationClicked, isA<Stream<PushNotificationEvent>>());
+        driver.onNotificationClicked,
+        isA<Stream<PushNotificationEvent>>(),
+      );
     });
 
     test('onPermissionChanged returns a stream', () {
@@ -120,37 +126,41 @@ void main() {
       /// sent arrives as its `additionalData`; that is where the subject and
       /// the destination a consumer navigates to both live.
       Map<String, dynamic> webEvent(String subject) => <String, dynamic>{
-            'notification': <String, dynamic>{
-              'notificationId': 'n1',
-              'title': 'API is down',
-              'additionalData': <String, dynamic>{
-                'subject': subject,
-                'notification_id': 'row-1',
-                'deep_link': '/incidents/i-1',
-              },
-            },
-          };
+        'notification': <String, dynamic>{
+          'notificationId': 'n1',
+          'title': 'API is down',
+          'additionalData': <String, dynamic>{
+            'subject': subject,
+            'notification_id': 'row-1',
+            'deep_link': '/incidents/i-1',
+          },
+        },
+      };
 
-      test('suppresses the browser notification when the subject is not ours',
-          () async {
-        final driver = OneSignalWebDriver();
-        driver.subjectGuard = (data) => data['subject'] == 'user_1';
+      test(
+        'suppresses the browser notification when the subject is not ours',
+        () async {
+          final driver = OneSignalWebDriver();
+          driver.subjectGuard = (data) => data['subject'] == 'user_1';
 
-        final received = <PushNotificationEvent>[];
-        final subscription = driver.onNotificationReceived.listen(received.add);
+          final received = <PushNotificationEvent>[];
+          final subscription = driver.onNotificationReceived.listen(
+            received.add,
+          );
 
-        var prevented = false;
-        driver.handleForegroundWillDisplay(
-          webEvent('user_2'),
-          () => prevented = true,
-        );
-        await Future<void>.delayed(Duration.zero);
+          var prevented = false;
+          driver.handleForegroundWillDisplay(
+            webEvent('user_2'),
+            () => prevented = true,
+          );
+          await Future<void>.delayed(Duration.zero);
 
-        expect(prevented, isTrue, reason: 'the browser must not draw it');
-        expect(received, isEmpty, reason: 'and nothing may be republished');
+          expect(prevented, isTrue, reason: 'the browser must not draw it');
+          expect(received, isEmpty, reason: 'and nothing may be republished');
 
-        await subscription.cancel();
-      });
+          await subscription.cancel();
+        },
+      );
 
       test('draws and republishes a push addressed to this device', () async {
         final driver = OneSignalWebDriver();
@@ -175,8 +185,7 @@ void main() {
         await subscription.cancel();
       });
 
-      test('republishes the payload a consumer reads, not the SDK wrapper',
-          () async {
+      test('republishes the payload a consumer reads, not the SDK wrapper', () async {
         // The assertion that matters is what a CONSUMER receives, not what the
         // guard reads internally: a subscriber to `Notify.onPushReceived` reads
         // `event.data['deep_link']` FLAT, which is the shape the mobile driver
@@ -263,33 +272,38 @@ void main() {
       /// A clicked event shaped the way the web SDK reports one: same nested
       /// `additionalData` shape as [webEvent] in the display group above.
       Map<String, dynamic> webEvent(String subject) => <String, dynamic>{
-            'notification': <String, dynamic>{
-              'notificationId': 'n1',
-              'title': 'API is down',
-              'additionalData': <String, dynamic>{
-                'subject': subject,
-                'notification_id': 'row-1',
-                'deep_link': '/incidents/i-1',
-              },
-            },
-          };
+        'notification': <String, dynamic>{
+          'notificationId': 'n1',
+          'title': 'API is down',
+          'additionalData': <String, dynamic>{
+            'subject': subject,
+            'notification_id': 'row-1',
+            'deep_link': '/incidents/i-1',
+          },
+        },
+      };
 
-      test('does not republish a clicked push addressed to a foreign subject',
-          () async {
-        final driver = OneSignalWebDriver();
-        driver.subjectGuard = (data) => data['subject'] == 'user_1';
+      test(
+        'does not republish a clicked push addressed to a foreign subject',
+        () async {
+          final driver = OneSignalWebDriver();
+          driver.subjectGuard = (data) => data['subject'] == 'user_1';
 
-        final clicked = <PushNotificationEvent>[];
-        final subscription = driver.onNotificationClicked.listen(clicked.add);
+          final clicked = <PushNotificationEvent>[];
+          final subscription = driver.onNotificationClicked.listen(clicked.add);
 
-        driver.handleNotificationClicked(webEvent('user_2'));
-        await Future<void>.delayed(Duration.zero);
+          driver.handleNotificationClicked(webEvent('user_2'));
+          await Future<void>.delayed(Duration.zero);
 
-        expect(clicked, isEmpty,
-            reason: 'a foreign subject must not drive a navigation');
+          expect(
+            clicked,
+            isEmpty,
+            reason: 'a foreign subject must not drive a navigation',
+          );
 
-        await subscription.cancel();
-      });
+          await subscription.cancel();
+        },
+      );
 
       test('republishes a clicked push addressed to this device', () async {
         final driver = OneSignalWebDriver();
@@ -311,25 +325,27 @@ void main() {
         await subscription.cancel();
       });
 
-      test('republishes the payload the tap navigates from, not the wrapper',
-          () async {
-        // The one that was actually broken in production: the app's tap
-        // handler reads `event.data['deep_link']` off this stream, finds
-        // nothing on the wrapper, logs "names no in-app destination" and
-        // returns, so tap-to-navigate is dead on the browser.
-        final driver = OneSignalWebDriver();
+      test(
+        'republishes the payload the tap navigates from, not the wrapper',
+        () async {
+          // The one that was actually broken in production: the app's tap
+          // handler reads `event.data['deep_link']` off this stream, finds
+          // nothing on the wrapper, logs "names no in-app destination" and
+          // returns, so tap-to-navigate is dead on the browser.
+          final driver = OneSignalWebDriver();
 
-        final clicked = <PushNotificationEvent>[];
-        final subscription = driver.onNotificationClicked.listen(clicked.add);
+          final clicked = <PushNotificationEvent>[];
+          final subscription = driver.onNotificationClicked.listen(clicked.add);
 
-        driver.handleNotificationClicked(webEvent('user_1'));
-        await Future<void>.delayed(Duration.zero);
+          driver.handleNotificationClicked(webEvent('user_1'));
+          await Future<void>.delayed(Duration.zero);
 
-        expect(clicked.single.data['deep_link'], '/incidents/i-1');
-        expect(clicked.single.data['subject'], 'user_1');
+          expect(clicked.single.data['deep_link'], '/incidents/i-1');
+          expect(clicked.single.data['subject'], 'user_1');
 
-        await subscription.cancel();
-      });
+          await subscription.cancel();
+        },
+      );
 
       test('republishes everything when no guard is installed', () async {
         // A driver used without the manager judges nothing, and an unjudged
@@ -374,7 +390,9 @@ void main() {
         await expectLater(driver.addEmail('ada@example.com'), completes);
         await expectLater(driver.removeEmail('ada@example.com'), completes);
         await expectLater(
-            driver.setTags(<String, String>{'a': 'b'}), completes);
+          driver.setTags(<String, String>{'a': 'b'}),
+          completes,
+        );
         await expectLater(driver.removeTags(<String>['a']), completes);
       });
     });
@@ -466,8 +484,10 @@ void main() {
           serviceWorkerScope: '/push/',
         );
 
-        expect(script,
-            contains('serviceWorkerPath: "push/OneSignalSDKWorker.js"'));
+        expect(
+          script,
+          contains('serviceWorkerPath: "push/OneSignalSDKWorker.js"'),
+        );
         expect(script, contains('serviceWorkerParam: { scope: "/push/" }'));
       });
 
@@ -488,7 +508,8 @@ void main() {
         expect(
           script,
           contains(
-              'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'),
+            'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js',
+          ),
         );
       });
 
@@ -515,9 +536,7 @@ void main() {
       });
 
       test('builds config without optional fields', () {
-        final config = OneSignalWebDriver.buildConfigFromEnv(
-          appId: 'test-id',
-        );
+        final config = OneSignalWebDriver.buildConfigFromEnv(appId: 'test-id');
 
         expect(config['app_id'], equals('test-id'));
         expect(config.containsKey('safari_web_id'), isFalse);

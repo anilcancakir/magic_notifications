@@ -17,10 +17,7 @@ void main() {
 
     test('initialize requires app_id', () async {
       final driver = createOneSignalDriver();
-      await expectLater(
-        driver.initialize({}),
-        throwsA(isA<Exception>()),
-      );
+      await expectLater(driver.initialize({}), throwsA(isA<Exception>()));
     });
 
     test('initialize succeeds with valid config', () async {

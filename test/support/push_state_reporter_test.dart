@@ -242,30 +242,34 @@ void main() {
       expect(Notify.pushState.isConfigured, isFalse);
     });
 
-    test('a report path without a release path reports nothing, and says so',
-        () async {
-      // Reporting a device that no sign-out can withdraw would leave it
-      // vouching for whoever signed out last, which is worse than silence.
-      Config.set('notifications.push_state.release_path', null);
-      final FakeLogManager log = Log.fake();
-      addTearDown(Log.unfake);
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
-      await declareIdentity();
+    test(
+      'a report path without a release path reports nothing, and says so',
+      () async {
+        // Reporting a device that no sign-out can withdraw would leave it
+        // vouching for whoever signed out last, which is worse than silence.
+        Config.set('notifications.push_state.release_path', null);
+        final FakeLogManager log = Log.fake();
+        addTearDown(Log.unfake);
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
+        await declareIdentity();
 
-      await Notify.pushState.release();
+        await Notify.pushState.release();
 
-      expect(
-        network.recorded.where((entry) => entry.$1.url.contains('push-state')),
-        isEmpty,
-      );
-      expect(
-        log.entries.where(
-          (FakeLogEntry entry) => entry.message.contains('release_path'),
-        ),
-        hasLength(1),
-      );
-    });
+        expect(
+          network.recorded.where(
+            (entry) => entry.$1.url.contains('push-state'),
+          ),
+          isEmpty,
+        );
+        expect(
+          log.entries.where(
+            (FakeLogEntry entry) => entry.message.contains('release_path'),
+          ),
+          hasLength(1),
+        );
+      },
+    );
 
     test('the report is posted to the configured path, verbatim', () async {
       Config.set('notifications.push_state.report_path', '/me/device');
@@ -277,35 +281,39 @@ void main() {
       expect(network.recorded.single.$1.url, '/me/device');
     });
 
-    test('a configured prefix decides which pass is the signed-in person',
-        () async {
-      Config.set('notifications.push_state.external_id_prefix', 'member_');
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
-      signIn('u1');
-      Notify.pushState.watch();
+    test(
+      'a configured prefix decides which pass is the signed-in person',
+      () async {
+        Config.set('notifications.push_state.external_id_prefix', 'member_');
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
+        signIn('u1');
+        Notify.pushState.watch();
 
-      await redeclare('user_u1');
-      expect(reports(network), isEmpty);
+        await redeclare('user_u1');
+        expect(reports(network), isEmpty);
 
-      await redeclare('member_u1');
-      expect(reports(network).single['external_id'], 'member_u1');
-    });
+        await redeclare('member_u1');
+        expect(reports(network).single['external_id'], 'member_u1');
+      },
+    );
   });
 
   group('the report follows a reconcile pass for the signed-in person', () {
-    test('a pass reconciled towards user_<current id> posts one report',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
-      signIn('u1');
-      Notify.pushState.watch();
+    test(
+      'a pass reconciled towards user_<current id> posts one report',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
+        signIn('u1');
+        Notify.pushState.watch();
 
-      await redeclare('user_u1');
+        await redeclare('user_u1');
 
-      expect(reports(network), hasLength(1));
-      expect(reports(network).single['external_id'], 'user_u1');
-    });
+        expect(reports(network), hasLength(1));
+        expect(reports(network).single['external_id'], 'user_u1');
+      },
+    );
 
     test('a pass reconciled towards somebody else posts nothing', () async {
       // The server refuses a report under an alias that is not the session's,
@@ -348,26 +356,28 @@ void main() {
   });
 
   group('the wire shape', () {
-    test('a signed-in device posts the package shape, not a second one',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
+    test(
+      'a signed-in device posts the package shape, not a second one',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
 
-      await declareIdentity();
+        await declareIdentity();
 
-      expect(reports(network), hasLength(1));
-      final Map<String, dynamic> body = reports(network).single;
-      expect(body.keys.toSet(), <String>{
-        'external_id',
-        'subscription_id',
-        'reachability',
-        'captured_at',
-      });
-      expect(body['reachability'], 'on');
-      expect(body['external_id'], 'user_u1');
-      expect(body['subscription_id'], 'sub-phone');
-      expect(DateTime.tryParse(body['captured_at'] as String), isNotNull);
-    });
+        expect(reports(network), hasLength(1));
+        final Map<String, dynamic> body = reports(network).single;
+        expect(body.keys.toSet(), <String>{
+          'external_id',
+          'subscription_id',
+          'reachability',
+          'captured_at',
+        });
+        expect(body['reachability'], 'on');
+        expect(body['external_id'], 'user_u1');
+        expect(body['subscription_id'], 'sub-phone');
+        expect(DateTime.tryParse(body['captured_at'] as String), isNotNull);
+      },
+    );
 
     test('a sign-out names this device, and nothing else about it', () async {
       // The person comes from the SESSION on the server side, so a body naming
@@ -408,27 +418,29 @@ void main() {
       expect(reports(network), hasLength(2));
     });
 
-    test('a sign-out lets the next person report an identical device state',
-        () async {
-      // Two people share one handset, and a failing SDK leaves the device
-      // carrying nobody for both, so their states are byte-identical. The
-      // reset hangs off `AuthLogout`, which every sign-out path dispatches.
-      final FakeNetworkDriver network = Http.fake();
-      useDriver(_ReportingPushDriver()..failLogin = true);
-      Auth.fake();
-      Notify.pushState.watch();
+    test(
+      'a sign-out lets the next person report an identical device state',
+      () async {
+        // Two people share one handset, and a failing SDK leaves the device
+        // carrying nobody for both, so their states are byte-identical. The
+        // reset hangs off `AuthLogout`, which every sign-out path dispatches.
+        final FakeNetworkDriver network = Http.fake();
+        useDriver(_ReportingPushDriver()..failLogin = true);
+        Auth.fake();
+        Notify.pushState.watch();
 
-      signIn('u1');
-      await redeclare('user_u1');
+        signIn('u1');
+        await redeclare('user_u1');
 
-      await Auth.logout();
-      await pumpEventQueue();
+        await Auth.logout();
+        await pumpEventQueue();
 
-      signIn('u2');
-      await redeclare('user_u2');
+        signIn('u2');
+        await redeclare('user_u2');
 
-      expect(reports(network), hasLength(2));
-    });
+        expect(reports(network), hasLength(2));
+      },
+    );
 
     test('the next person on a shared device reports for themselves', () async {
       final FakeNetworkDriver network = Http.fake();
@@ -471,18 +483,20 @@ void main() {
   });
 
   group('a device with no push driver at all', () {
-    test('a signed-in session posts exactly one report, marked unavailable',
-        () async {
-      // The package emits no reconcile pass for a driver-less build, so
-      // without this the device reports nothing for the whole session.
-      final FakeNetworkDriver network = Http.fake();
-      signIn('u1');
-      Notify.pushState.watch();
-      await pumpEventQueue();
+    test(
+      'a signed-in session posts exactly one report, marked unavailable',
+      () async {
+        // The package emits no reconcile pass for a driver-less build, so
+        // without this the device reports nothing for the whole session.
+        final FakeNetworkDriver network = Http.fake();
+        signIn('u1');
+        Notify.pushState.watch();
+        await pumpEventQueue();
 
-      expect(reports(network), hasLength(1));
-      expect(reports(network).single['reachability'], 'unavailable');
-    });
+        expect(reports(network), hasLength(1));
+        expect(reports(network).single['reachability'], 'unavailable');
+      },
+    );
 
     test('a second notifier bump posts nothing, the memo holds', () async {
       final FakeNetworkDriver network = Http.fake();
@@ -513,10 +527,7 @@ void main() {
 
       // Through the same guard, so the bump lands on the notifier the watch
       // is listening to, which is what a real sign-in does.
-      await Auth.login(
-        <String, dynamic>{'token': 'token-u1'},
-        makeUser('u1'),
-      );
+      await Auth.login(<String, dynamic>{'token': 'token-u1'}, makeUser('u1'));
       await pumpEventQueue();
 
       expect(reports(network), hasLength(1));
@@ -525,8 +536,7 @@ void main() {
   });
 
   group('the device change streams are watched on their own', () {
-    test(
-        'a driver attached after the watch is armed reports a revoked '
+    test('a driver attached after the watch is armed reports a revoked '
         'permission', () async {
       final FakeNetworkDriver network = Http.fake();
       signIn('u1');
@@ -544,8 +554,7 @@ void main() {
       expect(reports(network).last['reachability'], 'blocked');
     });
 
-    test(
-        'once a driver attaches, the next reconcile pass reports the real '
+    test('once a driver attaches, the next reconcile pass reports the real '
         'state', () async {
       final FakeNetworkDriver network = Http.fake();
       await declareIdentity();
@@ -563,20 +572,22 @@ void main() {
       expect(reports(network).last['subscription_id'], 'sub-phone');
     });
 
-    test('a driver that was already there is watched from the arming read',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      signIn('u1');
-      final _ReportingPushDriver driver = useDriver();
-      await pumpEventQueue();
+    test(
+      'a driver that was already there is watched from the arming read',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        signIn('u1');
+        final _ReportingPushDriver driver = useDriver();
+        await pumpEventQueue();
 
-      Notify.pushState.watch();
-      driver.changePermission(PushPermissionState.denied);
-      await pumpEventQueue();
+        Notify.pushState.watch();
+        driver.changePermission(PushPermissionState.denied);
+        await pumpEventQueue();
 
-      expect(reports(network), hasLength(1));
-      expect(reports(network).single['reachability'], 'blocked');
-    });
+        expect(reports(network), hasLength(1));
+        expect(reports(network).single['reachability'], 'blocked');
+      },
+    );
 
     test('a revoked permission reports itself with nobody asking', () async {
       final FakeNetworkDriver network = Http.fake();
@@ -619,9 +630,8 @@ void main() {
       // a fact that changes when the OS says so. Structural, because proving
       // an absence by advancing a fake clock hangs on the real event queue
       // every helper here waits on.
-      final String source = File(
-        'lib/src/support/push_state_reporter.dart',
-      ).readAsStringSync();
+      final String source = File('lib/src/support/push_state_reporter.dart')
+          .readAsStringSync();
 
       expect(source, isNot(contains('Timer.periodic')));
     });
@@ -663,19 +673,21 @@ void main() {
       expect(releases(network), isEmpty);
     });
 
-    test('a driver that has stopped answering still releases its row',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      final _ReportingPushDriver driver = useDriver();
-      await declareIdentity();
+    test(
+      'a driver that has stopped answering still releases its row',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        final _ReportingPushDriver driver = useDriver();
+        await declareIdentity();
 
-      // Assigned rather than announced, which would fire a report of its own.
-      driver.subscriptionId = null;
+        // Assigned rather than announced, which would fire a report of its own.
+        driver.subscriptionId = null;
 
-      await Notify.pushState.release();
+        await Notify.pushState.release();
 
-      expect(releases(network).single['subscription_id'], 'sub-phone');
-    });
+        expect(releases(network).single['subscription_id'], 'sub-phone');
+      },
+    );
 
     test('a signed-out session releases nothing', () async {
       final FakeNetworkDriver network = Http.fake();
@@ -688,46 +700,52 @@ void main() {
       expect(releases(network), isEmpty);
     });
 
-    test('a released device is reported from scratch, not remembered',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
-      await declareIdentity();
+    test(
+      'a released device is reported from scratch, not remembered',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
+        await declareIdentity();
 
-      await Notify.pushState.release();
-      await redeclare('user_u1');
+        await Notify.pushState.release();
+        await redeclare('user_u1');
 
-      expect(reports(network), hasLength(2));
-      expect(reports(network).last['subscription_id'], 'sub-phone');
-    });
+        expect(reports(network), hasLength(2));
+        expect(reports(network).last['subscription_id'], 'sub-phone');
+      },
+    );
 
-    test('a device reported again after a release can be released again',
-        () async {
-      final FakeNetworkDriver network = Http.fake();
-      useDriver();
-      await declareIdentity();
+    test(
+      'a device reported again after a release can be released again',
+      () async {
+        final FakeNetworkDriver network = Http.fake();
+        useDriver();
+        await declareIdentity();
 
-      await Notify.pushState.release();
-      await redeclare('user_u1');
-      await Notify.pushState.release();
+        await Notify.pushState.release();
+        await redeclare('user_u1');
+        await Notify.pushState.release();
 
-      expect(releases(network), hasLength(2));
-    });
+        expect(releases(network), hasLength(2));
+      },
+    );
 
-    test('a refused release leaves the memo describing what the server has',
-        () async {
-      final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
-        releasePath: Http.response(<String, dynamic>{'message': 'nope'}, 500),
-      });
-      useDriver();
-      await declareIdentity();
+    test(
+      'a refused release leaves the memo describing what the server has',
+      () async {
+        final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{
+          releasePath: Http.response(<String, dynamic>{'message': 'nope'}, 500),
+        });
+        useDriver();
+        await declareIdentity();
 
-      await Notify.pushState.release();
-      await redeclare('user_u1');
+        await Notify.pushState.release();
+        await redeclare('user_u1');
 
-      expect(releases(network), hasLength(1));
-      expect(reports(network), hasLength(1));
-    });
+        expect(releases(network), hasLength(1));
+        expect(reports(network), hasLength(1));
+      },
+    );
 
     test('a refused release can be tried again', () async {
       final FakeNetworkDriver network = Http.fake(<String, MagicResponse>{

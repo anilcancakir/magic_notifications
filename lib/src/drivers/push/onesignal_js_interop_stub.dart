@@ -16,8 +16,7 @@ Future<bool> init({
   String? serviceWorkerPath,
   String? serviceWorkerScope,
   Duration timeout = const Duration(seconds: 10),
-}) async =>
-    false;
+}) async => false;
 
 /// Whether the OneSignal SDK is available.
 ///
@@ -149,7 +148,7 @@ void addNotificationClickListener(
 /// notification, so there is nothing to suppress.
 void addNotificationForegroundListener(
   void Function(Map<String, dynamic> event, void Function() preventDisplay)
-      callback,
+  callback,
 ) {}
 
 /// Adds a listener for user state changes.

@@ -1,4 +1,4 @@
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 /// One build configuration of the Flutter application target, and the
 /// entitlements file it signs against when it names one.
@@ -54,12 +54,10 @@ abstract final class XcodeConfigurations {
         match.group(1)!: match.group(2)!,
     };
 
-    String? setting(String body, String key) =>
-        RegExp('^\\s*${RegExp.escape(key)} = (.+?);\$', multiLine: true)
-            .firstMatch(body)
-            ?.group(1)
-            ?.trim()
-            .replaceAll('"', '');
+    String? setting(String body, String key) => RegExp(
+      '^\\s*${RegExp.escape(key)} = (.+?);\$',
+      multiLine: true,
+    ).firstMatch(body)?.group(1)?.trim().replaceAll('"', '');
 
     final Iterable<String> targets = objects.values.where(
       (String body) =>
@@ -82,8 +80,9 @@ abstract final class XcodeConfigurations {
     if (references == null) return const [];
 
     final configurations = <XcodeConfiguration>[];
-    for (final RegExpMatch match
-        in RegExp(r'[0-9A-Fa-f]{24}').allMatches(references)) {
+    for (final RegExpMatch match in RegExp(
+      r'[0-9A-Fa-f]{24}',
+    ).allMatches(references)) {
       final String body = objects[match.group(0)!] ?? '';
 
       // The name comes from the configuration's OWN `name = ...;`, not from

@@ -20,7 +20,7 @@
 # other synchronous mutations) LAST. The provider inject is therefore the last
 # op, not a step the manifest stages before the override runs.
 #
-# See doc/install_yaml_schema.md (in fluttersdk_artisan) for the full schema.
+# See doc/plugins/install-yaml.md (in dowel) for the full schema.
 
 plugin_name: magic_notifications
 
@@ -37,8 +37,8 @@ post_install:
 
     1. Run `flutter pub get`.
     2. Configure your OneSignal dashboard.
-    3. Verify the install:  dart run <app>:artisan notifications:doctor
-    4. Manage channels:     dart run <app>:artisan notifications:channels --list
+    3. Verify the install:  dart run magic:dowel notifications:doctor
+    4. Manage channels:     dart run magic:dowel notifications:channels --list
 
     Note: provider + main.dart wiring are written synchronously by the install
     helpers and are NOT rolled back on a later failure. If install reports an

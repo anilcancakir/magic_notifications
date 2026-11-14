@@ -59,16 +59,16 @@ void main() {
       );
     });
 
-    test(
-        'boot() reports an unservable driver value and does not degrade '
+    test('boot() reports an unservable driver value and does not degrade '
         'silently', () async {
       Config.set('notifications.push.driver', 'fcm');
 
       provider.register();
       await provider.boot();
 
-      final List<FakeLogEntry> errors =
-          log.entries.where((FakeLogEntry e) => e.level == 'error').toList();
+      final List<FakeLogEntry> errors = log.entries
+          .where((FakeLogEntry e) => e.level == 'error')
+          .toList();
 
       expect(errors, isNotEmpty);
       expect(errors.first.message, contains('fcm'));
@@ -96,8 +96,9 @@ void main() {
     test('boot() resolves the driver through the manager registry', () async {
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       final _RecordingPushDriver driver = _RecordingPushDriver();
       manager.extend('onesignal', () => driver);
 
@@ -117,8 +118,9 @@ void main() {
     test('boot() registers both channels when push is configured', () async {
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       manager.extend('onesignal', () => _RecordingPushDriver());
 
       Config.set('notifications.push.driver', 'onesignal');
@@ -134,41 +136,45 @@ void main() {
       provider.register();
       await provider.boot();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
 
       expect(manager.hasChannel('database'), isTrue);
       expect(manager.hasChannel('push'), isFalse);
     });
 
-    test('boot() records an initialisation failure rather than swallowing it',
-        () async {
-      provider.register();
+    test(
+      'boot() records an initialisation failure rather than swallowing it',
+      () async {
+        provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
-      final _RecordingPushDriver driver = _RecordingPushDriver()
-        ..initializeError = StateError('the SDK refused');
-      manager.extend('onesignal', () => driver);
+        final NotificationManager manager = app.make<NotificationManager>(
+          'notifications',
+        );
+        final _RecordingPushDriver driver = _RecordingPushDriver()
+          ..initializeError = StateError('the SDK refused');
+        manager.extend('onesignal', () => driver);
 
-      Config.set('notifications.push.driver', 'onesignal');
-      Config.set('notifications.push.app_id', 'test-app-123');
+        Config.set('notifications.push.driver', 'onesignal');
+        Config.set('notifications.push.app_id', 'test-app-123');
 
-      await expectLater(provider.boot(), completes);
+        await expectLater(provider.boot(), completes);
 
-      // Readable afterwards, not only logged: a broken push setup has to be
-      // distinguishable from an absent one.
-      expect(
-        NotificationServiceProvider.pushInitializationError,
-        isA<StateError>(),
-      );
-      expect(
-        log.entries.where((FakeLogEntry e) => e.level == 'error'),
-        isNotEmpty,
-      );
-      // And it keeps degrading rather than aborting the boot.
-      expect(manager.hasChannel('push'), isTrue);
-    });
+        // Readable afterwards, not only logged: a broken push setup has to be
+        // distinguishable from an absent one.
+        expect(
+          NotificationServiceProvider.pushInitializationError,
+          isA<StateError>(),
+        );
+        expect(
+          log.entries.where((FakeLogEntry e) => e.level == 'error'),
+          isNotEmpty,
+        );
+        // And it keeps degrading rather than aborting the boot.
+        expect(manager.hasChannel('push'), isTrue);
+      },
+    );
 
     test('boot() does not report a platform that cannot carry push', () async {
       provider.register();
@@ -192,12 +198,12 @@ void main() {
       log.assertNothingLogged('error');
     });
 
-    test('boot() hands the driver the service-worker keys the config declares',
-        () async {
+    test('boot() hands the driver the service-worker keys the config declares', () async {
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       final _RecordingPushDriver driver = _RecordingPushDriver();
       manager.extend('onesignal', () => driver);
 
@@ -218,16 +224,18 @@ void main() {
       // registration lands second wins the scope, so when Flutter's does, push
       // silently never arrives on a device that reports itself converged.
       expect(
-          driver.initConfig?['service_worker_path'], 'OneSignalSDKWorker.js');
+        driver.initConfig?['service_worker_path'],
+        'OneSignalSDKWorker.js',
+      );
       expect(driver.initConfig?['service_worker_scope'], '/onesignal/');
     });
 
-    test('boot() leaves an undeclared service-worker key out of the map',
-        () async {
+    test('boot() leaves an undeclared service-worker key out of the map', () async {
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       final _RecordingPushDriver driver = _RecordingPushDriver();
       manager.extend('onesignal', () => driver);
 
@@ -245,12 +253,12 @@ void main() {
       expect(driver.initConfig!.containsKey('service_worker_scope'), isFalse);
     });
 
-    test('boot() drives one reconcile so the signed-out cold boot is covered',
-        () async {
+    test('boot() drives one reconcile so the signed-out cold boot is covered', () async {
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       final _RecordingPushDriver driver = _RecordingPushDriver();
       manager.extend('onesignal', () => driver);
 
@@ -268,8 +276,7 @@ void main() {
       expect(driver.calls, isNot(contains('login')));
     });
 
-    test('boot() delivers a push the SDK replays while it initialises',
-        () async {
+    test('boot() delivers a push the SDK replays while it initialises', () async {
       final FakeVaultService vault = Vault.fake();
       addTearDown(Vault.unfake);
       await vault.put(NotificationManager.pushIntentKey, 'user_A');
@@ -280,8 +287,9 @@ void main() {
 
       provider.register();
 
-      final NotificationManager manager =
-          app.make<NotificationManager>('notifications');
+      final NotificationManager manager = app.make<NotificationManager>(
+        'notifications',
+      );
       // The intent is on disk from the previous process and nowhere in memory,
       // which is every cold boot.
       manager.forgetDrivers();
@@ -297,10 +305,9 @@ void main() {
       Config.set('notifications.push.app_id', 'test-app-123');
 
       final List<Map<String, dynamic>> delivered = <Map<String, dynamic>>[];
-      final StreamSubscription<PushNotificationEvent> subscription =
-          manager.onPushReceived.listen(
-        (PushNotificationEvent event) => delivered.add(event.data),
-      );
+      final StreamSubscription<PushNotificationEvent> subscription = manager
+          .onPushReceived
+          .listen((PushNotificationEvent event) => delivered.add(event.data));
       addTearDown(subscription.cancel);
 
       await provider.boot();

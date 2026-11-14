@@ -215,8 +215,9 @@ void main() {
 
     test('re-enables soft_prompt enabled flag', () {
       // Write a config with soft_prompt disabled first.
-      File('${tempDir.path}/lib/config/notifications.dart').writeAsStringSync(
-          _buildNotificationsConfig(softPromptEnabled: false));
+      File(
+        '${tempDir.path}/lib/config/notifications.dart',
+      ).writeAsStringSync(_buildNotificationsConfig(softPromptEnabled: false));
 
       command.updateConfig({
         'soft_prompt': {'enabled': true},

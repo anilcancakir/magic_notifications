@@ -2,24 +2,24 @@
 
 Flutter push and database notification plugin for the Magic Framework. In-app polling + OneSignal (mobile/web) via `onesignal_flutter` package.
 
-**Version:** 0.3.12 · **Dart:** >=3.6.0 · **Flutter:** >=3.27.0
+**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
 
 ## Commands
 
-Notifications CLI commands surface via the host app's artisan binary (not as a standalone `magic_notifications` binary).
+Notifications CLI commands surface via the host app's dowel binary (not as a standalone `magic_notifications` binary).
 
 | Command | Description |
 |---------|-------------|
 | `flutter test --coverage` | Run all tests with coverage |
 | `flutter analyze --no-fatal-infos` | Static analysis |
 | `dart format .` | Format all code |
-| `dart run <app>:artisan notifications:install` | Interactive setup wizard |
-| `dart run <app>:artisan notifications:configure` | Update notification config |
-| `dart run <app>:artisan notifications:doctor` | Health check (also available as MCP tool) |
-| `dart run <app>:artisan notifications:test` | Send test notification |
-| `dart run <app>:artisan notifications:channels` | List channel status (also available as MCP tool) |
-| `dart run <app>:artisan notifications:uninstall` | Remove plugin integration |
-| `dart run <app>:artisan notifications:publish` | Copy config stub to project |
+| `dart run magic:dowel notifications:install` | Interactive setup wizard |
+| `dart run magic:dowel notifications:configure` | Update notification config |
+| `dart run magic:dowel notifications:doctor` | Health check (also available as MCP tool) |
+| `dart run magic:dowel notifications:test` | Send test notification |
+| `dart run magic:dowel notifications:channels` | List channel status (also available as MCP tool) |
+| `dart run magic:dowel notifications:uninstall` | Remove plugin integration |
+| `dart run magic:dowel notifications:publish` | Copy config stub to project |
 
 ## Architecture
 
@@ -41,13 +41,13 @@ lib/
     ├── ui/                        # NotificationViewRegistry, notifications list/preferences views, NotificationDropdown component
     ├── exceptions/               # NotificationException
     └── cli/
-        ├── notifications_artisan_provider.dart  # MagicNotificationsArtisanProvider (7 commands + 2 MCP tools)
+        ├── notifications_dowel_provider.dart  # MagicNotificationsDowelProvider (7 commands + 2 MCP tools)
         └── commands/             # InstallCommand, ConfigureCommand, DoctorCommand, TestCommand, ChannelsCommand, UninstallCommand, PublishCommand
 install.yaml                       # Manifest-driven install configuration
 assets/stubs/                      # Stub templates for code generation
 ```
 
-**CLI architecture:** Notifications commands are contributed via `MagicNotificationsArtisanProvider` (extends `ArtisanServiceProvider`) registered in the host app's `artisan.providers` config. The provider exposes 7 commands (`notifications:install/configure/test/doctor/uninstall/publish/channels`) and 2 read-only MCP tools (`notifications_doctor`, `notifications_channels`). Install is hybrid: static layer in `install.yaml` (provider injection only), dynamic layer in `InstallCommand`'s fluent override (UUID validation, platform conditionals, placeholder-rendered config, arbitrary file writes). No standalone `bin/` entry point; commands surface through the host app's unified artisan binary.
+**CLI architecture:** Notifications commands are contributed via `MagicNotificationsDowelProvider` (extends `DowelServiceProvider`) registered by `plugin:install` under `.dowel/plugins.json`. The provider exposes 7 commands (`notifications:install/configure/test/doctor/uninstall/publish/channels`) and 2 read-only MCP tools (`notifications_doctor`, `notifications_channels`). Install is hybrid: static layer in `install.yaml` (provider injection only), dynamic layer in `InstallCommand`'s fluent override (UUID validation, platform conditionals, placeholder-rendered config, arbitrary file writes). No standalone `bin/` entry point; commands surface through the host app's unified dowel binary.
 
 **Data flow:** App boot → `NotificationServiceProvider.boot()` → registers channels + push driver → `Notify.startPolling()` → `NotificationPoller` fetches via HTTP → emits to broadcast stream. Push: `Notify.initializePush()` → OneSignalDriver → platform-specific (mobile vs web JS interop)
 

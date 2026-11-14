@@ -64,8 +64,7 @@ class OneSignalDriver extends PushDriver {
       // Provisional and ephemeral both deliver without a prompt, so they are
       // the same answer to "may this app notify", which is what callers ask.
       OSNotificationPermission.provisional ||
-      OSNotificationPermission.ephemeral =>
-        PushPermissionState.provisional,
+      OSNotificationPermission.ephemeral => PushPermissionState.provisional,
       OSNotificationPermission.notDetermined =>
         PushPermissionState.notDetermined,
       // Only iOS reports a real tri-state; everywhere else permissionNative

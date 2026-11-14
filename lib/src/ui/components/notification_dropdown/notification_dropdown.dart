@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart'
+    show Icons, CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -287,7 +288,8 @@ class NotificationDropdown extends StatelessWidget {
               // Brand-relative on both ends: `text-primary` resolves to the
               // ADOPTER's brand, so a hover jumping to a fixed palette green
               // reads as deliberate only while that brand happens to be green.
-              className: 'text-xs text-primary hover:text-primary/80 '
+              className:
+                  'text-xs text-primary hover:text-primary/80 '
                   'focus:underline truncate',
             ),
           ),
@@ -335,10 +337,10 @@ class NotificationDropdown extends StatelessWidget {
     // falls back to one neutral bell.
     final Widget leadingIcon =
         Notify.view.buildTypeIcon(notification.type, context) ??
-            WIcon(
-              _defaultTypeIcon,
-              className: 'text-lg text-blue-500 dark:text-blue-400',
-            );
+        WIcon(
+          _defaultTypeIcon,
+          className: 'text-lg text-blue-500 dark:text-blue-400',
+        );
 
     // One className for both row shapes, with the difference carried as a
     // state: an interpolated variant is a second parser cache key per row, so a

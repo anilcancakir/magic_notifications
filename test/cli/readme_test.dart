@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:test/test.dart';
 
 void main() {
@@ -10,7 +11,7 @@ void main() {
 
     test('README documents install command', () {
       final readme = File('README.md').readAsStringSync();
-      expect(readme, contains('dart run <app>:artisan notifications:install'));
+      expect(readme, contains('dart run magic:dowel notifications:install'));
     });
 
     test('README documents configure command', () {

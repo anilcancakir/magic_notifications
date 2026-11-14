@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/src/facades/notify.dart';
@@ -56,7 +56,10 @@ void main() {
 
   Widget wrap(Widget child) {
     return MaterialApp(
-      home: WindTheme(data: WindThemeData(), child: Scaffold(body: child)),
+      home: WindTheme(
+        data: WindThemeData(),
+        child: Scaffold(body: child),
+      ),
     );
   }
 
@@ -155,8 +158,9 @@ void main() {
   ) async {
     fakeMixedColumnMatrix();
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -192,8 +196,9 @@ void main() {
   ) async {
     fakeTwoTypeMatrix();
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -235,8 +240,9 @@ void main() {
   ) async {
     fakeTwoTypeMatrix();
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -264,13 +270,14 @@ void main() {
   /// shipped carrying its own surface instead, `bg-surface-container-high`,
   /// which is exactly the token the row shell uses for a switch's off track and
   /// a chip's base tint: an off switch had no visible track on it.
-  testWidgets(
-      'the bulk card is bordered, and its surface collides with nothing',
-      (tester) async {
+  testWidgets('the bulk card is bordered, and its surface collides with nothing', (
+    tester,
+  ) async {
     fakeTwoTypeMatrix();
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -347,8 +354,9 @@ void main() {
   ) async {
     fakeTwoTypeMatrix();
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -368,8 +376,9 @@ void main() {
   ) async {
     fakeMatrix(pushProvisioned: true);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -389,8 +398,9 @@ void main() {
   ) async {
     fakeMatrix(pushProvisioned: false);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -403,8 +413,9 @@ void main() {
   testWidgets('toggling a channel writes the preference back', (tester) async {
     fakeMatrix(pushProvisioned: true);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -430,8 +441,9 @@ void main() {
   ) async {
     fakeMatrix(pushProvisioned: true);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -571,8 +583,9 @@ void main() {
   ) async {
     fakeMatrix(pushProvisioned: true);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
+    await tester.pumpWidget(
+      wrap(Notify.view.make('notifications.preferences')),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -582,8 +595,9 @@ void main() {
     final List<WDiv> rows = tester
         .widgetList<WDiv>(
           find.descendant(
-            of: find
-                .byKey(const ValueKey('notifications.type.incident_opened')),
+            of: find.byKey(
+              const ValueKey('notifications.type.incident_opened'),
+            ),
             matching: find.byType(WDiv),
           ),
         )
@@ -605,62 +619,68 @@ void main() {
     expect(rows.last.className, isNot(contains('border-b')));
   });
 
-  testWidgets('an enabled and a disabled channel chip resolve to one className',
-      (tester) async {
-    fakeMatrix(pushProvisioned: true);
+  testWidgets(
+    'an enabled and a disabled channel chip resolve to one className',
+    (tester) async {
+      fakeMatrix(pushProvisioned: true);
 
-    await tester
-        .pumpWidget(wrap(Notify.view.make('notifications.preferences')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpWidget(
+        wrap(Notify.view.make('notifications.preferences')),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
-    // The fixture ships mail enabled and push disabled, so the two chips
-    // differ in exactly the state this assertion is about.
-    final List<WDiv> chips = tester
-        .widgetList<WDiv>(
-          find.descendant(
-            of: find
-                .byKey(const ValueKey('notifications.type.incident_opened')),
-            matching: find.byType(WDiv),
-          ),
-        )
-        .where((div) => div.className?.contains('w-10 h-10') ?? false)
-        .toList();
-
-    expect(chips, hasLength(2));
-    expect(chips.first.className, chips.last.className);
-    expect(
-      chips.where((chip) => chip.states?.contains('enabled') ?? false),
-      hasLength(1),
-    );
-
-    // One className plus a state is only a fix if the state actually fires: a
-    // mistyped state name would satisfy every assertion above and paint both
-    // chips alike. Mail is enabled in the fixture and push is not, so their
-    // glyphs must still differ exactly as they did when the tint was
-    // interpolated into the string.
-    final Icon enabledGlyph = tester.widget<Icon>(
-      find
-          .descendant(
-            of: find
-                .byKey(const ValueKey('notifications.type.incident_opened')),
-            matching: find.byIcon(Icons.mail_outline),
+      // The fixture ships mail enabled and push disabled, so the two chips
+      // differ in exactly the state this assertion is about.
+      final List<WDiv> chips = tester
+          .widgetList<WDiv>(
+            find.descendant(
+              of: find.byKey(
+                const ValueKey('notifications.type.incident_opened'),
+              ),
+              matching: find.byType(WDiv),
+            ),
           )
-          .first,
-    );
-    final Icon disabledGlyph = tester.widget<Icon>(
-      find
-          .descendant(
-            of: find
-                .byKey(const ValueKey('notifications.type.incident_opened')),
-            matching: find.byIcon(Icons.notifications_outlined),
-          )
-          .first,
-    );
+          .where((div) => div.className?.contains('w-10 h-10') ?? false)
+          .toList();
 
-    expect(enabledGlyph.color, isNotNull);
-    expect(enabledGlyph.color, isNot(disabledGlyph.color));
-  });
+      expect(chips, hasLength(2));
+      expect(chips.first.className, chips.last.className);
+      expect(
+        chips.where((chip) => chip.states?.contains('enabled') ?? false),
+        hasLength(1),
+      );
+
+      // One className plus a state is only a fix if the state actually fires: a
+      // mistyped state name would satisfy every assertion above and paint both
+      // chips alike. Mail is enabled in the fixture and push is not, so their
+      // glyphs must still differ exactly as they did when the tint was
+      // interpolated into the string.
+      final Icon enabledGlyph = tester.widget<Icon>(
+        find
+            .descendant(
+              of: find.byKey(
+                const ValueKey('notifications.type.incident_opened'),
+              ),
+              matching: find.byIcon(Icons.mail_outline),
+            )
+            .first,
+      );
+      final Icon disabledGlyph = tester.widget<Icon>(
+        find
+            .descendant(
+              of: find.byKey(
+                const ValueKey('notifications.type.incident_opened'),
+              ),
+              matching: find.byIcon(Icons.notifications_outlined),
+            )
+            .first,
+      );
+
+      expect(enabledGlyph.color, isNotNull);
+      expect(enabledGlyph.color, isNot(disabledGlyph.color));
+    },
+  );
 
   testWidgets('a host override wins over the backend-reported flag', (
     tester,

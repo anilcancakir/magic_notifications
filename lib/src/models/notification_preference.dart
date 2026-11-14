@@ -151,10 +151,6 @@ class ChannelPreference {
 
   /// Converts this preference to a map for API requests.
   Map<String, dynamic> toMap() {
-    return {
-      'push': push,
-      'email': email,
-      'in_app': inApp,
-    };
+    return {'push': push, 'email': email, 'in_app': inApp};
   }
 }

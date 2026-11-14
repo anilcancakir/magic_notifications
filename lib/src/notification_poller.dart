@@ -29,11 +29,11 @@ class NotificationPoller {
   /// Create a notification poller.
   ///
   /// Accepts any object with a `fetchNotifications()` method.
-  /// [interval] defaults to 30 seconds if not specified.
+  /// [_interval] defaults to 30 seconds if not specified.
   NotificationPoller(
     this._manager, {
-    Duration interval = const Duration(seconds: 30),
-  }) : _interval = interval;
+    this._interval = const Duration(seconds: 30),
+  });
 
   /// Whether polling is currently active.
   bool get isActive => _timer != null && _timer!.isActive && !_isPaused;

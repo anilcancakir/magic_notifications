@@ -41,7 +41,7 @@ Update the version string in ALL of these files:
 | `CLAUDE.md` | `**Version:**` line |
 | `doc/getting-started/installation.md` | Version reference if pinned in install examples |
 | `README.md` | Version numbers in install examples |
-| `lib/src/cli/notifications_artisan_provider.dart` | `magicNotificationsVersion`, which the install banner prints. `test/cli/commands/install_command_test.dart` compares it against `pubspec.yaml`, so a miss here fails the suite rather than shipping quietly |
+| `lib/src/cli/notifications_dowel_provider.dart` | `magicNotificationsVersion`, which the install banner prints. `test/cli/commands/install_command_test.dart` compares it against `pubspec.yaml`, so a miss here fails the suite rather than shipping quietly |
 | `../magic/skills/magic-framework/references/plugin-notifications.md` | first-line stamp, per Phase 1 item 6. `test/skill_reference_stamp_test.dart` fails on a stale one whenever a sibling checkout exists |
 
 Grep the OLD version string across `*.md`, `*.yaml` and `lib/` before opening the PR rather than trusting this table; a stamp rots in whatever file nobody listed.

@@ -8,14 +8,14 @@ import '../test_helper.dart';
 
 /// One type carrying two independent channels, both enabled.
 Map<String, dynamic> _matrix() => <String, dynamic>{
-      'monitor_down': <String, dynamic>{
-        'label': 'Monitor Down',
-        'channels': <String, dynamic>{
-          'mail': <String, dynamic>{'enabled': true, 'locked': false},
-          'push': <String, dynamic>{'enabled': true, 'locked': false},
-        },
-      },
-    };
+  'monitor_down': <String, dynamic>{
+    'label': 'Monitor Down',
+    'channels': <String, dynamic>{
+      'mail': <String, dynamic>{'enabled': true, 'locked': false},
+      'push': <String, dynamic>{'enabled': true, 'locked': false},
+    },
+  },
+};
 
 /// The `enabled` flag [channel] currently carries under `monitor_down`.
 Object? _enabled(NotificationPreferencesController controller, String channel) {
@@ -46,8 +46,7 @@ void main() {
   });
 
   group('NotificationPreferencesController — session boundary', () {
-    test('signing out drops the previous person\'s preference matrix',
-        () async {
+    test('signing out drops the previous person\'s preference matrix', () async {
       Http.fake((request) {
         return MagicResponse(
           data: <String, dynamic>{'data': _matrix()},
@@ -72,30 +71,30 @@ void main() {
     });
   });
 
-  group('NotificationPreferencesController — a session that ends mid-request',
-      () {
-    test('a fetch in flight at sign-out cannot publish the previous matrix',
-        () async {
-      // The intricate half of the epoch guard, and the one the list controller's
-      // tests do not reach: this controller publishes from four places, not two.
-      final _GatedPreferencesDriver network = _GatedPreferencesDriver();
-      Magic.app.setInstance('network', network);
+  group('NotificationPreferencesController — a session that ends mid-request', () {
+    test(
+      'a fetch in flight at sign-out cannot publish the previous matrix',
+      () async {
+        // The intricate half of the epoch guard, and the one the list controller's
+        // tests do not reach: this controller publishes from four places, not two.
+        final _GatedPreferencesDriver network = _GatedPreferencesDriver();
+        Magic.app.setInstance('network', network);
 
-      controller.onInit();
-      final Future<void> reading = controller.fetchPreferences();
-      await Future<void>.delayed(Duration.zero);
+        controller.onInit();
+        final Future<void> reading = controller.fetchPreferences();
+        await Future<void>.delayed(Duration.zero);
 
-      await Notify.logoutPush();
+        await Notify.logoutPush();
 
-      network.answerGet(_matrix());
-      await reading;
+        network.answerGet(_matrix());
+        await reading;
 
-      expect(controller.matrixNotifier.value, isEmpty);
-      expect(controller.isSuccess, isFalse);
-    });
+        expect(controller.matrixNotifier.value, isEmpty);
+        expect(controller.isSuccess, isFalse);
+      },
+    );
 
-    test('a write in flight at sign-out cannot publish its provisioning flag',
-        () async {
+    test('a write in flight at sign-out cannot publish its provisioning flag', () async {
       final _GatedPreferencesDriver network = _GatedPreferencesDriver();
       Magic.app.setInstance('network', network);
 
@@ -127,29 +126,31 @@ void main() {
   });
 
   group('NotificationPreferencesController — failure paths', () {
-    test('fetchPreferences() keeps the matrix empty on a 500 response',
-        () async {
-      // The error body still carries a `data` shape (a stale cache, a
-      // degraded upstream) so this proves the early return on failure, not
-      // just an empty body's absence of anything to parse.
-      Http.fake((request) {
-        return MagicResponse(
-          data: <String, dynamic>{
-            'data': <String, dynamic>{
-              'monitor_down': <String, dynamic>{
-                'label': 'Monitor Down',
-                'channels': <String, dynamic>{},
+    test(
+      'fetchPreferences() keeps the matrix empty on a 500 response',
+      () async {
+        // The error body still carries a `data` shape (a stale cache, a
+        // degraded upstream) so this proves the early return on failure, not
+        // just an empty body's absence of anything to parse.
+        Http.fake((request) {
+          return MagicResponse(
+            data: <String, dynamic>{
+              'data': <String, dynamic>{
+                'monitor_down': <String, dynamic>{
+                  'label': 'Monitor Down',
+                  'channels': <String, dynamic>{},
+                },
               },
             },
-          },
-          statusCode: 500,
-        );
-      });
+            statusCode: 500,
+          );
+        });
 
-      await controller.fetchPreferences();
+        await controller.fetchPreferences();
 
-      expect(controller.matrixNotifier.value, isEmpty);
-    });
+        expect(controller.matrixNotifier.value, isEmpty);
+      },
+    );
 
     test(
       'updateTypePreference() reverts to the original matrix on a failed write',
@@ -172,50 +173,47 @@ void main() {
 
         expect(
           (((controller.matrixNotifier.value['monitor_down'] as Map)['channels']
-              as Map)['mail'] as Map)['enabled'],
+                  as Map)['mail']
+              as Map)['enabled'],
           isTrue,
         );
       },
     );
 
-    test(
-      'updateTypePreference() does not swallow a second cell mid-write',
-      () async {
-        controller.matrixNotifier.value = _matrix();
+    test('updateTypePreference() does not swallow a second cell mid-write', () async {
+      controller.matrixNotifier.value = _matrix();
 
-        final List<String> written = <String>[];
-        Http.fake((request) {
-          final Map<String, dynamic> body =
-              request.data as Map<String, dynamic>;
-          written.add('${body['type']}.${body['channel']}');
+      final List<String> written = <String>[];
+      Http.fake((request) {
+        final Map<String, dynamic> body = request.data as Map<String, dynamic>;
+        written.add('${body['type']}.${body['channel']}');
 
-          return MagicResponse(
-            data: <String, dynamic>{'data': <String, dynamic>{}},
-            statusCode: 200,
-          );
-        });
-
-        // An operator silencing two noisy channels in a row. The first write is
-        // still in flight when the second toggle lands, and a single flag across
-        // the whole matrix turns that second tap into a tap that visibly does
-        // nothing: no spinner, no snap-back, no message, and the channel keeps
-        // paging them.
-        final Future<void> mail = controller.updateTypePreference(
-          'monitor_down',
-          'mail',
-          false,
+        return MagicResponse(
+          data: <String, dynamic>{'data': <String, dynamic>{}},
+          statusCode: 200,
         );
-        final Future<void> push = controller.updateTypePreference(
-          'monitor_down',
-          'push',
-          false,
-        );
-        await Future.wait(<Future<void>>[mail, push]);
+      });
 
-        expect(written, <String>['monitor_down.mail', 'monitor_down.push']);
-        expect(_enabled(controller, 'push'), isFalse);
-      },
-    );
+      // An operator silencing two noisy channels in a row. The first write is
+      // still in flight when the second toggle lands, and a single flag across
+      // the whole matrix turns that second tap into a tap that visibly does
+      // nothing: no spinner, no snap-back, no message, and the channel keeps
+      // paging them.
+      final Future<void> mail = controller.updateTypePreference(
+        'monitor_down',
+        'mail',
+        false,
+      );
+      final Future<void> push = controller.updateTypePreference(
+        'monitor_down',
+        'push',
+        false,
+      );
+      await Future.wait(<Future<void>>[mail, push]);
+
+      expect(written, <String>['monitor_down.mail', 'monitor_down.push']);
+      expect(_enabled(controller, 'push'), isFalse);
+    });
 
     test(
       'updateTypePreference() still coalesces a repeat of the SAME cell',
@@ -288,38 +286,34 @@ void main() {
       },
     );
 
-    test(
-      'updateTypePreference() republishes the provisioning flag on a successful write',
-      () async {
-        controller.matrixNotifier.value = <String, dynamic>{
-          'monitor_down': <String, dynamic>{
-            'label': 'Monitor Down',
-            'channels': <String, dynamic>{
-              'mail': <String, dynamic>{'enabled': true, 'locked': false},
-            },
+    test('updateTypePreference() republishes the provisioning flag on a successful write', () async {
+      controller.matrixNotifier.value = <String, dynamic>{
+        'monitor_down': <String, dynamic>{
+          'label': 'Monitor Down',
+          'channels': <String, dynamic>{
+            'mail': <String, dynamic>{'enabled': true, 'locked': false},
           },
-        };
+        },
+      };
 
-        Http.fake((request) {
-          return MagicResponse(
-            data: <String, dynamic>{
-              'data': <String, dynamic>{},
-              'meta': <String, dynamic>{'push_provisioned': false},
-            },
-            statusCode: 200,
-          );
-        });
+      Http.fake((request) {
+        return MagicResponse(
+          data: <String, dynamic>{
+            'data': <String, dynamic>{},
+            'meta': <String, dynamic>{'push_provisioned': false},
+          },
+          statusCode: 200,
+        );
+      });
 
-        await controller.updateTypePreference('monitor_down', 'mail', false);
+      await controller.updateTypePreference('monitor_down', 'mail', false);
 
-        expect(controller.pushProvisionedNotifier.value, isFalse);
-      },
-    );
+      expect(controller.pushProvisionedNotifier.value, isFalse);
+    });
   });
 
   group('NotificationPreferencesController — one channel, every type', () {
-    test('it writes each unlocked type that disagrees with the target',
-        () async {
+    test('it writes each unlocked type that disagrees with the target', () async {
       controller.matrixNotifier.value = _bulkMatrix();
 
       final List<Map<String, dynamic>> sent = <Map<String, dynamic>>[];
@@ -359,8 +353,7 @@ void main() {
     /// `any` reads as on) is tapped off, and the batch fails. `push` has to come
     /// back on, because the per-cell PUT is about to succeed and the server will
     /// hold it on.
-    test('a failed batch restores a cell a per-cell write is holding',
-        () async {
+    test('a failed batch restores a cell a per-cell write is holding', () async {
       controller.matrixNotifier.value = <String, dynamic>{
         'monitor_down': <String, dynamic>{
           'label': 'Monitor Down',
@@ -441,21 +434,21 @@ void main() {
 /// Two types, so a bulk write has more than one cell to reach, and one locked
 /// cell that has to survive it.
 Map<String, dynamic> _bulkMatrix() => <String, dynamic>{
-      'monitor_down': <String, dynamic>{
-        'label': 'Monitor Down',
-        'channels': <String, dynamic>{
-          'mail': <String, dynamic>{'enabled': true, 'locked': false},
-          'push': <String, dynamic>{'enabled': true, 'locked': false},
-        },
-      },
-      'incident_opened': <String, dynamic>{
-        'label': 'Incident Opened',
-        'channels': <String, dynamic>{
-          'mail': <String, dynamic>{'enabled': true, 'locked': true},
-          'push': <String, dynamic>{'enabled': false, 'locked': false},
-        },
-      },
-    };
+  'monitor_down': <String, dynamic>{
+    'label': 'Monitor Down',
+    'channels': <String, dynamic>{
+      'mail': <String, dynamic>{'enabled': true, 'locked': false},
+      'push': <String, dynamic>{'enabled': true, 'locked': false},
+    },
+  },
+  'incident_opened': <String, dynamic>{
+    'label': 'Incident Opened',
+    'channels': <String, dynamic>{
+      'mail': <String, dynamic>{'enabled': true, 'locked': true},
+      'push': <String, dynamic>{'enabled': false, 'locked': false},
+    },
+  },
+};
 
 /// The `enabled` flag [type]'s [channel] currently carries.
 Object? _enabledOn(
@@ -510,7 +503,9 @@ class _GatedPreferencesDriver extends FakeNetworkDriver {
   /// Answers the oldest read still waiting with [matrix].
   void answerGet(Map<String, dynamic> matrix) {
     expect(_gets, isNotEmpty, reason: 'No read was waiting for an answer.');
-    _gets.removeAt(0).complete(
+    _gets
+        .removeAt(0)
+        .complete(
           MagicResponse(
             data: <String, dynamic>{'data': matrix},
             statusCode: 200,
@@ -534,7 +529,9 @@ class _GatedPreferencesDriver extends FakeNetworkDriver {
       greaterThan(index),
       reason: 'No write was waiting at index $index.',
     );
-    _puts.removeAt(index).complete(
+    _puts
+        .removeAt(index)
+        .complete(
           MagicResponse(
             data: <String, dynamic>{
               if (pushProvisioned != null)

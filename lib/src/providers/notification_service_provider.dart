@@ -76,8 +76,9 @@ class NotificationServiceProvider extends ServiceProvider {
     //    proof that `register()` bound what a consumer will resolve, and a
     //    missing registration surfaces as magic's own diagnostic rather than as
     //    a provider that booted against a binding nobody can reach.
-    final NotificationManager manager =
-        app.make<NotificationManager>(_containerKey);
+    final NotificationManager manager = app.make<NotificationManager>(
+      _containerKey,
+    );
 
     _pushInitializationError = null;
 
@@ -189,7 +190,7 @@ class NotificationServiceProvider extends ServiceProvider {
           safariWebId: Config.get<String>('notifications.push.safari_web_id'),
           notifyButtonEnabled:
               Config.get<bool>('notifications.push.notify_button_enabled') ??
-                  false,
+              false,
           serviceWorkerPath: Config.get<String>(
             'notifications.push.service_worker_path',
           ),

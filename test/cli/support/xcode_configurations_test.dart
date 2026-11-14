@@ -96,7 +96,9 @@ void main() {
 
     test('returns empty for a file that is not there', () {
       expect(
-          XcodeConfigurations.read('${tempDir.path}/absent.pbxproj'), isEmpty);
+        XcodeConfigurations.read('${tempDir.path}/absent.pbxproj'),
+        isEmpty,
+      );
     });
   });
 

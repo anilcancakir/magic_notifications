@@ -70,27 +70,29 @@ void main() {
       );
     });
 
-    test('loadPage() asks the backend for the page size it was given',
-        () async {
-      controller.perPage = 30;
-      final fake = Http.fake((request) {
-        return MagicResponse(
-          data: <String, dynamic>{
-            'data': <Map<String, dynamic>>[],
-            'meta': <String, dynamic>{'current_page': 1, 'last_page': 1},
-          },
-          statusCode: 200,
+    test(
+      'loadPage() asks the backend for the page size it was given',
+      () async {
+        controller.perPage = 30;
+        final fake = Http.fake((request) {
+          return MagicResponse(
+            data: <String, dynamic>{
+              'data': <Map<String, dynamic>>[],
+              'meta': <String, dynamic>{'current_page': 1, 'last_page': 1},
+            },
+            statusCode: 200,
+          );
+        });
+
+        await controller.loadPage(1);
+
+        fake.assertSent(
+          (request) =>
+              request.url == '/notifications' &&
+              request.queryParameters?['perPage'] == '30',
         );
-      });
-
-      await controller.loadPage(1);
-
-      fake.assertSent(
-        (request) =>
-            request.url == '/notifications' &&
-            request.queryParameters?['perPage'] == '30',
-      );
-    });
+      },
+    );
 
     test('refresh() re-reads the page the controller is on', () async {
       fakePages(lastPage: 3);
@@ -162,8 +164,7 @@ void main() {
       );
     });
 
-    test('loadPage() reports an error instead of publishing an empty page',
-        () async {
+    test('loadPage() reports an error instead of publishing an empty page', () async {
       Http.fake((request) {
         return MagicResponse(data: <String, dynamic>{}, statusCode: 500);
       });
@@ -195,8 +196,7 @@ void main() {
       expect(controller.pageNotifier.value?.data, hasLength(1));
     });
 
-    test('a reload keeps the rows it already has while it is in flight',
-        () async {
+    test('a reload keeps the rows it already has while it is in flight', () async {
       fakePages(lastPage: 2);
       await controller.loadPage(1);
 
@@ -209,8 +209,7 @@ void main() {
       expect(controller.pageNotifier.value?.data, hasLength(1));
     });
 
-    test('a read in flight at sign-out cannot publish the previous rows',
-        () async {
+    test('a read in flight at sign-out cannot publish the previous rows', () async {
       // The window `_clearSession` alone does not close: `logoutPush` clears
       // before its first await, so a read issued for A is still on its way back
       // and lands into the emptied notifier, and B's first frame paints it.
@@ -264,8 +263,7 @@ void main() {
       expect(controller.currentPage, 1);
     });
 
-    test('signing out drops the page the previous person was reading',
-        () async {
+    test('signing out drops the page the previous person was reading', () async {
       fakePages(lastPage: 3);
 
       // The controller has to exist before the sign-out, the way it does on a
@@ -345,7 +343,9 @@ class _GatedNetworkDriver extends FakeNetworkDriver {
   /// Answers the oldest read still waiting with [rows].
   void answer(List<Map<String, dynamic>> rows) {
     expect(_pending, isNotEmpty, reason: 'No read was waiting for an answer.');
-    _pending.removeAt(0).complete(
+    _pending
+        .removeAt(0)
+        .complete(
           MagicResponse(
             data: <String, dynamic>{
               'data': rows,

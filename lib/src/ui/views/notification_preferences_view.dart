@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart' show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart'
+    show Icons, CircularProgressIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -84,8 +85,12 @@ class NotificationPreferencesView
       _NotificationPreferencesViewState();
 }
 
-class _NotificationPreferencesViewState extends MagicStatefulViewState<
-    NotificationPreferencesController, NotificationPreferencesView> {
+class _NotificationPreferencesViewState
+    extends
+        MagicStatefulViewState<
+          NotificationPreferencesController,
+          NotificationPreferencesView
+        > {
   static const _iconLocked = Icons.lock_outline;
   static const _iconBack = Icons.chevron_left;
 
@@ -153,11 +158,7 @@ class _NotificationPreferencesViewState extends MagicStatefulViewState<
               _buildHeader(context),
               WDiv(
                 className: 'mt-6 flex flex-col gap-6',
-                children: [
-                  if (headerSlot != null) headerSlot,
-                  _buildMatrixSettings(),
-                  if (footerSlot != null) footerSlot,
-                ],
+                children: [?headerSlot, _buildMatrixSettings(), ?footerSlot],
               ),
             ],
           ),
@@ -235,8 +236,7 @@ class _NotificationPreferencesViewState extends MagicStatefulViewState<
           return WDiv(
             className: _cardClassName,
             child: WDiv(
-              className:
-                  'w-full py-12 flex flex-col items-center justify-center gap-3',
+              className: 'w-full py-12 flex flex-col items-center justify-center gap-3',
               children: [
                 WIcon(
                   Icons.notifications_off_outlined,
@@ -637,7 +637,8 @@ class _NotificationPreferencesViewState extends MagicStatefulViewState<
           // (a screen reader announced a bare "switch") and no stable handle
           // for an E2E driver to resolve.
           semanticLabel: _channelLabel(channel),
-          className: 'w-11 h-6 rounded-full px-0.5 '
+          className:
+              'w-11 h-6 rounded-full px-0.5 '
               'flex items-center justify-start checked:justify-end '
               'bg-surface-container-high checked:bg-primary '
               'disabled:opacity-50',

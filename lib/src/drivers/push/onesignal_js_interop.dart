@@ -5,7 +5,8 @@
 // select this no-op stub in that build instead of the real web implementation.
 // ignore: unused_import
 import 'onesignal_js_interop_stub.dart'
-    if (dart.library.js_interop) 'onesignal_js_interop_web.dart' as impl;
+    if (dart.library.js_interop) 'onesignal_js_interop_web.dart'
+    as impl;
 
 /// OneSignal JavaScript SDK interop layer.
 ///
@@ -48,14 +49,13 @@ class OneSignalJsInterop {
     bool notifyButtonEnabled = false,
     String? serviceWorkerPath,
     String? serviceWorkerScope,
-  }) =>
-      impl.init(
-        appId: appId,
-        safariWebId: safariWebId,
-        notifyButtonEnabled: notifyButtonEnabled,
-        serviceWorkerPath: serviceWorkerPath,
-        serviceWorkerScope: serviceWorkerScope,
-      );
+  }) => impl.init(
+    appId: appId,
+    safariWebId: safariWebId,
+    notifyButtonEnabled: notifyButtonEnabled,
+    serviceWorkerPath: serviceWorkerPath,
+    serviceWorkerScope: serviceWorkerScope,
+  );
 
   /// Whether the OneSignal SDK is available in the current environment.
   ///
@@ -198,16 +198,15 @@ class OneSignalJsInterop {
   ///
   /// The callback receives `true` when permission is granted, `false` otherwise.
   static void addPermissionChangeListener(
-          void Function(bool permission) callback) =>
-      impl.addPermissionChangeListener(callback);
+    void Function(bool permission) callback,
+  ) => impl.addPermissionChangeListener(callback);
 
   /// Adds a listener for notification click events.
   ///
   /// The callback receives the notification data as a map.
   static void addNotificationClickListener(
     void Function(Map<String, dynamic> event) callback,
-  ) =>
-      impl.addNotificationClickListener(callback);
+  ) => impl.addNotificationClickListener(callback);
 
   /// Adds a listener for foreground notification display events.
   ///
@@ -221,23 +220,20 @@ class OneSignalJsInterop {
   /// across the interop boundary.
   static void addNotificationForegroundListener(
     void Function(Map<String, dynamic> event, void Function() preventDisplay)
-        callback,
-  ) =>
-      impl.addNotificationForegroundListener(callback);
+    callback,
+  ) => impl.addNotificationForegroundListener(callback);
 
   /// Adds a listener for user state changes.
   ///
   /// The callback receives the user change event data.
   static void addUserStateChangeListener(
     void Function(Map<String, dynamic> event) callback,
-  ) =>
-      impl.addUserStateChangeListener(callback);
+  ) => impl.addUserStateChangeListener(callback);
 
   /// Adds a listener for subscription state changes.
   ///
   /// The callback receives the subscription change event data.
   static void addSubscriptionChangeListener(
     void Function(Map<String, dynamic> event) callback,
-  ) =>
-      impl.addSubscriptionChangeListener(callback);
+  ) => impl.addSubscriptionChangeListener(callback);
 }

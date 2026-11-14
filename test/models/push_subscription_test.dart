@@ -5,26 +5,28 @@ void main() {
   group('PushPermissionState', () {
     test('has all expected values', () {
       expect(
-          PushPermissionState.values,
-          containsAll([
-            PushPermissionState.notDetermined,
-            PushPermissionState.denied,
-            PushPermissionState.authorized,
-            PushPermissionState.provisional,
-          ]));
+        PushPermissionState.values,
+        containsAll([
+          PushPermissionState.notDetermined,
+          PushPermissionState.denied,
+          PushPermissionState.authorized,
+          PushPermissionState.provisional,
+        ]),
+      );
     });
   });
 
   group('PushReachability', () {
     test('has all expected values', () {
       expect(
-          PushReachability.values,
-          containsAll([
-            PushReachability.unavailable,
-            PushReachability.blocked,
-            PushReachability.off,
-            PushReachability.on,
-          ]));
+        PushReachability.values,
+        containsAll([
+          PushReachability.unavailable,
+          PushReachability.blocked,
+          PushReachability.off,
+          PushReachability.on,
+        ]),
+      );
     });
 
     test('separates a blocked device from one that was never asked', () {

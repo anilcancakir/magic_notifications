@@ -1,12 +1,12 @@
-import 'package:magic_notifications/src/cli/notifications_artisan_provider.dart';
+import 'package:magic_notifications/src/cli/notifications_dowel_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('MagicNotificationsArtisanProvider.mcpTools', () {
-    late MagicNotificationsArtisanProvider provider;
+  group('MagicNotificationsDowelProvider.mcpTools', () {
+    late MagicNotificationsDowelProvider provider;
 
     setUp(() {
-      provider = MagicNotificationsArtisanProvider();
+      provider = MagicNotificationsDowelProvider();
     });
 
     test('exposes exactly 2 MCP tools', () {

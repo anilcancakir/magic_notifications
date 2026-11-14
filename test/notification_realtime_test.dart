@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+import 'package:magic_socket/magic_socket.dart';
+import 'package:magic_socket/testing.dart';
 
 import 'test_helper.dart';
 
@@ -124,18 +126,17 @@ void main() {
     String id = 'n1',
     String title = 'Incident opened',
     String createdAt = '2026-08-19T09:30:00.000Z',
-  }) =>
-      <String, dynamic>{
-        'id': id,
-        'type': 'App\\Notifications\\IncidentOpened',
-        'data': <String, dynamic>{
-          'title': title,
-          'body': 'API Health is down',
-          'action_url': '/incidents/$id',
-        },
-        'created_at': createdAt,
-        'read_at': null,
-      };
+  }) => <String, dynamic>{
+    'id': id,
+    'type': 'App\\Notifications\\IncidentOpened',
+    'data': <String, dynamic>{
+      'title': title,
+      'body': 'API Health is down',
+      'action_url': '/incidents/$id',
+    },
+    'created_at': createdAt,
+    'read_at': null,
+  };
 
   /// Starts realtime on a channel the server has already confirmed, so the one
   /// read [NotificationManager.startRealtime] does is awaited rather than left to
@@ -219,8 +220,9 @@ void main() {
             .length,
         1,
       );
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
       expect(current.map((DatabaseNotification n) => n.id), <String>['old']);
     });
 
@@ -238,14 +240,15 @@ void main() {
         row(id: 'fresh', title: 'Checkout is down'),
       );
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
       // Newest first, and the frame IS the state: asking the API again for a row
       // that just arrived in full is the round trip this replaces.
-      expect(
-        current.map((DatabaseNotification n) => n.id),
-        <String>['fresh', 'old'],
-      );
+      expect(current.map((DatabaseNotification n) => n.id), <String>[
+        'fresh',
+        'old',
+      ]);
       expect(current.first.title, 'Checkout is down');
       expect(driver.recorded.length, afterStart);
     });
@@ -260,8 +263,9 @@ void main() {
         <String, dynamic>{'id': 'broken'},
       );
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
       expect(current, isEmpty);
       expect(manager.isRealtime, isTrue);
     });
@@ -274,8 +278,9 @@ void main() {
       channel.emit('notification.created', row(id: 'n1', title: 'First'));
       channel.emit('notification.created', row(id: 'n1', title: 'Corrected'));
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
       expect(current, hasLength(1));
       expect(current.single.title, 'Corrected');
     });
@@ -297,15 +302,18 @@ void main() {
       // exactly the window `startRealtime` opens by subscribing before it fetches.
       final Future<void> reading = manager.fetchNotifications();
       channel.emit(
-          'notification.created', row(id: 'fresh', title: 'Mid-flight'));
+        'notification.created',
+        row(id: 'fresh', title: 'Mid-flight'),
+      );
       await reading;
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
-      expect(
-        current.map((DatabaseNotification n) => n.id),
-        <String>['fresh', 'old'],
-      );
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
+      expect(current.map((DatabaseNotification n) => n.id), <String>[
+        'fresh',
+        'old',
+      ]);
       expect(current.first.title, 'Mid-flight');
     });
 
@@ -323,11 +331,14 @@ void main() {
       // the common case once a backlog drains. Merging must not leave two.
       final Future<void> reading = manager.fetchNotifications();
       channel.emit(
-          'notification.created', row(id: 'fresh', title: 'From the socket'));
+        'notification.created',
+        row(id: 'fresh', title: 'From the socket'),
+      );
       await reading;
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
       expect(current, hasLength(1));
       expect(current.single.title, 'From the socket');
     });
@@ -365,19 +376,20 @@ void main() {
       return channel;
     }
 
-    test('startPolling does not arm the timer while realtime is live',
-        () async {
-      await startSubscribed();
+    test(
+      'startPolling does not arm the timer while realtime is live',
+      () async {
+        await startSubscribed();
 
-      manager.startPolling();
+        manager.startPolling();
 
-      // The whole point of the feature: an authenticated socket is already open,
-      // so a 30-second HTTP timer on top of it is pure waste.
-      expect(manager.isPolling, isFalse);
-    });
+        // The whole point of the feature: an authenticated socket is already open,
+        // so a 30-second HTTP timer on top of it is pure waste.
+        expect(manager.isPolling, isFalse);
+      },
+    );
 
-    test('startRealtime keeps polling until the channel is subscribed',
-        () async {
+    test('startRealtime keeps polling until the channel is subscribed', () async {
       await manager.startRealtime(channel: 'App.Models.User.u1');
 
       // `connected` and a subscribed channel are not the same thing: a private
@@ -474,8 +486,7 @@ void main() {
       expect(manager.isRealtime, isTrue);
     });
 
-    test(
-        'a socket that is down at start subscribes anyway and polls until it '
+    test('a socket that is down at start subscribes anyway and polls until it '
         'connects', () async {
       // The realtime server was down when the app launched. Giving up here
       // left realtime off for the whole session: the driver connected later,
@@ -485,8 +496,9 @@ void main() {
       });
       echo.spy.connectError = StateError('Connection refused');
 
-      final bool armed =
-          await manager.startRealtime(channel: 'App.Models.User.u1');
+      final bool armed = await manager.startRealtime(
+        channel: 'App.Models.User.u1',
+      );
 
       expect(armed, isTrue);
       expect(manager.isRealtime, isTrue);
@@ -505,8 +517,7 @@ void main() {
       expect(driver.recorded.length, greaterThan(beforeConnect));
     });
 
-    test('resubscribing stops the fallback and closes the replay gap',
-        () async {
+    test('resubscribing stops the fallback and closes the replay gap', () async {
       final FakeNetworkDriver driver = Http.fake(<String, MagicResponse>{
         'notifications': Http.response(<String, dynamic>{'data': <dynamic>[]}),
       });
@@ -562,10 +573,7 @@ void main() {
       await manager.startRealtime(channel: 'App.Models.User.u2');
 
       expect(echo.spy.left, contains('private-App.Models.User.u1'));
-      expect(
-        echo.spy.channels.keys,
-        contains('private-App.Models.User.u2'),
-      );
+      expect(echo.spy.channels.keys, contains('private-App.Models.User.u2'));
     });
   });
 }

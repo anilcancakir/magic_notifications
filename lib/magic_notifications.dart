@@ -47,4 +47,4 @@ export 'src/http/notifications_list_controller.dart';
 export 'src/exceptions/notification_exception.dart';
 
 // CLI
-export 'src/cli/notifications_artisan_provider.dart';
+export 'src/cli/notifications_dowel_provider.dart';

@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 import '../support/xcode_configurations.dart';
-import '../notifications_artisan_provider.dart';
+import '../notifications_dowel_provider.dart';
 
 /// Project type detection result for the install banner.
 enum ProjectType { flutter, dart, unknown }
@@ -39,8 +39,9 @@ abstract final class NotificationsConfigWiring {
 
   /// Matches that import as a whole LINE (any `show` / `as` combinator, the
   /// semicolon and the line break included), so removing it leaves no residue.
-  static final RegExp configImportLine =
-      RegExp(r'[ \t]*' + _importCore + r'[^;\n]*;[ \t]*\r?\n?');
+  static final RegExp configImportLine = RegExp(
+    r'[ \t]*' + _importCore + r'[^;\n]*;[ \t]*\r?\n?',
+  );
 
   /// The getter name [configSource] declares its config map under, or `null`
   /// when it declares none this package can name.
@@ -155,7 +156,7 @@ class _InstallPlan {
 ///   - The arbitrary `web/OneSignalSDKWorker.js` write (`native.web` supports
 ///     only head_scripts / meta_tags).
 ///   - The placeholder-substituted config + the idempotent head-script guard.
-class InstallCommand extends ArtisanInstallCommand {
+class InstallCommand extends DowelInstallCommand {
   /// Public default constructor. Tests subclass to pin [getProjectRoot],
   /// [getStubSearchPaths], and [resolveManifestPath].
   InstallCommand();
@@ -171,7 +172,8 @@ class InstallCommand extends ArtisanInstallCommand {
   static const String _serviceWorkerScope = '/onesignal/';
 
   @override
-  String get signature => 'notifications:install '
+  String get signature =>
+      'notifications:install '
       '$baseFlags'
       '{--app-id= : OneSignal App ID (UUID format)} '
       '{--platforms= : Comma-separated platforms (android,ios,web)} '
@@ -187,7 +189,7 @@ class InstallCommand extends ArtisanInstallCommand {
   CommandBoot get boot => CommandBoot.none;
 
   @override
-  String pluginName(ArtisanContext ctx) => 'magic_notifications';
+  String pluginName(DowelContext ctx) => 'magic_notifications';
 
   /// Absolute path to the Flutter project root, resolved on access.
   String get projectRoot => getProjectRoot();
@@ -196,8 +198,10 @@ class InstallCommand extends ArtisanInstallCommand {
   String getProjectRoot() => FileHelper.findProjectRoot();
 
   /// Stub search paths, plugin assets first. Overridable in tests.
-  List<String> getStubSearchPaths() =>
-      [_resolvePluginStubsDir(), '${Directory.current.path}/assets/stubs'];
+  List<String> getStubSearchPaths() => [
+    _resolvePluginStubsDir(),
+    '${Directory.current.path}/assets/stubs',
+  ];
 
   /// Resolves the plugin's `install.yaml` path. Overridable in tests.
   ///
@@ -214,7 +218,7 @@ class InstallCommand extends ArtisanInstallCommand {
   /// Builds the [InstallContext] bound to the resolved project root. Overrides
   /// the base so the installer targets [projectRoot] rather than the cwd.
   @override
-  InstallContext buildContext(ArtisanContext ctx) =>
+  InstallContext buildContext(DowelContext ctx) =>
       InstallContext.real(ctx, projectRoot: projectRoot);
 
   /// Validate an OneSignal App ID against the canonical UUID 8-4-4-4-12 shape.
@@ -241,9 +245,10 @@ class InstallCommand extends ArtisanInstallCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     ctx.output.info(
-        ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion));
+      ConsoleStyle.banner('Magic Notifications', magicNotificationsVersion),
+    );
 
     // 1. Project-type guard. An unrecognised root means there is nothing safe
     //    to scaffold into.
@@ -280,7 +285,7 @@ class InstallCommand extends ArtisanInstallCommand {
     final result = await _runInstall(ctx, manifest, plan);
 
     // 5. Echo the post-install message on Success.
-    if (result is Success && manifest.postInstall.message != null) {
+    if (result is InstallSuccess && manifest.postInstall.message != null) {
       ctx.output.info(manifest.postInstall.message!);
     }
 
@@ -289,7 +294,7 @@ class InstallCommand extends ArtisanInstallCommand {
 
   /// Builds the install plan from CLI flags (CI/CD path). Returns `null` after
   /// emitting an error when `--app-id` is missing or malformed.
-  _InstallPlan? _resolveNonInteractivePlan(ArtisanContext ctx) {
+  _InstallPlan? _resolveNonInteractivePlan(DowelContext ctx) {
     final appId = ctx.input.option('app-id') as String?;
     if (appId == null || appId.isEmpty) {
       ctx.output.error('--app-id is required in non-interactive mode');
@@ -302,8 +307,10 @@ class InstallCommand extends ArtisanInstallCommand {
 
     final platformsStr =
         ctx.input.option('platforms') as String? ?? 'android,ios,web';
-    final platforms =
-        platformsStr.split(',').map((p) => p.trim()).toList(growable: false);
+    final platforms = platformsStr
+        .split(',')
+        .map((p) => p.trim())
+        .toList(growable: false);
 
     return _InstallPlan(
       oneSignalAppId: appId,
@@ -317,7 +324,7 @@ class InstallCommand extends ArtisanInstallCommand {
   /// Builds the install plan via the interactive wizard. The web / Safari
   /// prompts are gated on the platform selection IN CODE because manifest
   /// prompts run unconditionally and cannot be skipped when web is deselected.
-  _InstallPlan? _resolveInteractivePlan(ArtisanContext ctx) {
+  _InstallPlan? _resolveInteractivePlan(DowelContext ctx) {
     ctx.output.info('Starting interactive installation wizard...\n');
 
     // 1. OneSignal App ID, re-prompt until a valid UUID is entered.
@@ -376,10 +383,13 @@ class InstallCommand extends ArtisanInstallCommand {
         'Safari Web ID is only for the legacy Safari push path '
         '(pre macOS 13 / iOS 16.4). Modern Safari uses VAPID and needs none.',
       );
-      if (Prompt.confirm('Configure a legacy Safari Web ID?',
-          defaultValue: false)) {
-        final safariInput =
-            Prompt.ask('Enter legacy Safari Web ID (or press Enter to skip)');
+      if (Prompt.confirm(
+        'Configure a legacy Safari Web ID?',
+        defaultValue: false,
+      )) {
+        final safariInput = Prompt.ask(
+          'Enter legacy Safari Web ID (or press Enter to skip)',
+        );
         if (safariInput.isNotEmpty) {
           safariWebId = safariInput;
           ctx.output.success('Legacy Safari Web ID configured');
@@ -389,8 +399,10 @@ class InstallCommand extends ArtisanInstallCommand {
       } else {
         ctx.output.comment('Legacy Safari Web ID skipped');
       }
-      notifyButtonEnabled = Prompt.confirm('Enable OneSignal notify button?',
-          defaultValue: false);
+      notifyButtonEnabled = Prompt.confirm(
+        'Enable OneSignal notify button?',
+        defaultValue: false,
+      );
       ctx.output.writeln('');
     }
 
@@ -399,10 +411,13 @@ class InstallCommand extends ArtisanInstallCommand {
     ctx.output.info(
       ConsoleStyle.step(hasWeb ? 4 : 3, hasWeb ? 5 : 4, 'Soft Prompt'),
     );
-    ctx.output
-        .comment('Soft prompt asks users before requesting push permissions');
-    final enableSoftPrompt =
-        Prompt.confirm('Enable soft prompt?', defaultValue: true);
+    ctx.output.comment(
+      'Soft prompt asks users before requesting push permissions',
+    );
+    final enableSoftPrompt = Prompt.confirm(
+      'Enable soft prompt?',
+      defaultValue: true,
+    );
     ctx.output.writeln('');
 
     return _InstallPlan(
@@ -420,7 +435,7 @@ class InstallCommand extends ArtisanInstallCommand {
   /// atomic `.tmp` swap covers them, helper-backed mutations last (they write
   /// synchronously during stage and do NOT roll back).
   Future<TransactionResult> _runInstall(
-    ArtisanContext ctx,
+    DowelContext ctx,
     InstallManifest manifest,
     _InstallPlan plan,
   ) async {
@@ -452,13 +467,11 @@ class InstallCommand extends ArtisanInstallCommand {
     String? stagedConfig;
     if (configExists && !force) {
       ctx.output.warning(
-          'Configuration file already exists. Use --force to overwrite.');
+        'Configuration file already exists. Use --force to overwrite.',
+      );
     } else {
       stagedConfig = _renderConfig(plan);
-      installer.writeFile(
-        targetPath: configPath,
-        content: stagedConfig,
-      );
+      installer.writeFile(targetPath: configPath, content: stagedConfig);
     }
 
     // 2. Web service worker (arbitrary file write the manifest cannot express).
@@ -484,8 +497,9 @@ class InstallCommand extends ArtisanInstallCommand {
     // 4. Android POST_NOTIFICATIONS permission, gated on platform selection.
     //    The dispatcher additionally skips silently when android/ is absent.
     if (plan.hasAndroid) {
-      installer
-          .injectAndroidPermission('android.permission.POST_NOTIFICATIONS');
+      installer.injectAndroidPermission(
+        'android.permission.POST_NOTIFICATIONS',
+      );
     }
 
     // 5. iOS background mode, gated on platform selection. The dispatcher
@@ -523,7 +537,8 @@ class InstallCommand extends ArtisanInstallCommand {
     //    getter's name is read out of the project's own file rather than
     //    assumed.
     if (FileHelper.fileExists(mainPath) && !mainWiredBefore) {
-      final configSource = stagedConfig ??
+      final configSource =
+          stagedConfig ??
           (configExists ? FileHelper.readFile(configPath) : null);
       final getter = configSource == null
           ? null
@@ -574,7 +589,7 @@ class InstallCommand extends ArtisanInstallCommand {
     //    longer declares. This runs after the commit, not as a staged op, so it
     //    reads the config that actually landed and never fires on a dry run or
     //    on a transaction that rolled back.
-    if (result is Success &&
+    if (result is InstallSuccess &&
         stagedConfig != null &&
         configExists &&
         mainWiredBefore) {
@@ -589,7 +604,7 @@ class InstallCommand extends ArtisanInstallCommand {
     // 9. The APNs entitlements, both files and both build settings. Guarded on
     //    Success, so a `--dry-run` (which reports DryRun) and a rolled-back
     //    transaction each leave the project untouched.
-    if (result is Success &&
+    if (result is InstallSuccess &&
         plan.hasIos &&
         PlatformHelper.hasPlatform(projectRoot, 'ios')) {
       _writeApsEntitlements(ctx);
@@ -626,12 +641,13 @@ class InstallCommand extends ArtisanInstallCommand {
   /// silent failure one notch over. An existing twin is never overwritten, and
   /// only the one key is ensured, because an adopter who already split the
   /// file by hand is the person this is trying to help.
-  void _writeApsEntitlements(ArtisanContext ctx) {
+  void _writeApsEntitlements(DowelContext ctx) {
     final String iosRoot = '$projectRoot/ios';
     final String pbxproj = '$iosRoot/Runner.xcodeproj/project.pbxproj';
 
-    final List<XcodeConfiguration> configurations =
-        XcodeConfigurations.read(pbxproj);
+    final List<XcodeConfiguration> configurations = XcodeConfigurations.read(
+      pbxproj,
+    );
     if (configurations.isEmpty) {
       ctx.output.warning(
         'ios/Runner.xcodeproj/project.pbxproj could not be read, so no APNs '
@@ -701,8 +717,10 @@ class InstallCommand extends ArtisanInstallCommand {
         _ensureApsEnvironment(releasePath, 'production');
       }
 
-      blocked =
-          XcodeProjectEditor.setEntitlementsPaths(pbxproj, byConfiguration);
+      blocked = XcodeProjectEditor.setEntitlementsPaths(
+        pbxproj,
+        byConfiguration,
+      );
     } on StateError catch (error) {
       _reportEntitlementsNotPointed(ctx, error.message);
       return;
@@ -761,7 +779,7 @@ class InstallCommand extends ArtisanInstallCommand {
   ///
   /// One message for every reason, because the remedy is the same whichever
   /// one fired and an adopter needs the instruction more than the taxonomy.
-  void _reportEntitlementsNotPointed(ArtisanContext ctx, String reason) {
+  void _reportEntitlementsNotPointed(DowelContext ctx, String reason) {
     // Says what to DO rather than what was written, because one of the
     // reasons that reach here is a throw from the file writes themselves, so
     // claiming both files exist would be wrong on exactly the path where an
@@ -786,9 +804,8 @@ class InstallCommand extends ArtisanInstallCommand {
 
   /// Whether the project's `main.dart` at [mainPath] already imports the
   /// notifications config, which is what "already installed" means here.
-  bool _wiresConfig(String mainPath) => NotificationsConfigWiring.wiresConfig(
-        FileHelper.readFile(mainPath),
-      );
+  bool _wiresConfig(String mainPath) =>
+      NotificationsConfigWiring.wiresConfig(FileHelper.readFile(mainPath));
 
   /// Re-points an already-wired `lib/main.dart` at the getter the regenerated
   /// config declares, after a `--force` run overwrote the project's own config.
@@ -812,7 +829,7 @@ class InstallCommand extends ArtisanInstallCommand {
   /// run wrote. When either is unknown, `main.dart` is left exactly as it is:
   /// a guessed rename is how this package broke a real project once already.
   void _realignMainFactory(
-    ArtisanContext ctx,
+    DowelContext ctx,
     String mainPath, {
     required String? previousGetter,
     required String? regeneratedGetter,
@@ -903,20 +920,20 @@ class InstallCommand extends ArtisanInstallCommand {
 
   /// Translates a [TransactionResult] into a process exit code and emits the
   /// matching summary line.
-  int _renderResult(ArtisanContext ctx, TransactionResult result) {
+  int _renderResult(DowelContext ctx, TransactionResult result) {
     switch (result) {
-      case Success():
+      case InstallSuccess():
         ctx.output.success('Installation complete!');
         return 0;
-      case DryRun(opCount: final n):
+      case InstallDryRun(opCount: final n):
         ctx.output.info('Dry-run: $n op(s) staged; no files were written.');
         return 0;
-      case Conflict(conflicts: final list):
+      case InstallConflict(conflicts: final list):
         ctx.output.error(
           'Conflict on ${list.length} file(s). Re-run with --force to overwrite.',
         );
         return 1;
-      case Error(error: final msg, rolledBack: final ok):
+      case InstallError(error: final msg, rolledBack: final ok):
         ctx.output.error('Install failed: $msg (rolledBack: $ok)');
         return 1;
     }

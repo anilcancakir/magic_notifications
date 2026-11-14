@@ -4,6 +4,8 @@ import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+import 'package:magic_socket/magic_socket.dart';
+import 'package:magic_socket/testing.dart';
 
 import 'test_helper.dart';
 
@@ -54,8 +56,7 @@ void main() {
       expect(channel.sentCount, 0);
     });
 
-    test(
-        'send() still reaches the later channels when an earlier one throws, '
+    test('send() still reaches the later channels when an earlier one throws, '
         'whatever order via() names them in', () async {
       final push = MockChannel(
         'push',
@@ -70,39 +71,46 @@ void main() {
       // row was written at all.
       await expectLater(
         manager.send(
-            TestNotifiable('1'),
-            TestNotification(
-              via: ['push', 'database'],
-            )),
+          TestNotifiable('1'),
+          TestNotification(via: ['push', 'database']),
+        ),
         throwsA(isA<NotificationException>()),
       );
 
       expect(database.sentCount, 1);
     });
 
-    test('send() rethrows the first failure with its own type and code',
-        () async {
-      manager.registerChannel(MockChannel(
-        'push',
-        throws: NotificationException('refused', code: 'PUSH_REFUSED'),
-      ));
-      manager.registerChannel(MockChannel(
-        'database',
-        throws: StateError('a second, different failure'),
-      ));
+    test(
+      'send() rethrows the first failure with its own type and code',
+      () async {
+        manager.registerChannel(
+          MockChannel(
+            'push',
+            throws: NotificationException('refused', code: 'PUSH_REFUSED'),
+          ),
+        );
+        manager.registerChannel(
+          MockChannel(
+            'database',
+            throws: StateError('a second, different failure'),
+          ),
+        );
 
-      await expectLater(
-        manager.send(
+        await expectLater(
+          manager.send(
             TestNotifiable('1'),
-            TestNotification(
-              via: ['push', 'database'],
-            )),
-        throwsA(
-          isA<NotificationException>()
-              .having((e) => e.code, 'code', 'PUSH_REFUSED'),
-        ),
-      );
-    });
+            TestNotification(via: ['push', 'database']),
+          ),
+          throwsA(
+            isA<NotificationException>().having(
+              (e) => e.code,
+              'code',
+              'PUSH_REFUSED',
+            ),
+          ),
+        );
+      },
+    );
 
     test('send() logs warning for unknown channels', () async {
       final notification = TestNotification(via: ['unknown']);
@@ -175,17 +183,17 @@ void main() {
       network.answer(<Map<String, dynamic>>[_row(id: 'old')]);
       await second;
 
-      final List<DatabaseNotification> current =
-          await manager.notifications().first;
-      expect(
-        current.map((DatabaseNotification n) => n.id),
-        <String>['fresh', 'old'],
-      );
+      final List<DatabaseNotification> current = await manager
+          .notifications()
+          .first;
+      expect(current.map((DatabaseNotification n) => n.id), <String>[
+        'fresh',
+        'old',
+      ]);
       expect(current.first.title, 'Checkout is down');
     });
 
-    test('a read already in flight cannot put the signed-out rows back',
-        () async {
+    test('a read already in flight cannot put the signed-out rows back', () async {
       final Future<void> reading = manager.fetchNotifications();
       await pumpEventQueue();
 
@@ -223,8 +231,9 @@ void main() {
       await next;
 
       expect(
-        (await manager.notifications().first)
-            .map((DatabaseNotification n) => n.id),
+        (await manager.notifications().first).map(
+          (DatabaseNotification n) => n.id,
+        ),
         <String>['mine'],
       );
     });
@@ -264,8 +273,9 @@ void main() {
       await pumpEventQueue();
 
       expect(
-        (await manager.notifications().first)
-            .map((DatabaseNotification n) => n.id),
+        (await manager.notifications().first).map(
+          (DatabaseNotification n) => n.id,
+        ),
         <String>['mine'],
       );
     });
@@ -333,8 +343,9 @@ void main() {
       await pumpEventQueue();
 
       expect(
-        (await manager.notifications().first)
-            .map((DatabaseNotification n) => n.id),
+        (await manager.notifications().first).map(
+          (DatabaseNotification n) => n.id,
+        ),
         contains('welcome'),
       );
     });
@@ -349,8 +360,9 @@ void main() {
       await pumpEventQueue();
 
       expect(
-        (await manager.notifications().first)
-            .map((DatabaseNotification n) => n.id),
+        (await manager.notifications().first).map(
+          (DatabaseNotification n) => n.id,
+        ),
         <String>['mine'],
       );
     });
@@ -379,24 +391,26 @@ void main() {
       Auth.unfake();
     });
 
-    test('a channel armed before the auth change stays deaf after it',
-        () async {
-      // The previous person's channel, armed under their auth generation.
-      await manager.want('user_ada');
-      await manager.startRealtime(channel: 'App.Models.User.ada');
-      final _RecordingChannel theirs =
-          echo.spy.channels['private-App.Models.User.ada']!;
+    test(
+      'a channel armed before the auth change stays deaf after it',
+      () async {
+        // The previous person's channel, armed under their auth generation.
+        await manager.want('user_ada');
+        await manager.startRealtime(channel: 'App.Models.User.ada');
+        final _RecordingChannel theirs =
+            echo.spy.channels['private-App.Models.User.ada']!;
 
-      // The person changes, and a host that has not moved its delivery yet
-      // still holds Ada's channel when Grace is declared.
-      Auth.stateNotifier.value++;
-      await manager.want('user_grace');
+        // The person changes, and a host that has not moved its delivery yet
+        // still holds Ada's channel when Grace is declared.
+        Auth.stateNotifier.value++;
+        await manager.want('user_grace');
 
-      theirs.emit('notification.created', _row(id: 'theirs'));
-      await pumpEventQueue();
+        theirs.emit('notification.created', _row(id: 'theirs'));
+        await pumpEventQueue();
 
-      expect(await manager.notifications().first, isEmpty);
-    });
+        expect(await manager.notifications().first, isEmpty);
+      },
+    );
   });
 
   group('NotificationManager on sign-out', () {
@@ -451,28 +465,30 @@ void main() {
         );
       });
 
-      final PaginatedNotifications page =
-          await manager.fetchPaginatedNotifications(page: 2);
+      final PaginatedNotifications page = await manager
+          .fetchPaginatedNotifications(page: 2);
 
       expect(page.data, hasLength(1));
       expect(page.currentPage, 2);
       expect(page.lastPage, 4);
     });
 
-    test('throws rather than answering an empty page on a failed response',
-        () async {
-      Http.fake((MagicRequest request) {
-        return MagicResponse(data: <String, dynamic>{}, statusCode: 500);
-      });
+    test(
+      'throws rather than answering an empty page on a failed response',
+      () async {
+        Http.fake((MagicRequest request) {
+          return MagicResponse(data: <String, dynamic>{}, statusCode: 500);
+        });
 
-      // An empty page is indistinguishable from an empty inbox, and on this
-      // product that difference is an on-call engineer reading "no alerts"
-      // off a screen whose backend is down.
-      await expectLater(
-        manager.fetchPaginatedNotifications(),
-        throwsA(isA<NotificationException>()),
-      );
-    });
+        // An empty page is indistinguishable from an empty inbox, and on this
+        // product that difference is an on-call engineer reading "no alerts"
+        // off a screen whose backend is down.
+        await expectLater(
+          manager.fetchPaginatedNotifications(),
+          throwsA(isA<NotificationException>()),
+        );
+      },
+    );
 
     test('throws when the transport itself fails', () async {
       Http.fake((MagicRequest request) {
@@ -690,18 +706,17 @@ void main() {
 Map<String, dynamic> _row({
   String id = 'n1',
   String title = 'Incident opened',
-}) =>
-    <String, dynamic>{
-      'id': id,
-      'type': 'App\\Notifications\\IncidentOpened',
-      'data': <String, dynamic>{
-        'title': title,
-        'body': 'API Health is down',
-        'action_url': '/incidents/$id',
-      },
-      'created_at': '2026-08-19T09:30:00.000Z',
-      'read_at': null,
-    };
+}) => <String, dynamic>{
+  'id': id,
+  'type': 'App\\Notifications\\IncidentOpened',
+  'data': <String, dynamic>{
+    'title': title,
+    'body': 'API Health is down',
+    'action_url': '/incidents/$id',
+  },
+  'created_at': '2026-08-19T09:30:00.000Z',
+  'read_at': null,
+};
 
 /// A network driver whose reads finish when the TEST says so.
 ///
@@ -730,11 +745,10 @@ class _GatedNetworkDriver extends FakeNetworkDriver {
   /// Answers the oldest read still waiting with [rows].
   void answer(List<Map<String, dynamic>> rows) {
     expect(_pending, isNotEmpty, reason: 'No read was waiting for an answer.');
-    _pending.removeAt(0).complete(
-          MagicResponse(
-            data: <String, dynamic>{'data': rows},
-            statusCode: 200,
-          ),
+    _pending
+        .removeAt(0)
+        .complete(
+          MagicResponse(data: <String, dynamic>{'data': rows}, statusCode: 200),
         );
   }
 }
@@ -825,9 +839,7 @@ class MockChannel extends NotificationChannel {
   final Object? _throws;
   int sentCount = 0;
 
-  MockChannel(this._name, {bool available = true, Object? throws})
-      : _available = available,
-        _throws = throws;
+  MockChannel(this._name, {this._available = true, this._throws});
 
   @override
   String get name => _name;

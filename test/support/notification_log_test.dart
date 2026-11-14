@@ -42,14 +42,18 @@ void main() {
       // logging provider, and the calls this seam replaces all sit inside a
       // `catch`, where a throw turns a handled failure into an unhandled one.
       expect(
-          () => NotificationLog.error('nobody is listening'), returnsNormally);
+        () => NotificationLog.error('nobody is listening'),
+        returnsNormally,
+      );
     });
 
     test('debug() writes nowhere instead of throwing', () {
       Magic.flush();
 
       expect(
-          () => NotificationLog.debug('nobody is listening'), returnsNormally);
+        () => NotificationLog.debug('nobody is listening'),
+        returnsNormally,
+      );
     });
   });
 }

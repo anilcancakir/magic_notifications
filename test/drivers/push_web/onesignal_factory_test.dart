@@ -23,10 +23,7 @@ void main() {
 
     test('initialize requires app_id', () async {
       final driver = io.createPlatformDriver();
-      await expectLater(
-        driver.initialize({}),
-        throwsA(isA<Exception>()),
-      );
+      await expectLater(driver.initialize({}), throwsA(isA<Exception>()));
     });
 
     test('initialize succeeds with valid config', () async {

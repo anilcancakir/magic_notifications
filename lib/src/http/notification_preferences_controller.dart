@@ -52,8 +52,10 @@ class NotificationPreferencesController extends MagicController
   /// this subscription, B signs in on a shared device and the preferences
   /// screen paints A's per-type channel matrix out of [matrixNotifier] until a
   /// fresh read lands, and a read that fails leaves it there.
-  late final StreamSubscription<void> _sessionCleared =
-      Notify.manager.onSessionCleared.listen((_) => _clearSession());
+  late final StreamSubscription<void> _sessionCleared = Notify
+      .manager
+      .onSessionCleared
+      .listen((_) => _clearSession());
 
   @override
   void onInit() {
