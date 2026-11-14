@@ -64,7 +64,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 
 | Mistake | Fix |
 |---------|-----|
-| Adding a mail channel, or reading `toMail`, `notifiableEmail` or the `mail` config block | The runtime reads none of them; `test --channel mail`, the `channels` mail block and `notification_config.stub` carry the leftovers. Do not extend them |
+| Adding a mail channel, or reading `toMail`, `notifiableEmail` or the `mail` config block | The runtime reads none of them; `test --channel mail` and the `channels` mail block carry the leftovers, and an older generated config may still hold a `mail` block. Do not extend them |
 | Importing `OneSignalDriver` or `OneSignalWebDriver` from the provider | Go through `createOneSignalDriver()` in `onesignal_factory.dart`; each build compiles only the arm it can run |
 | Assuming `markAsRead` rolls back on an HTTP error | Magic's `Http` returns a `MagicResponse` for an error status; the refetch runs only when the call throws |
 | Reading `{data: {count}}` or sending `per_page` | `unreadCount` reads top-level `count` and `fetchPaginatedNotifications` sends `perPage`; change both sides together, with `doc/basics/laravel-backend-setup.md` |
