@@ -253,4 +253,4 @@ importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
 - [Channels](../basics/channels.md) and [Drivers](../basics/drivers.md): sending and the push SDK layer.
 - [Laravel Backend Setup](../basics/laravel-backend-setup.md): the API this package talks to.
 - [Magic installation](https://anilcancakir.com/magic/docs/getting-started/installation): the framework this plugin extends.
-- [Realtime delivery with magic_socket](https://anilcancakir.com/magic_socket/docs/getting-started/installation): the socket layer behind `Notify.startRealtime`.
+- [Realtime delivery with magic_socket](https://anilcancakir.com/magic/docs/socket/getting-started/installation): the socket layer behind `Notify.startRealtime`.

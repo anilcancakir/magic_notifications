@@ -8,6 +8,7 @@
 - **A runnable `example/` app.** It boots the provider and shows the registered channels, what the push driver reports, one send through a channel of the app's own and one realtime attempt, with no backend or OneSignal account. (`example/`)
 
 ### Changed
+- **The package page and every documentation link name the new location under `https://anilcancakir.com/magic/notifications`.** The pub.dev page carries it from the next release. (`pubspec.yaml`, `README.md`, `doc/`, `llms.txt`)
 - **The package metadata names the new home, and the description says what the code offers.** `homepage`, `repository` and `issue_tracker` point at `anilcancakir`, the `documentation` key is gone, and the description no longer claims a mail channel, which this package never had: it lists the backend-driven inbox, OneSignal push and realtime delivery. (`pubspec.yaml`)
 - **The README and the `doc/` pages are rewritten.** They make no mail channel claim, and every command is written `dart run magic:dowel notifications:<command>`. (`README.md`, `doc/`)
 - **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)

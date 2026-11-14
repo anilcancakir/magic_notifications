@@ -81,16 +81,16 @@ The package declares no push identity: the app calls `initializePush` after sign
 
 ## Docs
 
-- [Installation](https://anilcancakir.com/magic_notifications/docs/getting-started/installation.md): add Magic Notifications to a Magic app, register its provider, and wire the platform files a push needs to reach a device.
-- [Configuration](https://anilcancakir.com/magic_notifications/docs/getting-started/configuration.md): every `notifications.*` config key the package reads, what each one defaults to, and the behaviour behind it.
-- [Channels](https://anilcancakir.com/magic_notifications/docs/basics/channels.md): how a notification reaches its channels: the `NotificationChannel` contract, the database and push channels the package registers, and how to add your own.
-- [Drivers](https://anilcancakir.com/magic_notifications/docs/basics/drivers.md): the push driver layer: the `PushDriver` contract, the OneSignal drivers for mobile and web, how the right one is chosen, and how to supply your own.
-- [Preferences](https://anilcancakir.com/magic_notifications/docs/basics/preferences.md): how a person's notification opt-ins are modelled, which backend endpoints the shipped preferences screen talks to, and the push prompt component that asks for permission.
-- [Shipping push in a release build](https://anilcancakir.com/magic_notifications/docs/basics/shipping-push.md): the differences between a development build and a release build that stop push from arriving without any error, and how to check each before you submit.
-- [CLI Reference](https://anilcancakir.com/magic_notifications/docs/basics/cli.md): every `notifications:*` command Magic Notifications adds to dowel, with its flags, defaults and what it changes in the project.
-- [Laravel Backend Setup](https://anilcancakir.com/magic_notifications/docs/basics/laravel-backend-setup.md): the backend contract Magic Notifications reads from, and a worked Laravel implementation of it: the notifications API, preference matrix, OneSignal push, device reachability and socket delivery.
-- [Notification Manager](https://anilcancakir.com/magic_notifications/docs/architecture/notification-manager.md): how `NotificationManager` orchestrates channels, the push driver, polling, realtime delivery and the in-app notification stream.
-- [Service Provider](https://anilcancakir.com/magic_notifications/docs/architecture/service-provider.md): how `NotificationServiceProvider` binds the notification manager into Magic's container and wires the push driver during boot.
+- [Installation](https://anilcancakir.com/magic/docs/notifications/getting-started/installation.md): add Magic Notifications to a Magic app, register its provider, and wire the platform files a push needs to reach a device.
+- [Configuration](https://anilcancakir.com/magic/docs/notifications/getting-started/configuration.md): every `notifications.*` config key the package reads, what each one defaults to, and the behaviour behind it.
+- [Channels](https://anilcancakir.com/magic/docs/notifications/basics/channels.md): how a notification reaches its channels: the `NotificationChannel` contract, the database and push channels the package registers, and how to add your own.
+- [Drivers](https://anilcancakir.com/magic/docs/notifications/basics/drivers.md): the push driver layer: the `PushDriver` contract, the OneSignal drivers for mobile and web, how the right one is chosen, and how to supply your own.
+- [Preferences](https://anilcancakir.com/magic/docs/notifications/basics/preferences.md): how a person's notification opt-ins are modelled, which backend endpoints the shipped preferences screen talks to, and the push prompt component that asks for permission.
+- [Shipping push in a release build](https://anilcancakir.com/magic/docs/notifications/basics/shipping-push.md): the differences between a development build and a release build that stop push from arriving without any error, and how to check each before you submit.
+- [CLI Reference](https://anilcancakir.com/magic/docs/notifications/basics/cli.md): every `notifications:*` command Magic Notifications adds to dowel, with its flags, defaults and what it changes in the project.
+- [Laravel Backend Setup](https://anilcancakir.com/magic/docs/notifications/basics/laravel-backend-setup.md): the backend contract Magic Notifications reads from, and a worked Laravel implementation of it: the notifications API, preference matrix, OneSignal push, device reachability and socket delivery.
+- [Notification Manager](https://anilcancakir.com/magic/docs/notifications/architecture/notification-manager.md): how `NotificationManager` orchestrates channels, the push driver, polling, realtime delivery and the in-app notification stream.
+- [Service Provider](https://anilcancakir.com/magic/docs/notifications/architecture/service-provider.md): how `NotificationServiceProvider` binds the notification manager into Magic's container and wires the push driver during boot.
 
 ## Links
 

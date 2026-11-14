@@ -32,7 +32,7 @@ One sentence: what the page covers.
 
 - Layout is `doc/<section>/<page>.md`, lowercase `[a-z0-9-]`: sections `getting-started`, `basics`, `architecture`. One `#`, first line, then one sentence saying what the page is (the site copies it as the page description).
 - `<a name="slug"></a>` immediately before every `##`, each listed in the ToC. Keep existing slugs: `README.md` links `#opening-a-screen-from-a-tap`, `#push-prompt`, `#identity-reconciled`, `#onesignal-push` and `#telling-your-backend-whether-the-device-can-be-paged`.
-- A `basics/` page ends with a Gotchas table (mistake, fix) of rows verified in `lib/`, then `## Related Documentation` with relative `.md` links; another plugin's page is linked as `https://anilcancakir.com/<package>/docs/<section>/<page>`.
+- A `basics/` page ends with a Gotchas table (mistake, fix) of rows verified in `lib/`, then `## Related Documentation` with relative `.md` links; another plugin's page is linked as `https://anilcancakir.com/magic/docs/<slug>/<section>/<page>`.
 - Dart samples carry their imports, sit inside a function, declare or comment each name that is the host's, and compile against `lib/`. Blocks labelled as excerpts of `lib/` in the `architecture` section are exempt from compiling; every other block compiles. Tables are left-aligned (`:-----`) with identifiers in backticks. Run `python3 tool/check-docs.py` (0 issues) before finishing.
 - Commands are `dart run magic:dowel notifications:<command>`: the package has no executable of its own. Laravel's `php artisan` stays.
 - No em or en dash, no counts, no release-status wording, no dowel or wind_kit versions. The package has no mail channel.
