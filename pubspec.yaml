@@ -1,10 +1,9 @@
 name: magic_notifications
-description: Multi-channel notification system for Magic Framework. Supports database (in-app), push (OneSignal), and mail channels.
+description: "Notifications for Magic apps: a backend-driven inbox with ready-made views, OneSignal push on mobile and web, and realtime delivery over your socket."
 version: 1.0.0
-homepage: https://magic.fluttersdk.com/notifications
-documentation: https://magic.fluttersdk.com/packages/notifications/getting-started/installation
-repository: https://github.com/fluttersdk/magic_notifications
-issue_tracker: https://github.com/fluttersdk/magic_notifications/issues
+homepage: https://anilcancakir.com/magic_notifications
+repository: https://github.com/anilcancakir/magic_notifications
+issue_tracker: https://github.com/anilcancakir/magic_notifications/issues
 
 topics:
   - notifications
