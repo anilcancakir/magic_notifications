@@ -38,7 +38,8 @@ Map<String, dynamic> get notificationConfig => {
       //
       // When it IS on, it fires only on a device the OS has never asked, never
       // on one already subscribed, and never more than once per launch. A
-      // denied device is left alone: the prompt there shows nothing at all.
+      // denied device is left alone: no OS dialog can appear there, and on
+      // mobile a request would only show the settings fallback below.
       //
       // ON WEB, THINK TWICE. Browsers require a user gesture for a permission
       // request, and a login is not one, so this can burn the ask without ever
@@ -122,9 +123,6 @@ Map<String, dynamic> get notificationConfig => {
     'database': {
       'enabled': true,
       'polling_interval': 30, // seconds
-    },
-    'mail': {
-      'enabled': false,
     },
     'soft_prompt': {
       'enabled': {{ softPromptEnabled }},

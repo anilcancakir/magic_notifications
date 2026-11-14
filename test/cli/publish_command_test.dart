@@ -111,6 +111,18 @@ dependencies:
       },
     );
 
+    test(
+      'published file writes no mail block, since there is no mail channel',
+      () async {
+        await command.handle(_ctx(command));
+
+        final configPath = '${tempDir.path}/lib/config/notifications.dart';
+        final content = File(configPath).readAsStringSync();
+
+        expect(content, isNot(contains("'mail'")));
+      },
+    );
+
     test('creates lib/config directory if it does not exist', () async {
       await command.handle(_ctx(command));
 
