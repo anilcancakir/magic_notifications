@@ -115,10 +115,14 @@ dart run magic:dowel notifications:install \
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-final providers = [
-  // ... other providers
-  (app) => NotificationServiceProvider(app),
-];
+Map<String, dynamic> get appConfig => {
+  'app': {
+    'providers': [
+      // ... other providers
+      (app) => NotificationServiceProvider(app),
+    ],
+  },
+};
 ```
 
 `NotificationServiceProvider` runs two phases during framework boot:

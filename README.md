@@ -111,6 +111,11 @@ class MonitorDownNotification extends Notification {
     'title': 'Monitor down',
     'body': 'api.example.com is not responding',
   };
+
+  @override
+  PushMessage? toPush(Notifiable notifiable) => PushMessage()
+      .heading('Monitor down')
+      .content('api.example.com is not responding');
 }
 
 Future<void> alert(Notifiable user) => Notify.send(user, MonitorDownNotification());
@@ -141,6 +146,12 @@ The package does **not** declare who the device belongs to: your app does, after
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
+// Once, from a provider's boot() after auth is registered. Nothing else calls
+// `watch()`, so device reachability is never reported until this runs.
+void armPushState() {
+  Notify.pushState.watch();
+}
+
 Future<void> onSignIn(String userId) async {
   await Notify.initializePush('user_$userId');
   await Notify.startRealtime(channel: 'App.Models.User.$userId');
@@ -166,7 +177,7 @@ Future<void> onSignOut() async {
 | `PushPrompt`, `PushPromptHost(declinedVaultKey:)`, `PushOffNotice(onOpenPreferences:)` | The shipped reminder row and the quiet shell marker; see [Push Prompt Component](https://anilcancakir.com/magic_notifications/docs/basics/preferences#push-prompt). |
 | `Notify.manager.onPushReceived`, `onPushClicked` | Foreground pushes and taps, filtered to the signed-in identity; taps from a cold start are held until a listener attaches. |
 | `Notify.manager.onPushIdentityReconciled` | The outcome of every identity pass; see [Push Identity Reconcile Outcomes](https://anilcancakir.com/magic_notifications/docs/architecture/notification-manager#identity-reconciled). |
-| `Notify.pushState` | Posts the device's own reachability to your backend and withdraws it on sign-out; see [Telling your backend whether the device can be paged](https://anilcancakir.com/magic_notifications/docs/basics/shipping-push#telling-your-backend-whether-the-device-can-be-paged). Off until `report_path` and `release_path` are both set. |
+| `Notify.pushState` | Posts the device's own reachability to your backend and withdraws it on sign-out; see [Telling your backend whether the device can be paged](https://anilcancakir.com/magic_notifications/docs/basics/shipping-push#telling-your-backend-whether-the-device-can-be-paged). Reports nothing until your app calls `Notify.pushState.watch()` (the provider never does) and both `report_path` and `release_path` are set. |
 | `Notify.describePushUserUsing(resolver)` | Describes the signed-in person to OneSignal; nothing is sent until `share_user_attributes` is `true`. |
 | `Notify.extend(name, factory)` | Registers a `PushDriver` of your own, selected by `notifications.push.driver`. |
 

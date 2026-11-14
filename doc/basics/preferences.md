@@ -59,15 +59,19 @@ class NotificationPreference {
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-final pref = NotificationPreference.fromMap({
-  'push_enabled': true,
-  'email_enabled': false,
-  'in_app_enabled': true,
-  'type_preferences': {
-    'monitor_down': {'push': true, 'email': true, 'in_app': true},
-    'monitor_up': {'push': false, 'email': false, 'in_app': true},
-  },
-});
+NotificationPreference deserialise() {
+  final pref = NotificationPreference.fromMap({
+    'push_enabled': true,
+    'email_enabled': false,
+    'in_app_enabled': true,
+    'type_preferences': {
+      'monitor_down': {'push': true, 'email': true, 'in_app': true},
+      'monitor_up': {'push': false, 'email': false, 'in_app': true},
+    },
+  });
+
+  return pref;
+}
 ```
 
 A missing toggle reads as `true`.
@@ -124,11 +128,15 @@ class ChannelPreference {
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-final monitorDown = ChannelPreference.fromMap({
-  'push': true,
-  'email': true,
-  'in_app': false,
-});
+ChannelPreference monitorDownPreference() {
+  final monitorDown = ChannelPreference.fromMap({
+    'push': true,
+    'email': true,
+    'in_app': false,
+  });
+
+  return monitorDown;
+}
 ```
 
 <a name="global-vs-type"></a>

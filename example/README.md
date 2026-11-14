@@ -4,7 +4,7 @@ A Magic app that boots `NotificationServiceProvider` and shows what notification
 
 ```bash
 cd example
-flutter create --platforms=web .
+flutter create --empty --platforms=web .
 flutter run -d chrome
 ```
 

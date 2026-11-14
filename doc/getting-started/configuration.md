@@ -252,9 +252,13 @@ The installer writes the App ID as a literal. To keep it out of source control, 
 import 'package:magic/magic.dart';
 
 // In `notificationConfig`, under `notifications.push`.
-final Map<String, dynamic> push = {
-  'app_id': env('ONESIGNAL_APP_ID'),
-};
+Map<String, dynamic> pushConfig() {
+  final Map<String, dynamic> push = {
+    'app_id': env('ONESIGNAL_APP_ID'),
+  };
+
+  return push;
+}
 ```
 
 ```
@@ -273,9 +277,13 @@ After Magic boots, any value is available through `Config.get`:
 ```dart
 import 'package:magic/magic.dart';
 
-final appId = Config.get<String>('notifications.push.app_id');
-final interval = Config.get<int>('notifications.database.polling_interval');
-final softPrompt = Config.get<bool>('notifications.soft_prompt.enabled');
+({String? appId, int? interval, bool? softPrompt}) readNotificationConfig() {
+  final appId = Config.get<String>('notifications.push.app_id');
+  final interval = Config.get<int>('notifications.database.polling_interval');
+  final softPrompt = Config.get<bool>('notifications.soft_prompt.enabled');
+
+  return (appId: appId, interval: interval, softPrompt: softPrompt);
+}
 ```
 
 `Config.get` returns `null` when the key is absent or has another type; use `??` for a default:
@@ -283,7 +291,12 @@ final softPrompt = Config.get<bool>('notifications.soft_prompt.enabled');
 ```dart
 import 'package:magic/magic.dart';
 
-final selfTest = Config.get<bool>('notifications.push.self_test_enabled') ?? false;
+bool selfTestEnabled() {
+  final selfTest =
+      Config.get<bool>('notifications.push.self_test_enabled') ?? false;
+
+  return selfTest;
+}
 ```
 
 <a name="related-documentation"></a>

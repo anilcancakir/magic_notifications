@@ -143,14 +143,18 @@ Future<void> boot() async {
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
-// By key
-final manager = Magic.make<NotificationManager>('notifications');
+bool resolvesOneInstance() {
+  // By key
+  final manager = Magic.make<NotificationManager>('notifications');
 
-// Through the facade
-final same = Notify.manager;
+  // Through the facade
+  final same = Notify.manager;
 
-// The factory constructor
-final alsoSame = NotificationManager();
+  // The factory constructor
+  final alsoSame = NotificationManager();
+
+  return identical(manager, same) && identical(same, alsoSame);
+}
 ```
 
 All three return the same instance, because `NotificationManager()` is itself a Dart-level singleton regardless of the container binding.
@@ -163,10 +167,14 @@ Add `NotificationServiceProvider` to the provider list in `lib/config/app.dart`:
 ```dart
 import 'package:magic_notifications/magic_notifications.dart';
 
-final providers = [
-  // ... other providers
-  (app) => NotificationServiceProvider(app),
-];
+Map<String, dynamic> get appConfig => {
+  'app': {
+    'providers': [
+      // ... other providers
+      (app) => NotificationServiceProvider(app),
+    ],
+  },
+};
 ```
 
 > [!TIP]

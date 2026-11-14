@@ -48,7 +48,7 @@ final PushDriver? driver = Notify.manager.pushDriverOrNull; // null when push is
 | `onNotificationClicked` | Broadcast stream; the person tapped a notification |
 | `onPermissionChanged` | Broadcast stream; the OS permission state moved |
 | `onIdentityChanged` | Broadcast stream of `PushIdentityChange`; the SDK reports that the user or subscription changed underneath the app. The only trustworthy confirmation that a `login` or `logout` landed. |
-| `subjectGuard` / `mayDisplay(data)` | Set by the manager. A push whose `subject` names somebody other than the signed-in identity is not displayed or delivered. |
+| `subjectGuard` / `mayDisplay(data)` | Set by the manager. A push that arrives while the app is in the foreground and whose `subject` names somebody other than the signed-in identity is neither drawn nor republished: the drivers apply the guard in their foreground-display listener. In the background or with the app closed that listener does not run and the OS draws the notification with no client code involved, so the guard cannot stop it; only the server can, by no longer addressing a subscription that belongs to a previous person. |
 | `reachability()` | Whether push can reach this device right now (below). Implemented once in the base class. |
 
 ### PushNotificationEvent
@@ -213,10 +213,10 @@ import 'onesignal_stub.dart'
 ```
 
 - **Web** (`dart.library.js_interop`): `onesignal_web.dart` returns `OneSignalWebDriver()`. The guard is `js_interop` rather than the legacy HTML library because the latter is absent from a wasm compile.
-- **iOS and Android** (`dart.library.io`): `onesignal_io.dart` returns `OneSignalDriver()`.
-- **Anywhere else**: the stub throws `UnsupportedPlatformException`.
+- **Any `dart:io` build** (`dart.library.io`): `onesignal_io.dart` returns `OneSignalDriver()`. Desktop builds take this arm too; there `OneSignalDriver.isSupported` is `false`, so `PushChannel.isAvailable` is `false` and `initialize` throws `PLATFORM_NOT_SUPPORTED`.
+- **Neither guard matches**: the stub throws `UnsupportedPlatformException`. No Flutter build target reaches it; it is the default the conditional import falls back to.
 
-Each build therefore compiles only the driver it can run.
+Each build therefore compiles only the driver arm it selects.
 
 <a name="custom"></a>
 ## Creating a Custom Driver
@@ -323,9 +323,11 @@ class FcmServiceProvider extends ServiceProvider {
 
 ```dart
 // In `notificationConfig`, under the `notifications` key.
-const Map<String, dynamic> notifications = {
-  'push': {
-    'driver': 'fcm',
+Map<String, dynamic> get notificationConfig => {
+  'notifications': {
+    'push': {
+      'driver': 'fcm',
+    },
   },
 };
 ```

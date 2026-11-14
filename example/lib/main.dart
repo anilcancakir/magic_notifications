@@ -139,7 +139,7 @@ class _StatusPageState extends State<StatusPage> {
     final NotificationManager manager = Notify.manager;
 
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,20 +166,51 @@ class _StatusPageState extends State<StatusPage> {
   }
 }
 
-class _Button extends StatelessWidget {
+/// A button that works from the keyboard: Tab focuses it, Enter or Space
+/// activates it, and a ring shows where the focus is.
+class _Button extends StatefulWidget {
   const _Button({required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
 
   @override
+  State<_Button> createState() => _ButtonState();
+}
+
+class _ButtonState extends State<_Button> {
+  bool _focused = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: _accent,
-        child: Text(label, style: const TextStyle(color: Color(0xFFFFFFFF))),
+    return FocusableActionDetector(
+      mouseCursor: SystemMouseCursors.click,
+      onShowFocusHighlight: (bool value) => setState(() => _focused = value),
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (ActivateIntent intent) {
+            widget.onTap();
+
+            return null;
+          },
+        ),
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: _accent,
+            border: Border.all(
+              color: _focused ? _ink : const Color(0x00000000),
+              width: 2,
+            ),
+          ),
+          child: Text(
+            widget.label,
+            style: const TextStyle(color: Color(0xFFFFFFFF)),
+          ),
+        ),
       ),
     );
   }

@@ -116,7 +116,7 @@ Future<void> signOut() async {
 
 `watch()` reports after every identity reconcile for the signed-in person (`<external_id_prefix><Auth.id()>`, `user_` by default), whenever the driver's permission or subscription moves, and once as `unavailable` for a build with no push driver at all. A memo stops repeats and is forgotten on every `AuthLogout`. Skip the release and the server keeps vouching for a handset the person has left, under their name, until its own freshness horizon expires.
 
-`isConfigured` is `true` only when both `notifications.push_state.report_path` and `release_path` are set. With only one of them, `watch()` logs an error and stays off.
+`isConfigured` is `true` only when both `notifications.push_state.report_path` and `release_path` are set. With only one of them, `watch()` logs an error and stays off. Nothing starts `watch()` for you, the provider included: an app that sets both paths and never calls it reports nothing.
 
 <a name="before-you-submit"></a>
 ## Before you submit

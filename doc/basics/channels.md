@@ -199,6 +199,13 @@ import 'package:magic_notifications/magic_notifications.dart';
 class DeployFinishedNotification extends Notification {
   @override
   List<String> via(Notifiable notifiable) => ['database', 'slack'];
+
+  // `SlackChannel.send` reads this: the base `toDatabase` returns `null`.
+  @override
+  Map<String, dynamic>? toDatabase(Notifiable notifiable) => {
+    'title': 'Deploy finished',
+    'body': 'The release is live.',
+  };
 }
 ```
 

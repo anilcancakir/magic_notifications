@@ -51,7 +51,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. `plugin:install` regist
 1. The package declares no push identity. After sign-in call `Notify.initializePush('<prefix><id>')`; on sign-out `Notify.logoutPush()`. The id is forwarded unchanged and the backend addresses the device by the same string, so one prefix (`user_`) must hold on both sides; `notifications.push_state.external_id_prefix` has to match it. `magic_starter` already does this for its apps.
 2. `requestPushPermission()` shows nothing once the OS has answered. Ask `reachability()` (`unavailable`, `blocked`, `off`, `on`) or `Notify.manager.pushPromptAdvice(declinedAt:)` first; `blocked` needs the OS or browser setting, and the app owns the decline timestamp.
 3. A tapped push opens nothing. `onPushClicked` hands over `event.data`; routing is a `magic_deeplink` handler your app registers, or your own listener. Put the destination in OneSignal `setData` under `url`, `deep_link`, `link` or `uri`: `setUrl` is the Launch URL and never reaches the payload.
-4. `Notify.pushState.watch()` reports device reachability to your backend and stays off until both `report_path` and `release_path` are set; one alone logs an error. Call `release()` before `Auth.logout()`, because the release needs the token.
+4. `Notify.pushState.watch()` reports device reachability to your backend. Nothing calls it for you, the provider included, so arm it once from a provider's `boot()`; it stays off until both `report_path` and `release_path` are set, and one alone logs an error. Call `release()` before `Auth.logout()`, because the release needs the token.
 5. `describePushUserUsing` sends nothing until `share_user_attributes` is `true`. A tag written from a client is user-tamperable: never trust it for a plan, role or entitlement.
 6. Web push on iOS Safari reaches nobody until the site is added to the Home Screen. The page loads the OneSignal script and must not call `OneSignal.init()`; the driver initialises from config.
 7. iOS needs `aps-environment` `development` for Debug and Profile and `production` for Release; the installer writes both entitlements files and `notifications:doctor` reads them. The APNs key upload, the App Group and the Notification Service Extension stay manual.
@@ -76,6 +76,11 @@ Declare the push identity and arm delivery on sign-in, and undo both on sign-out
 ```dart
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
+
+// Once, from a provider's boot() after auth is registered; nothing else calls it.
+void armPushState() {
+  Notify.pushState.watch();
+}
 
 Future<void> onSignIn(String userId) async {
   await Notify.initializePush('user_$userId');

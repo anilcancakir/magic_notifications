@@ -17,6 +17,11 @@ dart run magic:dowel notifications:doctor
 import 'package:magic/magic.dart';
 import 'package:magic_notifications/magic_notifications.dart';
 
+// Once, from a provider's boot() after auth is registered; nothing else calls it.
+void armPushState() {
+  Notify.pushState.watch();
+}
+
 Future<void> onSignIn(String userId) async {
   // NotificationServiceProvider is registered in lib/config/app.dart by plugin:install.
   await Notify.initializePush('user_$userId');
@@ -65,7 +70,7 @@ The package declares no push identity: the app calls `initializePush` after sign
 - The package declares no push identity. Call `Notify.initializePush('<prefix><id>')` after sign-in and `Notify.logoutPush()` on sign-out; keep one prefix on the app and the backend. A blank `notifications.push.app_id` leaves the driver uninitialised and reachability `unavailable`.
 - `requestPushPermission()` shows nothing on a device that already answered. Read `reachability()` or `pushPromptAdvice()` first; `blocked` needs the OS or browser setting.
 - A tapped push opens nothing by itself. Register a `magic_deeplink` handler or route from `Notify.manager.onPushClicked`. The destination must be in OneSignal `setData` (`url`, `deep_link`, `link` or `uri`); `setUrl` never reaches the payload.
-- Release push state before the token goes: `Notify.pushState.release()` before `Auth.logout()`. `pushState` stays off until both `report_path` and `release_path` are set; one alone logs an error.
+- Release push state before the token goes: `Notify.pushState.release()` before `Auth.logout()`. `pushState` reports nothing until the app calls `Notify.pushState.watch()` (the provider never does) and both `report_path` and `release_path` are set; one alone logs an error.
 - `startRealtime` returns `false` and changes nothing when `broadcasting.default` is unset, empty or `'null'`, or the channel is empty. `startPolling` is a no-op while realtime is live and `boot()` starts none: start both from an authenticated layout.
 - `polling_interval` is clamped to 5 to 600 seconds and read when the poller is built; a non-integer reads as 30.
 - `fetchNotifications` logs a failure and keeps the held list; `fetchPaginatedNotifications` throws `NotificationException` (`NOTIFICATIONS_FETCH_FAILED`, `NOTIFICATIONS_DECODE_FAILED`); `unreadCount` returns `0` on a failure. A row whose `data` lacks a string `title` or `body` fails to decode.
