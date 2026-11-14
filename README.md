@@ -27,10 +27,6 @@
 
 ---
 
-> **Alpha** — `magic_notifications` is under active development. APIs may change between minor versions until `1.0.0`.
-
----
-
 ## Why Magic Notifications?
 
 Managing notifications in Flutter means juggling multiple channels — database polling, platform-specific push setup for iOS/Android/Web, email delivery, and user preference logic scattered across your codebase. Every project reinvents the same boilerplate.
@@ -69,7 +65,7 @@ Managing notifications in Flutter means juggling multiple channels — database 
 
 ```yaml
 dependencies:
-  magic_notifications: ^0.4.0
+  magic_notifications: ^1.0.0
 ```
 
 ### 2. Install configuration

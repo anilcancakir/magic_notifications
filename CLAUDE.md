@@ -2,7 +2,7 @@
 
 Flutter push and database notification plugin for the Magic Framework. In-app polling + OneSignal (mobile/web) via `onesignal_flutter` package.
 
-**Version:** 0.4.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
+**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
 
 ## Commands
 

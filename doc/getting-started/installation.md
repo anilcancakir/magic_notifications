@@ -27,7 +27,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  magic_notifications: ^0.4.0
+  magic_notifications: ^1.0.0
 ```
 
 Then fetch dependencies:

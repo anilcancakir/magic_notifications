@@ -60,7 +60,7 @@ name: test_app
 dependencies:
   flutter:
     sdk: flutter
-  magic_notifications: ^0.0.1
+  magic_notifications: ^1.0.0
 ''');
 
   File('${tempDir.path}/lib/config/app.dart').writeAsStringSync('''
