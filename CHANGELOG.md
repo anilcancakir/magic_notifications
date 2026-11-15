@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-15
+
 ### Changed
 - **The package page is `https://anilcancakir.com/magic/notifications` and every documentation link sits under `https://anilcancakir.com/magic/docs/notifications`.** (`pubspec.yaml`, `README.md`, `doc/`, `llms.txt`)
 - **The generated config no longer carries a `mail` block.** `notifications:install` and `notifications:publish` wrote `'mail': {'enabled': false}`, a setting for a channel this package does not have and that no runtime code reads. An existing file can drop the block; `notifications:channels` still prints `mail` as `disabled` without it. (`assets/stubs/install/notification_config.stub`)

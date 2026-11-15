@@ -4,7 +4,7 @@
 
 Notifications for the Magic Framework: the `Notify` facade over a backend-driven inbox (`DatabaseChannel`, `NotificationPoller`, `NotificationManager`), a self-addressed `PushChannel`, OneSignal push (`OneSignalDriver` mobile, `OneSignalWebDriver` web), realtime delivery over `magic_socket`, ready-made list, preferences and bell widgets, and the `notifications:*` dowel commands. There is no mail channel.
 
-**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0, `magic_socket` ^1.0.0, `dowel` ^1.0.0
+**Version:** 1.0.1 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0, `magic_socket` ^1.0.0, `dowel` ^1.0.0
 
 ## Commands
 
