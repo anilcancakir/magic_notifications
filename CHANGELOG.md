@@ -2,16 +2,8 @@
 
 ## [Unreleased]
 
-### Added
-- **`llms.txt`, an index of the package for an LLM agent.** It links each `doc/` page with a one-line description. (`llms.txt`)
-- **The `magic-notifications` agent skill.** `npx skills add anilcancakir/magic_notifications` installs it into an agent's skills directory. (`skills/magic-notifications/`)
-- **A runnable `example/` app.** It boots the provider and shows the registered channels, what the push driver reports, one send through a channel of the app's own and one realtime attempt, with no backend or OneSignal account. (`example/`)
-
 ### Changed
-- **The package page is `https://anilcancakir.com/magic/notifications` and every documentation link sits under `https://anilcancakir.com/magic/docs/notifications`.** The pub.dev page carries it from the next release. (`pubspec.yaml`, `README.md`, `doc/`, `llms.txt`)
-- **The package metadata names the new home, and the description says what the code offers.** `homepage`, `repository` and `issue_tracker` point at `anilcancakir`, the `documentation` key is gone, and the description no longer claims a mail channel, which this package never had: it lists the backend-driven inbox, OneSignal push and realtime delivery. (`pubspec.yaml`)
-- **The README and the `doc/` pages are rewritten.** They make no mail channel claim, and every command is written `dart run magic:dowel notifications:<command>`. (`README.md`, `doc/`)
-- **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)
+- **The package page is `https://anilcancakir.com/magic/notifications` and every documentation link sits under `https://anilcancakir.com/magic/docs/notifications`.** (`pubspec.yaml`, `README.md`, `doc/`, `llms.txt`)
 - **The generated config no longer carries a `mail` block.** `notifications:install` and `notifications:publish` wrote `'mail': {'enabled': false}`, a setting for a channel this package does not have and that no runtime code reads. An existing file can drop the block; `notifications:channels` still prints `mail` as `disabled` without it. (`assets/stubs/install/notification_config.stub`)
 
 ### Fixed
@@ -23,12 +15,20 @@
 
 ## [1.0.0] - 2026-11-14
 
+### Added
+- **`llms.txt`, an index of the package for an LLM agent.** It links each `doc/` page with a one-line description. (`llms.txt`)
+- **The `magic-notifications` agent skill.** `npx skills add anilcancakir/magic_notifications` installs it into an agent's skills directory. (`skills/magic-notifications/`)
+- **A runnable `example/` app.** It boots the provider and shows the registered channels, what the push driver reports, one send through a channel of the app's own and one realtime attempt, with no backend or OneSignal account. (`example/`)
+
 ### Changed
 - **First stable release:** version 1.0.0 replaces the planned 0.4.0 and requires `magic ^1.0.0` and `dowel ^1.0.0`; no API change beyond what is listed below.
 - **Realtime notifications now come from `magic_socket`, and the package requires `magic ^1.0.0`.** Core 1.0.0 no longer ships `Echo`, `BroadcastChannel` or `BroadcastEvent`; `NotificationManager` imports them from `package:magic_socket/magic_socket.dart`, so `magic_socket` is a new dependency. Core's installer no longer registers `BroadcastServiceProvider`, so an app that wants realtime runs `plugin:install magic_socket`; without it the notification manager logs the missing connection and falls back to polling. (`pubspec.yaml`, `lib/src/notification_manager.dart`)
 - **BREAKING: the CLI moved from `fluttersdk_artisan` to `dowel`.** `MagicNotificationsArtisanProvider` is now `MagicNotificationsDowelProvider` (file `notifications_dowel_provider.dart`), the commands run through `dart run magic:dowel notifications:<command>`, and the two MCP tools route through `dowel:notifications:*`. An app that already installed the plugin re-runs `dart run magic:dowel plugin:install magic_notifications` to register the provider under `.dowel/`. There is no alias for the old class name. (`pubspec.yaml`, `lib/cli.dart`, `lib/src/cli/`, `install.yaml`)
 - **BREAKING: Wind moved from `fluttersdk_wind` to `wind_kit`, and the Material types to `material_ui`.** `wind_kit ^1.12.0` replaces `fluttersdk_wind`, and `Icons` and `CircularProgressIndicator` now come from `package:material_ui/material_ui.dart` instead of the deprecated `package:flutter/material.dart`. The SDK floor rises to Dart 3.13 and Flutter 3.47, which wind_kit 1.12.0 and material_ui 1.11.0 require. (`pubspec.yaml`, `lib/src/ui/`)
 - **Direct dependencies raised to their latest releases.** `dowel ^1.0.0`, `onesignal_flutter ^5.8.0`, `meta ^1.19.0`, and dev `test ^1.32.0` and `fake_async ^1.3.3`; the `app_settings` range is unchanged. (`pubspec.yaml`)
+- **The package metadata names the new home, and the description says what the code offers.** `repository` and `issue_tracker` point at `anilcancakir`, the `documentation` key is gone, and the description no longer claims a mail channel, which this package never had: it lists the backend-driven inbox, OneSignal push and realtime delivery. (`pubspec.yaml`)
+- **The README and the `doc/` pages are rewritten.** They make no mail channel claim, and every command is written `dart run magic:dowel notifications:<command>`. (`README.md`, `doc/`)
+- **The install banner names a command that exists.** Its fourth next step printed `notifications:channels --list`, and the command takes no flags, so it now prints `notifications:channels`. (`install.yaml`)
 
 ## [0.3.12] - 2026-11-01
 
