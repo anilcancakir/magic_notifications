@@ -27,7 +27,7 @@ import 'push_subscription.dart';
 /// ```dart
 /// final snapshot = await Notify.manager.pushDeliverySnapshot();
 ///
-/// await Http.post('/api/v1/devices/push-state', data: snapshot.toMap());
+/// await Http.post('/devices/push-state', data: snapshot.toMap());
 /// ```
 @immutable
 class PushDeliverySnapshot {
