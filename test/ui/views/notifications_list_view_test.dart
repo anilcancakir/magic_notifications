@@ -114,11 +114,12 @@ void main() {
     required String title,
     required String body,
     bool isRead = false,
+    String? actionUrl,
   }) {
     return <String, dynamic>{
       'id': id,
       'type': 'monitor_down',
-      'data': {'title': title, 'body': body},
+      'data': {'title': title, 'body': body, 'action_url': ?actionUrl},
       'read_at': isRead ? DateTime.now().toIso8601String() : null,
       'created_at': DateTime.now().toIso8601String(),
     };
@@ -356,6 +357,102 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(fetches, greaterThan(afterMount));
+  });
+
+  group('tap-through', () {
+    /// Mounts the view over one notification carrying [actionUrl], taps its row
+    /// and answers what the tap handed to `onNavigate` and how many index
+    /// requests the screen made after the mount.
+    Future<({List<String> navigated, int refetches})> tapRow(
+      WidgetTester tester, {
+      String? actionUrl,
+    }) async {
+      int fetches = 0;
+
+      Http.fake((request) {
+        fetches++;
+
+        return MagicResponse(
+          data: <String, dynamic>{
+            'data': <Map<String, dynamic>>[
+              makeNotificationMap(
+                id: '1',
+                title: 'Monitor Down',
+                body: 'Body',
+                actionUrl: actionUrl,
+              ),
+            ],
+            'meta': <String, dynamic>{
+              'current_page': 1,
+              'last_page': 1,
+              'per_page': 15,
+              'total': 1,
+            },
+          },
+          statusCode: 200,
+        );
+      });
+
+      final List<String> navigated = <String>[];
+
+      await tester.pumpWidget(
+        wrap(
+          NotificationsListView(
+            onMarkAsRead: (String id) async {},
+            onNavigate: navigated.add,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final int afterMount = fetches;
+      expect(
+        afterMount,
+        greaterThan(0),
+        reason: 'the mount fetch must have run',
+      );
+
+      await tester.tap(find.text('Monitor Down'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      return (navigated: navigated, refetches: fetches - afterMount);
+    }
+
+    testWidgets('navigates to an in-app path', (tester) async {
+      final result = await tapRow(tester, actionUrl: '/x');
+
+      expect(result.navigated, <String>['/x']);
+      expect(result.refetches, 0);
+    });
+
+    testWidgets('does not navigate with a URL, and reloads instead', (
+      tester,
+    ) async {
+      final result = await tapRow(tester, actionUrl: 'https://evil.example/x');
+
+      expect(result.navigated, isEmpty);
+      expect(result.refetches, greaterThan(0));
+    });
+
+    testWidgets('does not navigate with a protocol-relative host', (
+      tester,
+    ) async {
+      final result = await tapRow(tester, actionUrl: '//evil.example/x');
+
+      expect(result.navigated, isEmpty);
+      expect(result.refetches, greaterThan(0));
+    });
+
+    testWidgets('reloads when the notification has no action URL', (
+      tester,
+    ) async {
+      final result = await tapRow(tester);
+
+      expect(result.navigated, isEmpty);
+      expect(result.refetches, greaterThan(0));
+    });
   });
 
   testWidgets('the delete control has an accessible name', (tester) async {

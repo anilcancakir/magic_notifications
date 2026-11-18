@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- **`DatabaseNotification.inAppActionPath`, the `action_url` a router can take.** It returns `actionUrl` only when that is a path inside the app (one leading `/`, no backslash, no ASCII control character, and still one leading `/` once dot segments are resolved, so `/.//host` is refused) and `null` for a URL, scheme, host, relative path or empty value. `actionUrl` still returns the raw value. (`lib/src/models/database_notification.dart`, `doc/basics/channels.md`)
+
+### Fixed
+- **`NotificationsListView` no longer navigates with a URL, scheme, host or backslash value.** A tap used to pass any non-null `action_url` to `MagicRoute.to` or `onNavigate`, so `https://evil.example/x`, `//evil.example/x` or `javascript:x` opened an in-app route with the foreign value in the router location. The view now navigates with `inAppActionPath` and reloads the page, as it does for a missing URL, when there is none. An absolute URL to the app's own origin used to open its path and now reloads the list too, so a backend that builds `action_url` with Laravel's `url()` or `route()` has to send a path (`route('name', $params, false)`), and a host that used `onNavigate` to open external links no longer receives them. The `NotificationDropdown` samples pass `inAppActionPath` to `MagicRoute.to` in the same way. (`lib/src/ui/views/notifications_list_view.dart`, `lib/src/ui/components/notification_dropdown/notification_dropdown.dart`, `doc/basics/notification-dropdown.md`)
+
 ## [1.0.1] - 2026-11-15
 
 ### Changed

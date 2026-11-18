@@ -24,8 +24,8 @@ Widget notificationBell() {
     onMarkAsRead: (String id) => Notify.markAsRead(id),
     onMarkAllAsRead: () => Notify.markAllAsRead(),
     onNotificationTap: (DatabaseNotification notification) {
-      final String? url = notification.actionUrl;
-      if (url != null) MagicRoute.to(url);
+      final String? path = notification.inAppActionPath;
+      if (path != null) MagicRoute.to(path);
     },
     // `/notifications` is the host's own route to the inbox screen.
     onViewAll: () => MagicRoute.to('/notifications'),
@@ -124,6 +124,7 @@ void registerTypeIcons() {
 | Overriding `panelClassName` with a colour only | The override replaces the default, width and `dark:` pair included. Restate `w-80` and the dark tone. |
 | Expecting a tap on a read row to skip `onMarkAsRead` | It runs on every tap. `Notify.markAsRead` on a read row posts the request again; guard it in the callback if that matters. |
 | No mark-all link or footer | Both appear only when their callback is set, and the mark-all link only while something is unread. |
+| Passing `notification.actionUrl` to `MagicRoute.to` | The backend owns the value, and it can be a URL, a `//host` or a `javascript:` string; the router takes paths and opens a route for whatever it is given. Use `inAppActionPath`, which is `null` unless the value is a path inside the app. |
 | Raw keys such as `notifications.view_all` in the panel | Add every key in [Translation Keys](./preferences.md#translation-keys) to every locale. |
 
 <a name="related-documentation"></a>

@@ -200,6 +200,8 @@ class MonitorDownNotification extends Notification
 
 The client reads `data.title` and `data.body` as required strings and `data.action_url` as optional, so `toArray()` has to carry the first two on every notification. A row without them cannot be decoded, and the fetch that returns it fails.
 
+Send `action_url` as a path inside the app, as above. A tap navigates only with a path that starts with one `/`: an absolute URL, even one to the app's own origin (what Laravel's `url()` and `route()` return by default), reloads the list instead. Build the path with `route('name', $params, false)`.
+
 <a name="api-controllers"></a>
 ## API Controllers
 

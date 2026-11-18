@@ -54,6 +54,63 @@ void main() {
       expect(notification.readAt, isNull);
     });
 
+    group('inAppActionPath', () {
+      DatabaseNotification withActionUrl(String? actionUrl) {
+        return DatabaseNotification(
+          id: '1',
+          type: 'test',
+          title: 'Test',
+          body: 'Body',
+          data: {},
+          actionUrl: actionUrl,
+          createdAt: DateTime(2026, 2, 3),
+        );
+      }
+
+      const accepted = <String>['/', '/x', '/x/y?a=1#f', '/monitors/1'];
+
+      for (final path in accepted) {
+        test('returns $path as it is', () {
+          expect(withActionUrl(path).inAppActionPath, path);
+        });
+      }
+
+      const rejected = <String, String?>{
+        'null': null,
+        'an empty string': '',
+        'an https URL': 'https://evil.example/x',
+        'a protocol-relative URL': '//evil.example/x',
+        'a javascript: URL': 'javascript:x',
+        'an upper-case scheme URL': 'HTTP://evil.example/admin',
+        'a mailto: URL': 'mailto:a@b.c',
+        'a relative path': 'x/y',
+        'a leading backslash host': r'/\evil.example',
+        'a backslash inside the path': r'/x\y',
+        'a tab': '/\t/evil.example',
+        'a newline': '/x\ny',
+        'a carriage return': '/x\ry',
+        'a NUL': '/x\u0000y',
+        'a DEL': '/x\u007fy',
+        'a dot segment that resolves to a host': '/.//evil.example/x',
+        'two dot segments that resolve to a host': '/..//evil.example/x',
+        'a path that climbs out to a host': '/x/../..//evil.example',
+        'an absolute URL to the same origin': 'https://app.example.com/x',
+      };
+
+      rejected.forEach((label, value) {
+        test('returns null for $label', () {
+          expect(withActionUrl(value).inAppActionPath, isNull);
+        });
+      });
+
+      test('leaves actionUrl as the raw value', () {
+        expect(
+          withActionUrl('https://evil.example/x').actionUrl,
+          'https://evil.example/x',
+        );
+      });
+    });
+
     test('copyWith() creates modified copy', () {
       final original = DatabaseNotification(
         id: '1',
