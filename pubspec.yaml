@@ -1,6 +1,6 @@
 name: magic_notifications
 description: "Notifications for Magic apps: a backend-driven inbox with ready-made views, OneSignal push on mobile and web, and realtime delivery over your socket."
-version: 1.0.1
+version: 1.1.0
 homepage: https://anilcancakir.com/magic/notifications
 repository: https://github.com/anilcancakir/magic_notifications
 issue_tracker: https://github.com/anilcancakir/magic_notifications/issues
