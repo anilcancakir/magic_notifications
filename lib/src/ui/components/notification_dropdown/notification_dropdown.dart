@@ -18,7 +18,10 @@ import 'notification_dropdown.recipe.dart';
 ///   notificationStream: Notify.notifications(),
 ///   onMarkAsRead: (id) => Notify.markAsRead(id),
 ///   onMarkAllAsRead: () => Notify.markAllAsRead(),
-///   onNotificationTap: (n) => MagicRoute.to(n.actionUrl ?? '/'),
+///   onNotificationTap: (n) {
+///     final path = n.inAppActionPath;
+///     if (path != null) MagicRoute.to(path);
+///   },
 ///   onViewAll: () => MagicRoute.to('/notifications'),
 /// )
 /// ```

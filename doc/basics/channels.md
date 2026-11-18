@@ -100,7 +100,8 @@ The database channel is asymmetric:
 | `title` | `String` | Read from `data['title']` |
 | `body` | `String` | Read from `data['body']` |
 | `data` | `Map<String, dynamic>` | The full `data` payload |
-| `actionUrl` | `String?` | Read from `data['action_url']` |
+| `actionUrl` | `String?` | Read from `data['action_url']`, as the backend sent it |
+| `inAppActionPath` | `String?` | `actionUrl` when it is a path inside the app (one leading `/`, no backslash, no raw ASCII control character, and a path that still does not start with `//` once dot segments are resolved, so `/.//host` is refused), otherwise `null`. Navigate with this, not with `actionUrl` |
 | `createdAt` | `DateTime` | Creation timestamp |
 | `readAt` | `DateTime?` | `null` while unread |
 | `isRead` | `bool` | `readAt != null` |

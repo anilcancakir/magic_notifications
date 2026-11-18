@@ -40,7 +40,11 @@ class NotificationsListView
   /// so what the server still holds is unknown and the list reloads.
   final Future<bool> Function(String id)? onDelete;
 
-  /// Navigates to a notification's action URL, or `null` for [MagicRoute].
+  /// Called with a tapped notification's [DatabaseNotification.inAppActionPath];
+  /// `null` navigates with [MagicRoute] instead.
+  ///
+  /// A notification whose `action_url` is not an in-app path never reaches it:
+  /// the tap reloads the list, as it does for a notification with no URL.
   final void Function(String path)? onNavigate;
 
   /// Rows per page requested from the backend.
@@ -373,14 +377,16 @@ class _NotificationsListViewState
           await Notify.markAsRead(notification.id);
         }
 
-        // 2. Navigate to the action URL, or reload the current page.
-        final actionUrl = notification.actionUrl;
-        if (actionUrl != null) {
+        // 2. Navigate to the in-app action path, or reload the current page.
+        // A URL, scheme, host or backslash value is not a path the router can
+        // take, so it reloads like a notification with no action.
+        final actionPath = notification.inAppActionPath;
+        if (actionPath != null) {
           final navigate = widget.onNavigate;
           if (navigate != null) {
-            navigate(actionUrl);
+            navigate(actionPath);
           } else {
-            MagicRoute.to(actionUrl);
+            MagicRoute.to(actionPath);
           }
         } else {
           controller.refresh();

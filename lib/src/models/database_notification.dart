@@ -41,6 +41,42 @@ class DatabaseNotification {
   /// Whether this notification has been read
   bool get isRead => readAt != null;
 
+  /// [actionUrl] when it is a path inside this app, otherwise `null`.
+  ///
+  /// The backend owns `action_url`, and a router takes paths, not URLs, so a
+  /// value is returned only when it starts with exactly one `/` and holds no
+  /// backslash and no ASCII control character (below 0x20, or 0x7f), and its
+  /// path still starts with one `/` once dot segments are resolved. A scheme
+  /// (`https:`, `javascript:`), a host (`//host`, or `/.//host`, whose resolved
+  /// path `//host` reads as a host if a parser takes it on its own) and a
+  /// relative `x/y` are all answered with `null`,
+  /// and so is an absolute URL to the app's own origin: the backend sends a
+  /// path. Backslashes and control characters are refused because a URL parser
+  /// reads `/\host` as `//host` and drops a tab or newline from `/<tab>/host`,
+  /// which turns an apparent path into a host.
+  ///
+  /// Navigate with this rather than with [actionUrl]; a `null` means there is
+  /// nowhere in the app to go.
+  String? get inAppActionPath {
+    final String? url = actionUrl;
+    if (url == null || !url.startsWith('/') || url.startsWith('//')) {
+      return null;
+    }
+
+    for (final int unit in url.codeUnits) {
+      if (unit < 0x20 || unit == 0x7f || unit == 0x5c) {
+        return null;
+      }
+    }
+
+    final String? path = Uri.tryParse(url)?.path;
+    if (path == null || path.startsWith('//')) {
+      return null;
+    }
+
+    return url;
+  }
+
   /// Parse from API response
   factory DatabaseNotification.fromMap(Map<String, dynamic> map) {
     final data = map['data'] as Map<String, dynamic>;
