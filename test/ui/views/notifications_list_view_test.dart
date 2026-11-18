@@ -45,6 +45,9 @@ void main() {
     // The controller behind this screen is a Magic singleton, so the page a
     // previous case paged to would otherwise survive into the next one.
     Magic.delete<NotificationsListController>();
+    // The manager is a process static, so its in-flight reads and registrations
+    // would otherwise leak into the next case.
+    Notify.manager.forgetDrivers();
   });
 
   tearDown(() {

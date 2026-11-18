@@ -47,8 +47,9 @@ class DatabaseNotification {
   /// value is returned only when it starts with exactly one `/` and holds no
   /// backslash and no ASCII control character (below 0x20, or 0x7f), and its
   /// path still starts with one `/` once dot segments are resolved. A scheme
-  /// (`https:`, `javascript:`), a host (`//host`, or `/.//host`, which a URL
-  /// parser resolves to it) and a relative `x/y` are all answered with `null`,
+  /// (`https:`, `javascript:`), a host (`//host`, or `/.//host`, whose resolved
+  /// path `//host` reads as a host if a parser takes it on its own) and a
+  /// relative `x/y` are all answered with `null`,
   /// and so is an absolute URL to the app's own origin: the backend sends a
   /// path. Backslashes and control characters are refused because a URL parser
   /// reads `/\host` as `//host` and drops a tab or newline from `/<tab>/host`,
