@@ -1,7 +1,7 @@
 ---
 name: magic-notifications
 description: "Build notifications in a Magic app with magic_notifications: the Notify facade, a backend-driven inbox, OneSignal push, realtime."
-version: 1.0.1
+version: 1.1.0
 when_to_use: "Use when code imports magic_notifications or touches Notify, PushDriver, OneSignal push, push_state or a notifications:* command."
 ---
 

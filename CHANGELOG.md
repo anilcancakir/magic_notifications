@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-18
+
 ### Added
 - **`DatabaseNotification.inAppActionPath`, the `action_url` a router can take.** It returns `actionUrl` only when that is a path inside the app (one leading `/`, no backslash, no ASCII control character, and still one leading `/` once dot segments are resolved, so `/.//host` is refused) and `null` for a URL, scheme, host, relative path or empty value. `actionUrl` still returns the raw value. (`lib/src/models/database_notification.dart`, `doc/basics/channels.md`)
 
