@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/anilcancakir/magic_notifications/master/.github/magic-logo.svg" width="120" alt="Magic Notifications" />
+  <img src="https://raw.githubusercontent.com/anilcancakir/magic_notifications/master/screenshots/logo.png" width="120" alt="Magic Notifications logo" />
 </p>
 
 <h1 align="center">Magic Notifications</h1>
