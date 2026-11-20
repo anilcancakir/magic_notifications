@@ -12,10 +12,6 @@ topics:
   - magic-framework
   - flutter-plugin
 
-screenshots:
-  - description: "The Magic Notifications logo."
-    path: screenshots/logo.png
-
 environment:
   sdk: ">=3.13.0 <4.0.0"
   flutter: ">=3.47.0"
