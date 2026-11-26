@@ -1,5 +1,4 @@
-import 'package:material_ui/material_ui.dart'
-    show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -124,9 +123,15 @@ class _NotificationPreferencesViewState
   @override
   Widget build(BuildContext context) {
     if (controller.isLoading) {
+      // A `WIcon` spinner, not a `CircularProgressIndicator`: that one also
+      // publishes `SemanticsRole.loadingSpinner`, which can override the role
+      // of a merged parent on web.
       return const WDiv(
         className: 'py-12 flex items-center justify-center',
-        child: CircularProgressIndicator(),
+        child: WIcon(
+          Icons.refresh_outlined,
+          className: 'text-3xl text-fg-muted animate-spin',
+        ),
       );
     }
 

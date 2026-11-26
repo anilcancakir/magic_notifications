@@ -135,7 +135,17 @@ void main() {
 
     await tester.pumpWidget(wrap(const NotificationsListView()));
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    final WIcon spinner = tester.widget<WIcon>(
+      find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WIcon &&
+            (widget.className ?? '').contains('animate-spin'),
+      ),
+    );
+
+    expect(spinner.className, contains('text-fg-muted'));
   });
 
   testWidgets('renders empty state with icon and message', (tester) async {
@@ -507,6 +517,71 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Mark all as read'), findsOneWidget);
+  });
+
+  group('the mark-all label colour', () {
+    /// Mounts the list with one unread row under [theme] and returns the
+    /// colour the mark-all label paints.
+    Future<Color?> markAllLabelColour(
+      WidgetTester tester,
+      WindThemeData theme,
+    ) async {
+      fakeNotifications([
+        makeNotificationMap(id: '1', title: 'Unread', body: 'Body'),
+      ]);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WindTheme(
+            data: theme,
+            child: Scaffold(
+              body: SizedBox(
+                width: 1024,
+                height: 900,
+                child: NotificationsListView(onMarkAllAsRead: () async {}),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      final RichText label = tester.widget<RichText>(
+        find.descendant(
+          of: find.byType(WButton),
+          matching: find.byType(RichText),
+        ),
+      );
+
+      return label.text.style?.color;
+    }
+
+    testWidgets('follows the host on-primary role over a light brand', (
+      tester,
+    ) async {
+      // A dark on-primary is what a light brand needs: a fixed white would
+      // vanish on this fill.
+      final Color? colour = await markAllLabelColour(
+        tester,
+        WindThemeData(
+          aliases: <String, String>{
+            'bg-primary': 'bg-[#FDE68A]',
+            'text-on-primary': 'text-[#101010]',
+          },
+        ),
+      );
+
+      expect(colour, const Color(0xFF101010));
+    });
+
+    testWidgets('stays white when the host defines no on-primary role', (
+      tester,
+    ) async {
+      final Color? colour = await markAllLabelColour(tester, WindThemeData());
+
+      expect(colour, const Color(0xFFFFFFFF));
+    });
   });
 
   testWidgets('publishes its state through the container', (tester) async {

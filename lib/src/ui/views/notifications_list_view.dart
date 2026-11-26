@@ -1,5 +1,4 @@
-import 'package:material_ui/material_ui.dart'
-    show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -272,12 +271,17 @@ class _NotificationsListViewState
         }
         controller.refresh();
       },
+      // `text-on-primary` is the role that pairs with `bg-primary`, so a host
+      // whose brand is light still reads. It comes after `text-white` on
+      // purpose: Wind is last-wins, so a host that defines the role gets it,
+      // and a host whose theme has no such alias keeps white on the default
+      // blue brand instead of the theme's body colour.
       className:
           'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
-          'text-white font-medium text-sm',
+          'text-white text-on-primary font-medium text-sm',
       child: WText(
         trans('notifications.mark_all_read'),
-        className: 'text-white font-medium text-sm',
+        className: 'text-white text-on-primary font-medium text-sm',
       ),
     );
   }
@@ -288,11 +292,17 @@ class _NotificationsListViewState
     int totalPages,
   ) {
     if (controller.isLoading && notifications.isEmpty) {
+      // A `WIcon` spinner, not a `CircularProgressIndicator`: that one also
+      // publishes `SemanticsRole.loadingSpinner`, which can override the role
+      // of a merged parent on web.
       return const WDiv(
         className:
             'w-full bg-surface-container border border-color-border '
             'rounded-2xl p-6 flex items-center justify-center',
-        child: CircularProgressIndicator(),
+        child: WIcon(
+          Icons.refresh_outlined,
+          className: 'text-3xl text-fg-muted animate-spin',
+        ),
       );
     }
 

@@ -1,5 +1,4 @@
-import 'package:material_ui/material_ui.dart'
-    show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -175,6 +174,7 @@ class NotificationDropdown extends StatelessWidget {
     int unreadCount,
   ) {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
@@ -433,21 +433,29 @@ class NotificationDropdown extends StatelessWidget {
 
   Widget _buildLoadingDropdown() {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
       maxHeight: 400,
       triggerBuilder: (context, isOpen, isHovering) =>
           _buildTrigger(context, isOpen, isHovering, unreadCount: 0),
+      // A `WIcon` spinner, not a `CircularProgressIndicator`: that one also
+      // publishes `SemanticsRole.loadingSpinner`, which can override the role
+      // of a merged parent on web.
       contentBuilder: (context, close) => WDiv(
         className: 'py-12 flex items-center justify-center',
-        child: const CircularProgressIndicator(),
+        child: const WIcon(
+          Icons.refresh_outlined,
+          className: 'text-3xl text-gray-500 dark:text-gray-400 animate-spin',
+        ),
       ),
     );
   }
 
   Widget _buildErrorDropdown() {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,

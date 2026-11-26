@@ -475,7 +475,17 @@ void main() {
 
     await tester.pumpWidget(wrap(const NotificationPreferencesView()));
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    final WIcon spinner = tester.widget<WIcon>(
+      find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WIcon &&
+            (widget.className ?? '').contains('animate-spin'),
+      ),
+    );
+
+    expect(spinner.className, contains('text-fg-muted'));
   });
 
   testWidgets('renders the empty-matrix state when the backend has nothing', (
