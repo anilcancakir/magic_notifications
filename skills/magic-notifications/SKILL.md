@@ -68,6 +68,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. `plugin:install` regist
 2. The package ships no translation catalogue. Add every key the screens, `NotificationDropdown` and `PushPrompt` read to each locale, or a key renders as itself: the `notifications.*` keys plus `time.*`, `common.page_of`, `common.back` and `errors.unexpected`, listed at https://anilcancakir.com/magic/docs/notifications/basics/preferences#translation-keys.
 3. `NotificationsListView.onDelete` returns `Future<bool>`: `true` reloads the page, `false` leaves it alone, a throw reloads.
 4. `PushPromptHost` takes a `declinedVaultKey` of its own; it reads the value back as an ISO-8601 timestamp and treats anything else as never declined.
+5. `NotificationDropdown` names its own bell (`semanticLabel`, else `notifications.title`, else `Notifications`). Pass a shell's own name as `semanticLabel`; a labelled `Semantics` around the bell merges with it and the bell is read twice.
 
 ## Recipes
 

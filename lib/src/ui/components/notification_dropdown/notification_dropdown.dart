@@ -130,6 +130,15 @@ class NotificationDropdown extends StatelessWidget {
   /// [kNotificationDropdownBadgeTextClassName].
   final String badgeTextClassName;
 
+  /// The bell's accessible name, or null for `notifications.title`.
+  ///
+  /// A shell that names its controls from its own catalogue passes its name
+  /// here rather than wrapping the bell in a labelled `Semantics`: a wrapper
+  /// merges its label with this one and the bell is read twice. With null and
+  /// no `notifications.title` in the catalogue the name is `Notifications`,
+  /// never the raw key.
+  final String? semanticLabel;
+
   /// Creates a [NotificationDropdown].
   const NotificationDropdown({
     super.key,
@@ -145,7 +154,14 @@ class NotificationDropdown extends StatelessWidget {
     this.panelOffset = const Offset(0, 4),
     this.badgeClassName = kNotificationDropdownBadgeClassName,
     this.badgeTextClassName = kNotificationDropdownBadgeTextClassName,
+    this.semanticLabel,
   });
+
+  String get _bellName =>
+      semanticLabel ??
+      (Lang.has('notifications.title')
+          ? trans('notifications.title')
+          : 'Notifications');
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +190,7 @@ class NotificationDropdown extends StatelessWidget {
     int unreadCount,
   ) {
     return WPopover(
-      semanticLabel: trans('notifications.title'),
+      semanticLabel: _bellName,
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
@@ -433,7 +449,7 @@ class NotificationDropdown extends StatelessWidget {
 
   Widget _buildLoadingDropdown() {
     return WPopover(
-      semanticLabel: trans('notifications.title'),
+      semanticLabel: _bellName,
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
@@ -457,7 +473,7 @@ class NotificationDropdown extends StatelessWidget {
 
   Widget _buildErrorDropdown() {
     return WPopover(
-      semanticLabel: trans('notifications.title'),
+      semanticLabel: _bellName,
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
