@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:magic/magic.dart' show Config;
+import 'package:magic/magic.dart' show Config, MagicPlatform;
 import 'package:magic_notifications/magic_notifications.dart';
 
 import '../../test_helper.dart';
@@ -43,6 +43,60 @@ void main() {
           throwsA(isA<NotificationException>()),
         );
       }
+    });
+
+    group('platform support', () {
+      test('is supported on iOS', () {
+        expect(OneSignalDriver(isIOS: true).isSupported, isTrue);
+      });
+
+      test('is supported on Android', () {
+        expect(
+          OneSignalDriver(isIOS: false, isAndroid: true).isSupported,
+          isTrue,
+        );
+      });
+
+      test('is unsupported where there is neither', () {
+        expect(
+          OneSignalDriver(isIOS: false, isAndroid: false).isSupported,
+          isFalse,
+        );
+      });
+
+      test('is unsupported on tvOS, which reports as iOS', () {
+        MagicPlatform.debugTvOSOverride = true;
+        addTearDown(() => MagicPlatform.debugTvOSOverride = null);
+
+        expect(OneSignalDriver(isIOS: true).isSupported, isFalse);
+      });
+
+      test('initialize() on tvOS throws before any OneSignal call', () async {
+        MagicPlatform.debugTvOSOverride = true;
+        addTearDown(() => MagicPlatform.debugTvOSOverride = null);
+
+        final calls = <MethodCall>[];
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        const channel = MethodChannel('OneSignal');
+        messenger.setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+        await expectLater(
+          OneSignalDriver(isIOS: true).initialize({'app_id': 'test-app-id'}),
+          throwsA(
+            isA<NotificationException>().having(
+              (e) => e.code,
+              'code',
+              'PLATFORM_NOT_SUPPORTED',
+            ),
+          ),
+        );
+        expect(calls, isEmpty);
+      });
     });
 
     // The mobile driver talks to the static OneSignal SDK directly and has no

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`OneSignalDriver.isSupported` is false on tvOS.** tvOS reports as iOS, so the driver answered true, yet `onesignal_flutter` has no tvOS half and every SDK call there had nothing on the other end. The driver now asks `MagicPlatform.isTvOS` first, so `initialize` throws `PLATFORM_NOT_SUPPORTED` before touching the SDK, and the push stack stays off like any other unsupported platform. iOS, Android and web behave as before. The constructor takes `isIOS` and `isAndroid` so a desktop test host can reach the iOS arm. (`lib/src/drivers/push/onesignal_driver.dart`, `test/drivers/push/onesignal_driver_test.dart`)
+
 ## [1.2.1] - 2026-11-26
 
 ### Fixed
