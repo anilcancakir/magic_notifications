@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:app_settings/app_settings.dart';
-import 'package:magic/magic.dart' show Config;
+import 'package:magic/magic.dart' show Config, MagicPlatform;
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import '../../exceptions/notification_exception.dart';
@@ -33,6 +33,13 @@ class OneSignalDriver extends PushDriver {
   final StreamController<PushIdentityChange> _identityController =
       StreamController<PushIdentityChange>.broadcast();
 
+  /// [isIOS] and [isAndroid] exist for tests: a `flutter test` run is always on
+  /// a desktop, so without them only the unsupported answer is reachable.
+  OneSignalDriver({this._isIOS, this._isAndroid});
+
+  final bool? _isIOS;
+  final bool? _isAndroid;
+
   bool _initialized = false;
 
   @override
@@ -42,11 +49,16 @@ class OneSignalDriver extends PushDriver {
   @override
   bool get isInitialized => _initialized;
 
+  /// Whether this device can run the OneSignal SDK: iOS and Android only.
+  ///
+  /// tvOS answers false: it reports as iOS, but `onesignal_flutter` ships no
+  /// tvOS half, so any SDK call there has nothing on the other end.
   @override
   bool get isSupported {
-    // OneSignal SDK primarily supports iOS and Android
+    if (MagicPlatform.isTvOS) return false;
+
     try {
-      return Platform.isIOS || Platform.isAndroid;
+      return (_isIOS ?? Platform.isIOS) || (_isAndroid ?? Platform.isAndroid);
     } catch (e) {
       // Platform not available (e.g., in tests or web)
       return false;
