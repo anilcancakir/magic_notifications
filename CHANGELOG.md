@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `NotificationDropdown` bell never announces a raw key, and a shell can name it through `semanticLabel` instead of a wrapper.** 1.2.0 labelled the bell with `trans('notifications.title')`, which returns the key itself when the catalogue lacks it, and magic_starter's app layout still wrapped the bell in its own labelled `Semantics`, so the merged node read "Notifications notifications.title" without the key and "Notifications Notifications" with it (found by a live walk of a consuming app and confirmed by a semantics probe). The name is now `semanticLabel` when given, else `notifications.title` when the catalogue has it, else `Notifications`, on the loading, error and list bells alike. Moving the fallback into the shell alone was rejected because the inner label is merged into any wrapper, so only a parameter gives the bell exactly one name. (`lib/src/ui/components/notification_dropdown/notification_dropdown.dart`, `test/ui/components/notification_dropdown_test.dart`, `doc/basics/notification-dropdown.md`, `skills/magic-notifications/SKILL.md`)
+
 ## [1.2.0] - 2026-11-26
 
 ### Changed

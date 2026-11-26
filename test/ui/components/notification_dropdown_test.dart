@@ -680,6 +680,63 @@ void main() {
       }
     });
 
+    testWidgets('a semanticLabel names the bell in place of the title', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(
+              notificationStream: streamController.stream,
+              semanticLabel: 'Alerts',
+            ),
+          ),
+        );
+
+        // Still loading: the loading bell carries the same name.
+        expect(buttonNodes(tester).single.label, 'Alerts');
+
+        streamController.add([]);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(buttonNodes(tester).single.label, 'Alerts');
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('a catalogue without the title names the bell in English', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+      final Map<String, dynamic> withoutTitle = <String, dynamic>{..._sentences}
+        ..remove('notifications.title');
+      Translator.instance.setLoader(_MapTranslationLoader(withoutTitle));
+      // A DIFFERENT locale, because `Translator.load` returns early when the
+      // locale is unchanged.
+      await Translator.instance.load(const Locale('tr'));
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        streamController.add([]);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(buttonNodes(tester).single.label, 'Notifications');
+      } finally {
+        handle.dispose();
+        Translator.instance.setLoader(const _MapTranslationLoader(_sentences));
+        await Translator.instance.load(const Locale('en'));
+      }
+    });
+
     testWidgets('the same node reports expanded while the panel is open', (
       tester,
     ) async {
