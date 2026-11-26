@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsRole;
+
 import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
@@ -123,14 +125,21 @@ class _NotificationPreferencesViewState
   @override
   Widget build(BuildContext context) {
     if (controller.isLoading) {
-      // A `WIcon` spinner, not a `CircularProgressIndicator`: that one also
-      // publishes `SemanticsRole.loadingSpinner`, which can override the role
-      // of a merged parent on web.
-      return const WDiv(
-        className: 'py-12 flex items-center justify-center',
-        child: WIcon(
-          Icons.refresh_outlined,
-          className: 'text-3xl text-fg-muted animate-spin',
+      // A `WIcon` spinner under the loading-spinner role, not a
+      // `CircularProgressIndicator`: that widget published the same role on
+      // its own, and the explicit node keeps the announcement without a
+      // Material widget (or a translation key, which the host would have to
+      // supply). It is a screen's whole body, so no merged parent's role is at
+      // stake here, unlike under the dropdown's bell button.
+      return Semantics(
+        container: true,
+        role: SemanticsRole.loadingSpinner,
+        child: WDiv(
+          className: 'py-12 flex items-center justify-center',
+          child: WIcon(
+            Icons.refresh_outlined,
+            className: 'text-3xl text-fg-muted animate-spin',
+          ),
         ),
       );
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -146,6 +147,27 @@ void main() {
     );
 
     expect(spinner.className, contains('text-fg-muted'));
+  });
+
+  testWidgets('the loading state announces itself as a loading spinner', (
+    tester,
+  ) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+
+    try {
+      fakeNotifications(const []);
+
+      await tester.pumpWidget(wrap(const NotificationsListView()));
+
+      expect(
+        publishedSemanticsNodes(tester).where(
+          (SemanticsData node) => node.role == SemanticsRole.loadingSpinner,
+        ),
+        hasLength(1),
+      );
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('renders empty state with icon and message', (tester) async {

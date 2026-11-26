@@ -732,6 +732,35 @@ void main() {
       }
     });
 
+    testWidgets('the bell stays a plain button while the panel is loading', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        await tester.tap(find.byIcon(Icons.notifications_outlined));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // A loading-spinner role on the spinner would override the role of
+        // the merged bell button on web, so none may be published here.
+        expect(
+          publishedSemanticsNodes(tester).where(
+            (SemanticsData node) => node.role == SemanticsRole.loadingSpinner,
+          ),
+          isEmpty,
+        );
+        expect(buttonNodes(tester).first.role, SemanticsRole.none);
+      } finally {
+        handle.dispose();
+      }
+    });
+
     testWidgets('the loading and the failure popovers name the bell too', (
       tester,
     ) async {

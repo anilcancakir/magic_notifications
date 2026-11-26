@@ -440,9 +440,11 @@ class NotificationDropdown extends StatelessWidget {
       maxHeight: 400,
       triggerBuilder: (context, isOpen, isHovering) =>
           _buildTrigger(context, isOpen, isHovering, unreadCount: 0),
-      // A `WIcon` spinner, not a `CircularProgressIndicator`: that one also
-      // publishes `SemanticsRole.loadingSpinner`, which can override the role
-      // of a merged parent on web.
+      // A bare `WIcon` spinner, with no loading-spinner role on purpose: this
+      // panel sits under the merged bell button, and a
+      // `CircularProgressIndicator` (which publishes
+      // `SemanticsRole.loadingSpinner`) can override that button's role on
+      // web. The two screens own their whole body and do announce the role.
       contentBuilder: (context, close) => WDiv(
         className: 'py-12 flex items-center justify-center',
         child: const WIcon(
