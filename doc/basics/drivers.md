@@ -105,7 +105,7 @@ This is the read a soft prompt gates on before showing itself, and the read that
 
 | Behaviour | Detail |
 | :--- | :--- |
-| `isSupported` | `true` on iOS and Android only |
+| `isSupported` | `true` on iOS and Android only; `false` on tvOS, which reports as iOS but has no OneSignal SDK |
 | `initialize` | Throws `NotificationException` with code `PLATFORM_NOT_SUPPORTED` on another platform and `MISSING_APP_ID` when `app_id` is blank; otherwise starts the SDK and attaches the foreground, click, permission and user observers |
 | `login` and `requestPermission` | Throw `NOT_INITIALIZED` when called before `initialize`; `logout`, `optIn` and `optOut` return quietly |
 | `permissionState()` | Maps the native permission; on platforms that report a denied state without a tri-state it asks the SDK whether a prompt would still show, so a never-asked device reads `notDetermined` |
