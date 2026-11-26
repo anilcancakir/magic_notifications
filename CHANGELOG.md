@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-26
+
 ### Changed
 
 - **The `NotificationDropdown` bell is one named button that reports whether its panel is open.** The popover trigger carried no accessible name, so a screen reader announced an unlabelled control. The loading, error and list popovers now pass `notifications.title` as `WPopover.semanticLabel`, which names the trigger's single merged button node (the unread count is read after the name) and publishes `expanded` while the panel is open, with no second node. This raises the `wind_kit` floor to `^1.13.0`, the first release whose `WPopover` takes `semanticLabel`. (`pubspec.yaml`, `lib/src/ui/components/notification_dropdown/notification_dropdown.dart`, `doc/basics/notification-dropdown.md`, `doc/basics/preferences.md`)
