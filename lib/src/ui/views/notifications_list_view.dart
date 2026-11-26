@@ -1,5 +1,6 @@
-import 'package:material_ui/material_ui.dart'
-    show Icons, CircularProgressIndicator;
+import 'dart:ui' show SemanticsRole;
+
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -272,12 +273,17 @@ class _NotificationsListViewState
         }
         controller.refresh();
       },
+      // `text-on-primary` is the role that pairs with `bg-primary`, so a host
+      // whose brand is light still reads. It comes after `text-white` on
+      // purpose: Wind is last-wins, so a host that defines the role gets it,
+      // and a host whose theme has no such alias keeps white on the default
+      // blue brand instead of the theme's body colour.
       className:
           'px-4 py-2 rounded-lg bg-primary hover:bg-primary/80 '
-          'text-white font-medium text-sm',
+          'text-white text-on-primary font-medium text-sm',
       child: WText(
         trans('notifications.mark_all_read'),
-        className: 'text-white font-medium text-sm',
+        className: 'text-white text-on-primary font-medium text-sm',
       ),
     );
   }
@@ -288,11 +294,24 @@ class _NotificationsListViewState
     int totalPages,
   ) {
     if (controller.isLoading && notifications.isEmpty) {
-      return const WDiv(
-        className:
-            'w-full bg-surface-container border border-color-border '
-            'rounded-2xl p-6 flex items-center justify-center',
-        child: CircularProgressIndicator(),
+      // A `WIcon` spinner under the loading-spinner role, not a
+      // `CircularProgressIndicator`: that widget published the same role on
+      // its own, and the explicit node keeps the announcement without a
+      // Material widget (or a translation key, which the host would have to
+      // supply). It is a screen's whole body, so no merged parent's role is at
+      // stake here, unlike under the dropdown's bell button.
+      return Semantics(
+        container: true,
+        role: SemanticsRole.loadingSpinner,
+        child: WDiv(
+          className:
+              'w-full bg-surface-container border border-color-border '
+              'rounded-2xl p-6 flex items-center justify-center',
+          child: WIcon(
+            Icons.refresh_outlined,
+            className: 'text-3xl text-fg-muted animate-spin',
+          ),
+        ),
       );
     }
 

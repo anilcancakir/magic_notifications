@@ -1,3 +1,4 @@
+import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
@@ -475,7 +476,39 @@ void main() {
 
     await tester.pumpWidget(wrap(const NotificationPreferencesView()));
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    final WIcon spinner = tester.widget<WIcon>(
+      find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WIcon &&
+            (widget.className ?? '').contains('animate-spin'),
+      ),
+    );
+
+    expect(spinner.className, contains('text-fg-muted'));
+  });
+
+  testWidgets('the loading state announces itself as a loading spinner', (
+    tester,
+  ) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+
+    try {
+      fakeMatrix(pushProvisioned: true);
+      NotificationPreferencesController.instance.setLoading();
+
+      await tester.pumpWidget(wrap(const NotificationPreferencesView()));
+
+      expect(
+        publishedSemanticsNodes(tester).where(
+          (SemanticsData node) => node.role == SemanticsRole.loadingSpinner,
+        ),
+        hasLength(1),
+      );
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('renders the empty-matrix state when the backend has nothing', (

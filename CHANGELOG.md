@@ -4,7 +4,13 @@
 
 ### Changed
 
+- **The `NotificationDropdown` bell is one named button that reports whether its panel is open.** The popover trigger carried no accessible name, so a screen reader announced an unlabelled control. The loading, error and list popovers now pass `notifications.title` as `WPopover.semanticLabel`, which names the trigger's single merged button node (the unread count is read after the name) and publishes `expanded` while the panel is open, with no second node. This raises the `wind_kit` floor to `^1.13.0`, the first release whose `WPopover` takes `semanticLabel`. (`pubspec.yaml`, `lib/src/ui/components/notification_dropdown/notification_dropdown.dart`, `doc/basics/notification-dropdown.md`, `doc/basics/preferences.md`)
+- **The loading states use a spinning Wind icon instead of Material's `CircularProgressIndicator`.** The dropdown panel, the inbox and the preferences screen each drew a Material spinner, which also publishes `SemanticsRole.loadingSpinner` and can override the role of a merged parent on web. Each is now a `WIcon` with `animate-spin`, coloured by a token (`text-gray-500 dark:text-gray-400` in the dropdown, `text-fg-muted` in the two screens), and the `CircularProgressIndicator` import is gone from all three files. The inbox and preferences loading states keep the screen reader announcement by wrapping the icon in `Semantics(role: SemanticsRole.loadingSpinner)`, which needs no translation key; the dropdown panel deliberately has no such role, because it sits under the merged bell button, whose role it would override on web. (`lib/src/ui/components/notification_dropdown/notification_dropdown.dart`, `lib/src/ui/views/notifications_list_view.dart`, `lib/src/ui/views/notification_preferences_view.dart`, `doc/basics/notification-dropdown.md`)
 - **The README shows the plugin's own logo instead of the Magic logo.** `.github/logo.png`, a 512 pixel PNG of the mark the docs site serves, replaces `.github/magic-logo.svg`. (`README.md`, `.github/`)
+
+### Fixed
+
+- **The inbox's "Mark all as read" label follows the host's `text-on-primary` role.** It was a fixed `text-white` on a `bg-primary` box, which is unreadable once a host's brand is light. The label now reads `text-white text-on-primary`: Wind is last-wins, so a host that defines the alias (the `design:sync` contract carries it) gets its own pairing, and a theme with no such alias keeps white on the default blue brand rather than falling back to the body colour. (`lib/src/ui/views/notifications_list_view.dart`)
 
 ## [1.1.0] - 2026-11-18
 

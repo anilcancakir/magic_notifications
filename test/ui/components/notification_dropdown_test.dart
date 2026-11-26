@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:ui' show Tristate;
 
+import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
@@ -626,6 +628,188 @@ void main() {
     // enter, so the assertion is over the token, not over a painted colour.
     expect(action.className, contains('hover:text-primary'));
     expect(action.className, isNot(contains('green')));
+  });
+
+  group('NotificationDropdown bell semantics', () {
+    /// The button nodes assistive technology sees under the popover. A node
+    /// merged into its parent is not a separate stop for a screen reader, so
+    /// only the surviving ones count.
+    List<SemanticsData> buttonNodes(WidgetTester tester) {
+      final List<SemanticsData> buttons = <SemanticsData>[];
+
+      void collect(SemanticsNode node) {
+        final SemanticsData data = node.getSemanticsData();
+        if (!node.isMergedIntoParent && data.flagsCollection.isButton) {
+          buttons.add(data);
+        }
+        node.visitChildren((SemanticsNode child) {
+          collect(child);
+          return true;
+        });
+      }
+
+      collect(tester.getSemantics(find.byType(WPopover)));
+
+      return buttons;
+    }
+
+    testWidgets('one button node, named by the title, collapsed while closed', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        streamController.add([]);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        final List<SemanticsData> buttons = buttonNodes(tester);
+
+        expect(buttons, hasLength(1));
+        expect(buttons.single.label, 'Notifications');
+        expect(buttons.single.hasAction(SemanticsAction.tap), isTrue);
+        expect(buttons.single.flagsCollection.isExpanded, Tristate.isFalse);
+        expect(find.bySemanticsLabel('Notifications'), findsOneWidget);
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('the same node reports expanded while the panel is open', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        streamController.add([]);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        await tester.tap(find.byIcon(Icons.notifications_outlined));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Nothing here yet'), findsOneWidget);
+        expect(
+          buttonNodes(tester).first.flagsCollection.isExpanded,
+          Tristate.isTrue,
+        );
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('the unread count is read after the name, in one node', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        streamController.add([makeNotification(), makeNotification()]);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        final List<SemanticsData> buttons = buttonNodes(tester);
+
+        expect(buttons, hasLength(1));
+        expect(buttons.single.label, 'Notifications\n2');
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('the bell stays a plain button while the panel is loading', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        await tester.tap(find.byIcon(Icons.notifications_outlined));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // A loading-spinner role on the spinner would override the role of
+        // the merged bell button on web, so none may be published here.
+        expect(
+          publishedSemanticsNodes(tester).where(
+            (SemanticsData node) => node.role == SemanticsRole.loadingSpinner,
+          ),
+          isEmpty,
+        );
+        expect(buttonNodes(tester).first.role, SemanticsRole.none);
+      } finally {
+        handle.dispose();
+      }
+    });
+
+    testWidgets('the loading and the failure popovers name the bell too', (
+      tester,
+    ) async {
+      final SemanticsHandle handle = tester.ensureSemantics();
+
+      try {
+        // Loading: the stream has not answered yet.
+        await tester.pumpWidget(
+          wrap(
+            NotificationDropdown(notificationStream: streamController.stream),
+          ),
+        );
+        expect(buttonNodes(tester).single.label, 'Notifications');
+
+        // Failure: the stream answered with an error.
+        streamController.addError(StateError('load failed'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(buttonNodes(tester).single.label, 'Notifications');
+      } finally {
+        handle.dispose();
+      }
+    });
+  });
+
+  testWidgets('the loading panel shows a Wind spinner, not a Material one', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(NotificationDropdown(notificationStream: streamController.stream)),
+    );
+
+    // A spinner never settles, so `pumpAndSettle` would hang here.
+    await tester.tap(find.byIcon(Icons.notifications_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    final WIcon spinner = tester.widget<WIcon>(
+      find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is WIcon &&
+            (widget.className ?? '').contains('animate-spin'),
+      ),
+    );
+
+    expect(spinner.className, contains('dark:text-'));
   });
 
   group('NotificationDropdown defaults — dark-mode pairing', () {

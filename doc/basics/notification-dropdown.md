@@ -58,12 +58,12 @@ The widget holds no state of its own and calls no backend: it renders whatever `
 
 | Stream state | Bell | Panel |
 | :--- | :--- | :--- |
-| Waiting for its first list | No badge | A progress indicator |
+| Waiting for its first list | No badge | A spinning Wind icon |
 | An error | No badge | `notifications.load_failed` |
 | An empty list | No badge | `notifications.empty` |
 | Rows | The unread count, or `notifications.badge_overflow` above nine | `notifications.title`, the mark-all link while something is unread, one row per notification (title, body, relative time) and the view-all footer |
 
-The panel is capped at 400 logical pixels high and scrolls inside. Every string comes from a translation key the host supplies; [Translation Keys](./preferences.md#translation-keys) lists them with English reference copy.
+The bell is one button for assistive technology, named by `notifications.title` and read with the unread count after it; it reports itself expanded while the panel is open. The panel is capped at 400 logical pixels high and scrolls inside. Every string comes from a translation key the host supplies; [Translation Keys](./preferences.md#translation-keys) lists them with English reference copy.
 
 <a name="restyling"></a>
 ## Restyling

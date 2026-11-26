@@ -352,7 +352,7 @@ The package ships no translation catalogue. Every string the inbox screen, the p
 
 | Key | Where it shows | English reference copy |
 | :--- | :--- | :--- |
-| `notifications.title` | Inbox header title, dropdown panel heading, and the title of the error shown when a delete fails | Notifications |
+| `notifications.title` | Inbox header title, dropdown panel heading, the dropdown bell's accessible name, and the title of the error shown when a delete fails | Notifications |
 | `notifications.list_subtitle` | Inbox header subtitle | Everything we sent you |
 | `notifications.mark_all_read` | Inbox header action and dropdown heading link, while something is unread | Mark all as read |
 | `notifications.empty` | Inbox and dropdown with no rows | Nothing here yet |

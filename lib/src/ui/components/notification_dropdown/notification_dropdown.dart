@@ -1,5 +1,4 @@
-import 'package:material_ui/material_ui.dart'
-    show Icons, CircularProgressIndicator;
+import 'package:material_ui/material_ui.dart' show Icons;
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
 
@@ -175,6 +174,7 @@ class NotificationDropdown extends StatelessWidget {
     int unreadCount,
   ) {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
@@ -433,21 +433,31 @@ class NotificationDropdown extends StatelessWidget {
 
   Widget _buildLoadingDropdown() {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,
       maxHeight: 400,
       triggerBuilder: (context, isOpen, isHovering) =>
           _buildTrigger(context, isOpen, isHovering, unreadCount: 0),
+      // A bare `WIcon` spinner, with no loading-spinner role on purpose: this
+      // panel sits under the merged bell button, and a
+      // `CircularProgressIndicator` (which publishes
+      // `SemanticsRole.loadingSpinner`) can override that button's role on
+      // web. The two screens own their whole body and do announce the role.
       contentBuilder: (context, close) => WDiv(
         className: 'py-12 flex items-center justify-center',
-        child: const CircularProgressIndicator(),
+        child: const WIcon(
+          Icons.refresh_outlined,
+          className: 'text-3xl text-gray-500 dark:text-gray-400 animate-spin',
+        ),
       ),
     );
   }
 
   Widget _buildErrorDropdown() {
     return WPopover(
+      semanticLabel: trans('notifications.title'),
       alignment: PopoverAlignment.bottomRight,
       offset: panelOffset,
       className: panelClassName,

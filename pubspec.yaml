@@ -40,12 +40,14 @@ dependencies:
   # to be declared where it is used.
   meta: ^1.19.0
   # Direct rather than transitive: this package ships widgets, so wind is a
-  # dependency of its own. The floor names 1.12.0, the first wind_kit release
-  # on material_ui.
-  wind_kit: ^1.12.0
-  # `Icons` and `CircularProgressIndicator` come from material_ui now that
-  # Flutter's own material library is deprecated. wind_kit 1.12.0 builds on the
-  # same package, so the two share one set of material types.
+  # dependency of its own. The floor names 1.13.0, the first wind_kit release
+  # whose `WPopover` takes `semanticLabel`, which names the bell trigger and
+  # reports it expanded while the panel is open; 1.12.0 was the first on
+  # material_ui.
+  wind_kit: ^1.13.0
+  # `Icons` comes from material_ui now that Flutter's own material library is
+  # deprecated. wind_kit builds on the same package, so the two share one set
+  # of material types.
   material_ui: ^1.11.0
   # Opens the app's own notification settings page for
   # `PushDriver.openPlatformSettings`, which OneSignal reaches only through its
